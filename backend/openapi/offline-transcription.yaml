@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: Offline Transcription Service
+  version: 1.0.0
+  description: |
+    FastAPI service providing offline audio transcription using FunASR.
+    
+    Endpoints include health/readiness probes, model info, transcription for
+    existing files in the `uploads/` directory, and upload+transcribe.
+servers:
+  - url: http://localhost:2594
+    description: Local development server
+  - url: /
+    description: Relative server (proxy/ingress)
+
+tags:
+  - name: System
+    description: Health and readiness probes
+  - name: Model
+    description: Model info and capabilities
+  - name: Transcription
+    description: Transcription endpoints
+  - name: Web
+    description: Simple web UI (HTML)
+
+paths:
+  /:
+    get:
+      tags: [System]
+      summary: Service status
+      operationId: getRoot
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootStatus'
+  /health:
+    get:
+      tags: [System]
+      summary: Liveness probe
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /ready:
+    get:
+      tags: [System]
+      summary: Readiness probe
+      description: Verifies external tools (ffmpeg/ffprobe) and model availability.
+      operationId: getReady
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessStatus'
+  /api/model-info:
+    get:
+      tags: [Model]
+      summary: Get model information
+      operationId: getModelInfo
+      responses:
+        '200':
+          description: Model information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelInfo'
+  /api/transcribe:
+    post:
+      tags: [Transcription]
+      summary: Transcribe an existing audio file from uploads directory
+      operationId: postTranscribe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranscriptionRequest'
+      responses:
+        '200':
+          description: Transcription successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionResponse'
+        '400':
+          description: Bad request (e.g., invalid path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Audio file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error during transcription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/upload-transcribe:
+    post:
+      tags: [Transcription]
+      summary: Upload an audio file and transcribe
+      operationId: postUploadTranscribe
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Audio or video file to transcribe
+                hotword:
+                  type: string
+                  description: Optional hotword(s) separated by spaces
+              required: [file]
+      responses:
+        '200':
+          description: Transcription successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionResponse'
+        '400':
+          description: Bad request (e.g., unsupported file type)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error during upload or transcription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /web:
+    get:
+      tags: [Web]
+      summary: Simple web interface
+      operationId: getWeb
+      responses:
+        '200':
+          description: HTML user interface
+          content:
+            text/html:
+              schema:
+                type: string
+                format: html
+
+components:
+  schemas:
+    RootStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: Offline Transcription Service
+        version:
+          type: string
+          example: 1.0.0
+      required: [status, service, version]
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+      required: [status]
+    ReadinessStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, notReady]
+        dependencies:
+          type: object
+          properties:
+            ffmpeg:
+              type: boolean
+            ffprobe:
+              type: boolean
+            modelReady:
+              type: boolean
+          required: [ffmpeg, ffprobe, modelReady]
+      required: [status, dependencies]
+    ModelInfo:
+      type: object
+      properties:
+        model:
+          type: string
+          description: Selected speech recognition model (path or name)
+        vadModel:
+          type: string
+          description: Selected VAD model (path or name)
+        puncModel:
+          type: string
+          description: Selected punctuation model (path or name)
+        supportedFormats:
+          type: array
+          items:
+            type: string
+            example: wav
+        sampleRate:
+          type: integer
+          example: 16000
+        localModels:
+          type: object
+          properties:
+            modelPath:
+              type: string
+              nullable: true
+            vadPath:
+              type: string
+              nullable: true
+            puncPath:
+              type: string
+              nullable: true
+      required: [model, vadModel, puncModel, supportedFormats, sampleRate, localModels]
+    TranscriptionRequest:
+      type: object
+      properties:
+        audioFilePath:
+          type: string
+          description: Relative path under uploads/ to an existing audio file
+          example: seeyon-intro.wav
+        hotword:
+          type: string
+          nullable: true
+          description: Optional hotword(s) separated by spaces
+      required: [audioFilePath]
+    TranscriptionResponse:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Transcribed text
+        processingTime:
+          type: number
+          format: float
+          description: Processing time in seconds
+        audioDuration:
+          type: number
+          format: float
+          nullable: true
+          description: Audio duration in seconds
+        fileSize:
+          type: integer
+          nullable: true
+          description: File size in bytes
+      required: [text, processingTime]
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required: [detail]

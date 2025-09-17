@@ -1,0 +1,42 @@
+# Repository Guidelines
+
+## Project Structure & Module Organization
+- `frontend/` (Vite + React + TypeScript) keeps views in `src/pages`, shared UI in `src/components` and `src/layout`, API clients in `src/services`, utilities in `src/utils`; use the `@/` alias from `tsconfig.json` for absolute imports.
+- `backend/api/` hosts the Express + MongoDB service; keep HTTP entry points under `src/routes`, persistence logic in `src/services` and `src/config`, and shared contracts in `src/types`. The seeder in `src/utils/seedData.ts` expects audio under `/recordings`.
+- `recordings/` stores generated audio served by the API, while each package emits build artifacts into a local `dist/` directory that should stay out of commits.
+
+## Build, Test, and Development Commands
+- Frontend: `cd frontend && npm install`, `npm run dev` (http://localhost:2590), `npm run build`, `npm run preview`, and `npm run lint` before sharing changes.
+- Backend: `cd backend/api && npm install`, `npm run dev` for the TSX watcher on http://localhost:2591, `npm run build`, `npm start`, `npm run lint`, and `npm test` for the Jest suite.
+
+## Coding Style & Naming Conventions
+- Stick to TypeScript, two-space indentation, trailing semicolons, and single quotes; the ESLint configs enforce these defaults.
+- Name React components and layout wrappers in PascalCase (`MeetingDetail`), hooks with a `use` prefix, and utilities in camelCase.
+- Mirror REST resources in backend route filenames (e.g. `src/routes/recordings.ts`) and colocate helpers near their consumers to avoid long relatives; prefer the `@/` alias in the frontend.
+
+## Testing Guidelines
+- Backend specs belong in `src/__tests__/` or alongside code as `*.test.ts`; stub MongoDB (e.g. via MongoMemoryServer) so `npm test` runs offline and covers routes, services, and serializers.
+- Frontend automation is not yet scaffolded—document manual verification in PRs, and if you introduce Vitest or React Testing Library, colocate `*.test.tsx` under `src/` and wire the command into `package.json`.
+
+## Commit & Pull Request Guidelines
+- Use Conventional Commit subjects (`feat:`, `refactor:`, `docs:`) with imperative, lower-case wording consistent with the current history.
+- PRs should describe behaviour changes, list commands you ran, link tracking issues, and include UI screenshots when altering visible flows; keep scope narrow and flag any seeding or data migrations.
+
+## Environment & Configuration
+- The API honours `MONGODB_URI` and `DB_NAME`; add overrides in `backend/api/.env` and call out any seed data implications.
+- The frontend reads runtime configuration from `VITE_`-prefixed variables via `import.meta.env`; avoid hard-coded URLs.
+- Store any new development audio under `recordings/` and keep sensitive or production data out of the repository.
+
+## Extra Rules
+
+- Do not wrapping function parameters unless neccessary.
+- Use named function for react component.
+- Prefer airbnb javascript coding style.
+- React components should be default exported at the very last line.
+- Do not wrap React element props unless more than 200 characters in a line.
+- Prefer PascalCase for React component files (jsx, tsx).
+- Create cutom React components in `src/components`, not `src/components/ui`.
+- When implement new features, carefully search and reuse existing code.
+- Try your best to avoid producing duplicate code.
+- Never auto start dev server to test code.
+- When creating a new React page, plan the page composition—list top-level sections, then create the page-level component and split MAJOR sections into separate files.
