@@ -13,6 +13,7 @@ WORKDIR /srv/backend
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci
 COPY backend/ ./
+COPY base/ ../base/
 RUN npm run build
 
 # --- Frontend build stage
@@ -21,6 +22,7 @@ WORKDIR /srv/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
+COPY base/ ../base/
 RUN npm run build
 
 # --- Runtime image with Node + Nginx
@@ -39,6 +41,7 @@ RUN apk add --no-cache nginx \
 COPY --from=backend_deps /srv/backend/node_modules ./node_modules
 COPY --from=backend_builder /srv/backend/dist ./dist
 COPY backend/package.json backend/package-lock.json ./
+COPY base ./base
 
 # Copy frontend static build
 COPY --from=frontend_builder /srv/frontend/dist /usr/share/nginx/html
