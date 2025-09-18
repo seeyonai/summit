@@ -25,6 +25,7 @@ export type RecordingUpdate = Partial<Recording>;
 export type MeetingStatus = 'scheduled' | 'in_progress' | 'completed' | 'failed';
 
 export interface TodoItem {
+  id?: string;
   text: string;
   completed: boolean;
   priority?: 'low' | 'medium' | 'high';
@@ -33,6 +34,7 @@ export interface TodoItem {
 }
 
 export interface DiscussionPoint {
+  id?: string;
   title: string;
   description: string;
   category: string;
@@ -49,6 +51,7 @@ export interface Meeting {
   parsedTodos?: TodoItem[];
   discussionPoints?: DiscussionPoint[];
   participants?: number;
+  recordings?: Recording[];
 }
 
 export interface SegmentationResponse {
@@ -85,6 +88,7 @@ export interface SpeechModelInfo {
 
 // Hotword management types
 export interface Hotword {
+  id?: string;
   word: string;
   isActive: boolean;
 }

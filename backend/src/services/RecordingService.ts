@@ -105,7 +105,7 @@ class RecordingServiceImpl {
     };
 
     const collection = this.getCollection();
-    const insertResult = await collection.insertOne(document);
+    const insertResult = await collection.insertOne(document as any);
     const inserted = await collection.findOne({ _id: insertResult.insertedId });
 
     if (!inserted) {

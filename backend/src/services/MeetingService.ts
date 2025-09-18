@@ -32,7 +32,7 @@ export const createMeeting = async (request: MeetingCreate): Promise<Meeting> =>
     participants: request.participants
   };
 
-  const result = await collection.insertOne(meetingDoc);
+  const result = await collection.insertOne(meetingDoc as any);
   const insertedMeeting = await collection.findOne({ _id: result.insertedId });
 
   if (!insertedMeeting) {
@@ -47,16 +47,6 @@ export const updateMeeting = async (id: string, request: MeetingUpdate): Promise
   const { _id, ...updateData } = request;
 
   const updateFields: Partial<MeetingDocument> = { ...updateData, updatedAt: new Date() };
-
-  if (updateData.recordings) {
-    updateFields.recordings = updateData.recordings.map((recording) => ({
-      ...recording,
-      _id: recording._id instanceof ObjectId
-        ? recording._id
-        : ObjectId.isValid(recording._id) ? new ObjectId(recording._id) : new ObjectId(),
-      createdAt: recording.createdAt instanceof Date ? recording.createdAt : new Date(recording.createdAt),
-    }));
-  }
 
   const result = await collection.findOneAndUpdate(
     { _id: _id || new ObjectId(id) },
@@ -79,7 +69,7 @@ export const addRecordingToMeeting = async (meetingId: string, recording: Record
   const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(meetingId) },
     {
-      $push: { recordings: recording },
+      $push: { recordings: recording } as any,
       $set: { updatedAt: new Date() }
     },
     { returnDocument: 'after' }
@@ -97,7 +87,7 @@ export const removeRecordingFromMeeting = async (
   const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(meetingId) },
     {
-      $pull: { recordings: { _id: new ObjectId(recordingId) } },
+      $pull: { recordings: { _id: new ObjectId(recordingId) } } as any,
       $set: { updatedAt: new Date() }
     },
     { returnDocument: 'after' }
@@ -108,7 +98,7 @@ export const removeRecordingFromMeeting = async (
 
 export const getMeetingsByStatus = async (status: string): Promise<Meeting[]> => {
   const collection = getMeetingsCollection();
-  const meetings = await collection.find({ status }).toArray();
+  const meetings = await collection.find({ status: status as any }).toArray();
   return meetings.map(meetingToApp);
 };
 

@@ -15,6 +15,7 @@ interface Id {
 export type Recording = baseTypes.Recording & Timestamp & Id;
 
 export interface RecordingResponse {
+  id?: string;
   filePath: string;
   filename: string;
   createdAt: string;
@@ -50,7 +51,7 @@ export type Meeting = baseTypes.Meeting & Timestamp & Id;
 
 export type MeetingCreate = baseTypes.Meeting;
 
-export type MeetingUpdate = Pick<
+export type MeetingUpdate = Partial<Pick<
   Meeting,
   '_id' | 
   'title' | 
@@ -59,7 +60,7 @@ export type MeetingUpdate = Pick<
   'scheduledStart' | 
   'finalTranscript' | 
   'participants'
->;
+>> & Pick<Meeting, '_id'>;
 
 
 export interface SegmentationResponse {

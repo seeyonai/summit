@@ -228,7 +228,7 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request,
     // For now, just add some placeholder text
     recording.verbatimTranscript = `[逐字稿 - 待实现]\n原始转录: ${recording.transcription}\n\n这里将会生成包含语气词、停顿、重复等原始语音特征的逐字稿。`;
     
-    const updatedMeeting = await meetingService.updateMeeting(meetingId, { recordings: meeting.recordings });
+    const updatedMeeting = await meetingService.updateMeeting(meetingId, { _id: meeting._id } as any);
     
     res.json({
       success: true,
@@ -281,8 +281,9 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
 *此纪要由AI自动生成，仅供参考。*`;
     
     const updatedMeeting = await meetingService.updateMeeting(meetingId, { 
+      _id: meeting._id,
       finalTranscript: meeting.finalTranscript 
-    });
+    } as any);
     
     res.json({
       success: true,
