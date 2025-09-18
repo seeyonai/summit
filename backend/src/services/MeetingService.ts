@@ -54,6 +54,10 @@ export const updateMeeting = async (id: string, request: MeetingUpdate): Promise
     { returnDocument: 'after' }
   );
 
+  if (!result) {
+    return null;
+  }
+
   return result.value ? meetingToApp(result.value) : null;
 };
 
@@ -75,6 +79,10 @@ export const addRecordingToMeeting = async (meetingId: string, recording: Record
     { returnDocument: 'after' }
   );
 
+  if (!result) {
+    return null;
+  }
+
   return result.value ? meetingToApp(result.value) : null;
 };
 
@@ -92,6 +100,10 @@ export const removeRecordingFromMeeting = async (
     },
     { returnDocument: 'after' }
   );
+
+  if (!result) {
+    return null;
+  }
 
   return result.value ? meetingToApp(result.value) : null;
 };

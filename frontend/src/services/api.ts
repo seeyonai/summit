@@ -1,4 +1,4 @@
-import type { Meeting, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment } from '@/types';
+import type { Meeting, MeetingWithRecordings, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment } from '@/types';
 
 interface RecordingUpdatePayload {
   filename?: string;
@@ -111,7 +111,7 @@ class ApiService {
     return this.get('/api/meetings');
   }
 
-  async getMeeting(id: string): Promise<Meeting> {
+  async getMeeting(id: string): Promise<MeetingWithRecordings> {
     return this.get(`/api/meetings/${id}`);
   }
 

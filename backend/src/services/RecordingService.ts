@@ -65,6 +65,12 @@ class RecordingServiceImpl {
     return documents.map((doc) => this.toResponse(doc));
   }
 
+  async getRecordingsByMeetingId(meetingId: string): Promise<RecordingResponse[]> {
+    const collection = this.getCollection();
+    const documents = await collection.find({meetingId: new ObjectId(meetingId)}).sort({ createdAt: -1 }).toArray();
+    return documents.map((doc) => this.toResponse(doc));
+  }
+
   async getRecordingById(recordingId: string): Promise<RecordingResponse> {
     const document = await this.findRecording(recordingId);
 
@@ -292,7 +298,7 @@ class RecordingServiceImpl {
 
   private toResponse(document: RecordingDocument): RecordingResponse {
     return {
-      id: document._id.toHexString(),
+      _id: document._id,
       filePath: document.filePath,
       filename: document.filename,
       createdAt: document.createdAt.toISOString(),
@@ -410,6 +416,10 @@ export async function getAllRecordings(): Promise<RecordingResponse[]> {
   return recordingServiceImpl.getAllRecordings();
 }
 
+export async function getRecordingsByMeetingId(meetingId: string) {
+  return recordingServiceImpl.getRecordingsByMeetingId(meetingId);
+}
+
 export async function getRecordingById(recordingId: string): Promise<RecordingResponse> {
   return recordingServiceImpl.getRecordingById(recordingId);
 }
@@ -441,6 +451,7 @@ export async function polishTranscription(recordingId: string): Promise<{ messag
 export const recordingService = {
   getAllRecordings,
   getRecordingById,
+  getRecordingsByMeetingId,
   startRecording,
   updateRecording,
   deleteRecording,

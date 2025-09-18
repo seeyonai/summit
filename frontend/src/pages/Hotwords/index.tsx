@@ -22,7 +22,7 @@ const HotwordManagement: React.FC = () => {
   });
   
   const [editingHotword, setEditingHotword] = useState<Hotword | null>(null);
-  const [editForm, setEditForm] = useState<HotwordUpdate>({});
+  const [editForm, setEditForm] = useState<HotwordUpdate | undefined>();
 
   // Fetch hotwords
   const fetchHotwords = async () => {
@@ -86,7 +86,7 @@ const HotwordManagement: React.FC = () => {
     if (!editingHotword) return;
 
     try {
-      const response = await fetch(`${HOTWORD_BACKEND_URL}/api/hotwords/${editingHotword.id}`, {
+      const response = await fetch(`${HOTWORD_BACKEND_URL}/api/hotwords/${editingHotword._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -101,7 +101,7 @@ const HotwordManagement: React.FC = () => {
 
       setSuccess('热词更新成功');
       setEditingHotword(null);
-      setEditForm({});
+      setEditForm(undefined);
       fetchHotwords();
     } catch (err) {
       setError(err instanceof Error ? err.message : '更新热词失败');
@@ -109,7 +109,7 @@ const HotwordManagement: React.FC = () => {
   };
 
   // Delete hotword
-  const handleDeleteHotword = async (hotwordId: number) => {
+  const handleDeleteHotword = async (hotwordId: string) => {
     if (!confirm('确定要删除这个热词吗？')) {
       return;
     }
@@ -134,6 +134,7 @@ const HotwordManagement: React.FC = () => {
   const startEditing = (hotword: Hotword) => {
     setEditingHotword(hotword);
     setEditForm({
+      _id: hotword._id,
       word: hotword.word
     });
   };
@@ -141,7 +142,7 @@ const HotwordManagement: React.FC = () => {
   // Cancel editing
   const cancelEditing = () => {
     setEditingHotword(null);
-    setEditForm({});
+    setEditForm(undefined);
   };
 
   // Clear messages
@@ -155,6 +156,12 @@ const HotwordManagement: React.FC = () => {
     }
   }, [success, error]);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editForm?._id) {
+      return;
+    }
+    setEditForm({...editForm, word: e.target.value});
+  }
   
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -225,8 +232,8 @@ const HotwordManagement: React.FC = () => {
                   <Label htmlFor="edit-hotword">热词</Label>
                   <Input
                     id="edit-hotword"
-                    value={editForm.word || ''}
-                    onChange={(e) => setEditForm({...editForm, word: e.target.value})}
+                    value={editForm?.word || ''}
+                    onChange={handleChange}
                   />
                 </div>
                 
@@ -275,7 +282,7 @@ const HotwordManagement: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {hotwords.map(hotword => (
                 <div
-                  key={hotword.id}
+                  key={hotword._id}
                   className={`p-3 border rounded-lg ${
                     hotword.isActive 
                       ? 'border-green-200 bg-green-50' 
@@ -308,7 +315,7 @@ const HotwordManagement: React.FC = () => {
                       </Button>
                       
                       <Button
-                        onClick={() => handleDeleteHotword(hotword.id)}
+                        onClick={() => handleDeleteHotword(hotword._id)}
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-800"

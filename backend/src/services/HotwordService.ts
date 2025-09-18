@@ -1,5 +1,5 @@
 import { Hotword } from '../types';
-import { getCollection, COLLECTIONS, HotwordDocument, hotwordToApp, hotwordToDoc } from '../types/mongodb';
+import { getCollection, COLLECTIONS, HotwordDocument, hotwordToApp } from '../types/mongodb';
 import { ObjectId } from 'mongodb';
 
 export class HotwordService {

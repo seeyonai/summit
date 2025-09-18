@@ -8,12 +8,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RealTimeSpeechRecognition } from '@/components/Audio';
 import { apiService } from '@/services/api';
-import type { Meeting, MeetingUpdate } from '@/types';
+import type { MeetingUpdate, MeetingWithRecordings } from '@/types';
 
 const MeetingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [meeting, setMeeting] = useState<Meeting | null>(null);
+  const [meeting, setMeeting] = useState<MeetingWithRecordings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
@@ -61,10 +61,8 @@ const MeetingDetail: React.FC = () => {
         recordings: [
           ...meeting.recordings,
           {
-            _id: `recording_${Date.now()}`,
             filename: recordingData.filename,
             filePath: `/recordings/${recordingData.filename}`,
-            createdAt: new Date(),
             duration: recordingData.duration,
             transcription: recordingData.transcription,
           }
@@ -244,7 +242,7 @@ const MeetingDetail: React.FC = () => {
           {meeting.recordings.length > 0 ? (
             <div className="space-y-4">
               {meeting.recordings.map((recording, index) => (
-                <div key={(recording._id && recording._id.toString()) || index} className="bg-muted p-4 rounded-lg">
+                <div key={index} className="bg-muted p-4 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="font-medium text-sm">{recording.filename}</p>

@@ -18,7 +18,7 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
   currentHotwords = []
 }) => {
   const [hotwords, setHotwords] = useState<Hotword[]>([]);
-  const [selectedHotwords, setSelectedHotwords] = useState<Set<number>>(new Set());
+  const [selectedHotwords, setSelectedHotwords] = useState<Set<string>>(new Set());
   const [useAllHotwords, setUseAllHotwords] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -37,10 +37,10 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
       
       // Auto-select hotwords that match current hotwords
       const currentWordSet = new Set(currentHotwords);
-      const autoSelected = new Set<number>();
+      const autoSelected = new Set<string>();
       data.forEach((hotword: Hotword) => {
         if (currentWordSet.has(hotword.word)) {
-          autoSelected.add(hotword.id);
+          autoSelected.add(hotword._id);
         }
       });
       setSelectedHotwords(autoSelected);
@@ -57,7 +57,7 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
     }
   }, [isOpen, fetchHotwords]);
 
-  const handleHotwordToggle = (hotwordId: number) => {
+  const handleHotwordToggle = (hotwordId: string) => {
     const newSelected = new Set(selectedHotwords);
     if (newSelected.has(hotwordId)) {
       newSelected.delete(hotwordId);
@@ -69,7 +69,7 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
 
   const handleSelectAll = () => {
     const newSelected = new Set(selectedHotwords);
-    hotwords.forEach(hw => newSelected.add(hw.id));
+    hotwords.forEach(hw => newSelected.add(hw._id));
     setSelectedHotwords(newSelected);
   };
 
@@ -85,7 +85,7 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
     } else {
       // Apply selected hotwords
       const selectedHotwordTexts = hotwords
-        .filter(hw => selectedHotwords.has(hw.id))
+        .filter(hw => selectedHotwords.has(hw._id))
         .map(hw => hw.word);
       onApply(selectedHotwordTexts, false);
     }
@@ -175,17 +175,17 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {filteredHotwords.map(hotword => (
                 <label
-                  key={hotword.id}
+                  key={hotword._id}
                   className={`flex items-center p-2 border rounded-lg cursor-pointer transition-colors ${
-                    selectedHotwords.has(hotword.id) || useAllHotwords
+                    selectedHotwords.has(hotword._id) || useAllHotwords
                       ? 'border-blue-300 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <input
                     type="checkbox"
-                    checked={selectedHotwords.has(hotword.id) || useAllHotwords}
-                    onChange={() => handleHotwordToggle(hotword.id)}
+                    checked={selectedHotwords.has(hotword._id) || useAllHotwords}
+                    onChange={() => handleHotwordToggle(hotword._id)}
                     disabled={useAllHotwords}
                     className="mr-2"
                   />

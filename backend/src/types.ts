@@ -15,7 +15,7 @@ interface Id {
 export type Recording = baseTypes.Recording & Timestamp & Id;
 
 export interface RecordingResponse {
-  id?: string;
+  _id: ObjectId;
   filePath: string;
   filename: string;
   createdAt: string;

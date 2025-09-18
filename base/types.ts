@@ -88,7 +88,6 @@ export interface SpeechModelInfo {
 
 // Hotword management types
 export interface Hotword {
-  id?: string;
   word: string;
   isActive: boolean;
 }

@@ -123,8 +123,10 @@ export type DiscussionPoint = baseTypes.DiscussionPoint;
 
 export type Meeting = baseTypes.Meeting & Id & Timestamp;
 
+export type MeetingWithRecordings = Meeting & { recordings: Recording[] };
+
 export type MeetingCreate = Pick<
-  baseTypes.CreateMeetingRequest,
+  baseTypes.Meeting,
   'title' | 'description' | 'scheduledStart' | 'participants'
 >;
 

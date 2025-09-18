@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import meetingService from '../services/MeetingService';
-import { MeetingCreate, MeetingUpdate, Recording, Meeting } from '../types';
+import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../types';
+import recordingService from '../services/RecordingService';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ const serializeRecording = (recording: Recording) => ({
   ...recording,
   _id: recording._id.toString(),
   createdAt: toIsoString(recording.createdAt),
+  updatedAt: toIsoString(recording.updatedAt),
 });
 
 const serializeMeeting = (meeting: Meeting) => ({
@@ -29,6 +31,7 @@ const serializeMeeting = (meeting: Meeting) => ({
   createdAt: toIsoString(meeting.createdAt),
   updatedAt: toIsoString(meeting.updatedAt),
   scheduledStart: toIsoString(meeting.scheduledStart),
+  // @ts-ignore
   recordings: meeting.recordings?.map(serializeRecording) || [],
 });
 
@@ -215,7 +218,8 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request,
       return res.status(404).json({ error: 'Meeting not found' });
     }
     
-    const recording = meeting.recordings.find((r: Recording) => r._id.toString() === recordingId);
+    const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
+    const recording = recordings.find((r) => r._id.toString() === recordingId);
     if (!recording) {
       return res.status(404).json({ error: 'Recording not found' });
     }
@@ -252,9 +256,11 @@ router.post('/:meetingId/final-transcript', async (req: Request, res: Response) 
       return res.status(404).json({ error: 'Meeting not found' });
     }
     
-    const transcripts = meeting.recordings
-      .filter((r: Recording) => r.transcription)
-      .map((r: Recording) => r.transcription)
+    const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
+
+    const transcripts = recordings
+      .filter((r: RecordingResponse) => r.transcription)
+      .map((r: RecordingResponse) => r.transcription)
       .filter(Boolean);
     
     if (transcripts.length === 0) {
