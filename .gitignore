@@ -33,10 +33,10 @@ Thumbs.db
 # Logs
 *.log
 
-# Audio recordings (if they shouldn't be committed)
-recordings/
+# Audio recordings (only apply at root level)
+/recordings
 
-# Production files (if source files are in src/)
+# Production files
 public/main-prod.js
 public/index-prod.html
 
