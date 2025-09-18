@@ -1,14 +1,12 @@
-# syntax=docker/dockerfile:1
-
 # --- Backend dependencies (prod only)
-FROM registry.daocloud.io/library/node:20-alpine AS backend_deps
+FROM docker.m.daocloud.io/library/node:20 AS backend_deps
 WORKDIR /srv/backend
 ENV NODE_ENV=production
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci --omit=dev
 
 # --- Backend build stage
-FROM registry.daocloud.io/library/node:20-alpine AS backend_builder
+FROM docker.m.daocloud.io/library/node:20 AS backend_builder
 WORKDIR /srv/backend
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci
@@ -17,7 +15,7 @@ COPY base/ ../base/
 RUN npm run build
 
 # --- Frontend build stage
-FROM registry.daocloud.io/library/node:20-alpine AS frontend_builder
+FROM docker.m.daocloud.io/library/node:20 AS frontend_builder
 WORKDIR /srv/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -26,7 +24,7 @@ COPY base/ ../base/
 RUN npm run build
 
 # --- Runtime image with Node + Nginx
-FROM registry.daocloud.io/library/node:20-alpine AS runtime
+FROM docker.m.daocloud.io/library/node:20 AS runtime
 WORKDIR /usr/src/app
 ENV NODE_ENV=production \
     PORT=2591
