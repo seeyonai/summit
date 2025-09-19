@@ -1,4 +1,4 @@
-// API endpoints configuration
+// API endpoints configuration (relative paths)
 export const API_ENDPOINTS = {
   // Unified Backend Service (Port 2591)
   SPEECH: {
@@ -31,16 +31,4 @@ export const API_ENDPOINTS = {
     SEGMENT: (id: string) => `/api/recordings/${id}/segment`,
     POLISH: (id: string) => `/api/recordings/${id}/polish`,
   },
-} as const;
-
-// Service URLs
-export const SERVICE_URLS = {
-  SPEECH: 'http://localhost:2591',
-  BACKEND: 'http://localhost:2591',
-  SEGMENTATION: 'http://localhost:8001',
-} as const;
-
-// WebSocket URLs
-export const WS_URLS = {
-  SPEECH: (protocol = 'ws') => `${protocol}://localhost:2591/api/speech/ws`,
 } as const;

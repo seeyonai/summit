@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 import { Meeting, MeetingCreate, MeetingUpdate, Recording } from '../types';
 import { getCollection, COLLECTIONS, MeetingDocument, meetingToApp } from '../types/mongodb';
+import { getRecordingsByMeetingId } from './RecordingService';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
 
@@ -10,10 +11,18 @@ export const getAllMeetings = async (): Promise<Meeting[]> => {
   return meetings.map(meetingToApp);
 };
 
-export const getMeetingById = async (id: string): Promise<Meeting | null> => {
+export const getMeetingById = async (id: string, options: { includeRecordings?: boolean } = {}): Promise<Meeting | null> => {
   const collection = getMeetingsCollection();
   const meeting = await collection.findOne({ _id: new ObjectId(id) });
-  return meeting ? meetingToApp(meeting) : null;
+  if (!meeting) {
+    return null;
+  }
+  const { includeRecordings = true } = options;
+  if (!includeRecordings) {
+    return meetingToApp(meeting);
+  }
+  const recordings = await getRecordingsByMeetingId(id);
+  return meetingToApp({ ...meeting, recordings });
 };
 
 export const createMeeting = async (request: MeetingCreate): Promise<Meeting> => {
@@ -22,7 +31,7 @@ export const createMeeting = async (request: MeetingCreate): Promise<Meeting> =>
 
   const meetingDoc: Omit<MeetingDocument, '_id'> = {
     title: request.title,
-    description: request.description,
+    summary: request.summary,
     status: 'scheduled',
     createdAt: now,
     updatedAt: now,
@@ -108,6 +117,31 @@ export const removeRecordingFromMeeting = async (
   return result.value ? meetingToApp(result.value) : null;
 };
 
+export const updateCombinedRecording = async (meetingId: string, recording: Recording | null): Promise<Meeting | null> => {
+  const collection = getMeetingsCollection();
+  const updateOperations: Record<string, any> = {
+    $set: { updatedAt: new Date() }
+  };
+
+  if (recording) {
+    updateOperations.$set.combinedRecording = recording;
+  } else {
+    updateOperations.$unset = { combinedRecording: '' };
+  }
+
+  const result = await collection.findOneAndUpdate(
+    { _id: new ObjectId(meetingId) },
+    updateOperations,
+    { returnDocument: 'after' }
+  );
+
+  if (!result?.value) {
+    return null;
+  }
+
+  return meetingToApp(result.value);
+};
+
 export const getMeetingsByStatus = async (status: string): Promise<Meeting[]> => {
   const collection = getMeetingsCollection();
   const meetings = await collection.find({ status: status as any }).toArray();
@@ -133,6 +167,7 @@ export const meetingService = {
   deleteMeeting,
   addRecordingToMeeting,
   removeRecordingFromMeeting,
+  updateCombinedRecording,
   getMeetingsByStatus,
   getUpcomingMeetings
 };

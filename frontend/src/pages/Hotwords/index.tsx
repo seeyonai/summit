@@ -7,8 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import type { Hotword, HotwordCreate, HotwordUpdate } from '@/types';
-
-const HOTWORD_BACKEND_URL = (location.protocol === 'https:' ? 'https://' : 'http://') + 'localhost:2591';
+import { api } from '@/services/api';
+import { API_ENDPOINTS } from '@/constants/apiEndpoints';
 
 const HotwordManagement: React.FC = () => {
   const [hotwords, setHotwords] = useState<Hotword[]>([]);
@@ -30,12 +30,7 @@ const HotwordManagement: React.FC = () => {
     setError('');
     
     try {
-      const response = await fetch(`${HOTWORD_BACKEND_URL}/api/hotwords`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch hotwords');
-      }
-      
-      const data = await response.json();
+      const data = await api<Hotword[]>(API_ENDPOINTS.BACKEND.HOTWORDS);
       setHotwords(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch hotwords');
@@ -58,18 +53,10 @@ const HotwordManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${HOTWORD_BACKEND_URL}/api/hotwords`, {
+      await api(API_ENDPOINTS.BACKEND.HOTWORDS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(newHotword),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || '创建热词失败');
-      }
 
       setSuccess('热词创建成功');
       setNewHotword({ word: '' });
@@ -86,18 +73,10 @@ const HotwordManagement: React.FC = () => {
     if (!editingHotword) return;
 
     try {
-      const response = await fetch(`${HOTWORD_BACKEND_URL}/api/hotwords/${editingHotword._id}`, {
+      await api(API_ENDPOINTS.BACKEND.HOTWORD_DETAIL(editingHotword._id), {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(editForm),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || '更新热词失败');
-      }
 
       setSuccess('热词更新成功');
       setEditingHotword(null);
@@ -115,13 +94,7 @@ const HotwordManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${HOTWORD_BACKEND_URL}/api/hotwords/${hotwordId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('删除热词失败');
-      }
+      await api(API_ENDPOINTS.BACKEND.HOTWORD_DETAIL(hotwordId), { method: 'DELETE' });
 
       setSuccess('热词删除成功');
       fetchHotwords();
@@ -164,7 +137,7 @@ const HotwordManagement: React.FC = () => {
   }
   
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">热词管理</h1>
         <p className="text-muted-foreground">管理语音识别中的热词，提高识别准确率</p>

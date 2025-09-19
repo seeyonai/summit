@@ -4,20 +4,30 @@ export interface SpeakerSegment {
   speakerIndex: number;
 }
 
+export interface TimeStampedNote {
+  timestamp: number;
+  text: string;
+}
+
 export interface Recording {
+  _id: string;
   filePath: string;
   filename: string;
+  createdAt: string;
+  updatedAt: string;
   duration?: number;
   fileSize?: number;
   transcription?: string;
   verbatimTranscript?: string;
   speakerSegments?: SpeakerSegment[];
+  timeStampedNotes?: TimeStampedNote[];
   numSpeakers?: number;
   sampleRate?: number;
   channels?: number;
   format?: string;
   source?: 'live' | 'upload';
   externalId?: string;
+  meeting?: Meeting;
 }
 
 export type RecordingUpdate = Partial<Recording>;
@@ -33,25 +43,29 @@ export interface TodoItem {
   dueDate?: string;
 }
 
-export interface DiscussionPoint {
+export interface DisputedIssue {
   id?: string;
-  title: string;
-  description: string;
-  category: string;
-  priority: 'low' | 'medium' | 'high';
+  text: string;
+}
+
+export interface AgendaItem {
+  order: number;
+  text: string;
   status: 'resolved' | 'ongoing' | 'pending';
 }
 
 export interface Meeting {
   title: string;
-  description?: string;
+  agenda?: AgendaItem[];
   status: MeetingStatus;
   scheduledStart?: Date;
   finalTranscript?: string;
+  summary?: string;
   parsedTodos?: TodoItem[];
-  discussionPoints?: DiscussionPoint[];
+  disputedIssues?: DisputedIssue[];
   participants?: number;
   recordings?: Recording[];
+  combinedRecording?: Recording;
 }
 
 export interface SegmentationResponse {

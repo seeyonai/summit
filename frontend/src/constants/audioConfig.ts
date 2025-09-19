@@ -1,7 +1,18 @@
 // Audio configuration constants
+function computeWsUrl(path: string): string {
+  if (typeof window !== 'undefined' && window.location) {
+    const isSecure = window.location.protocol === 'https:';
+    const protocol = isSecure ? 'wss' : 'ws';
+    const host = window.location.hostname;
+    const port = window.location.port === '2590' ? '2591' : window.location.port;
+    const hostport = port ? `${host}:${port}` : host;
+    return `${protocol}://${hostport}${path.startsWith('/') ? path : `/${path}`}`;
+  }
+  return `ws://localhost:2591${path.startsWith('/') ? path : `/${path}`}`;
+}
 export const AUDIO_CONFIG = {
   // WebSocket settings
-  WS_URL: `ws://localhost:2591/api/speech/ws`,
+  WS_URL: computeWsUrl('/api/speech/ws'),
   
   // Audio settings
   SAMPLE_RATE: 16000,

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { api } from '@/services/api';
 
 export interface ApiState<T> {
   data: T | null;
@@ -7,12 +8,11 @@ export interface ApiState<T> {
 }
 
 export interface UseApiOptions {
-  baseUrl?: string;
   headers?: Record<string, string>;
 }
 
 export function useApi<T = unknown>(options: UseApiOptions = {}) {
-  const { baseUrl = 'http://localhost:2591', headers = {} } = options;
+  const { headers = {} } = options;
 
   const [state, setState] = useState<ApiState<T>>({
     data: null,
@@ -22,26 +22,15 @@ export function useApi<T = unknown>(options: UseApiOptions = {}) {
 
   const request = useCallback(async (
     endpoint: string,
-    options: RequestInit = {}
+    reqOptions: RequestInit = {}
   ): Promise<T> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const url = `${baseUrl}${endpoint}`;
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-          ...options.headers
-        },
-        ...options
+      const data = await api<T>(endpoint, {
+        headers,
+        ...reqOptions,
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
       setState(prev => ({ ...prev, data, loading: false }));
       return data;
     } catch (error) {
@@ -53,7 +42,7 @@ export function useApi<T = unknown>(options: UseApiOptions = {}) {
       }));
       throw error;
     }
-  }, [baseUrl, headers]);
+  }, [headers]);
 
   const get = useCallback((endpoint: string) => {
     return request(endpoint, { method: 'GET' });

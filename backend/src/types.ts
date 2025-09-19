@@ -31,6 +31,16 @@ export interface RecordingResponse {
   format?: string;
   externalId?: string;
   source?: 'live' | 'upload';
+  meeting?: {
+    _id: ObjectId;
+    title: string;
+    status: MeetingStatus;
+    createdAt: Date;
+    updatedAt?: Date;
+    scheduledStart?: Date;
+    summary?: string;
+    participants?: number;
+  };
 }
 
 interface MeetingId {
@@ -47,6 +57,8 @@ export type TodoItem = baseTypes.TodoItem;
 
 export type DiscussionPoint = baseTypes.DiscussionPoint;
 
+export type AgendaItem = baseTypes.AgendaItem;
+
 export type Meeting = baseTypes.Meeting & Timestamp & Id;
 
 export type MeetingCreate = baseTypes.Meeting;
@@ -55,11 +67,12 @@ export type MeetingUpdate = Partial<Pick<
   Meeting,
   '_id' | 
   'title' | 
-  'description' | 
+  'summary' | 
   'status' | 
   'scheduledStart' | 
   'finalTranscript' | 
-  'participants'
+  'participants' |
+  'combinedRecording'
 >> & Pick<Meeting, '_id'>;
 
 

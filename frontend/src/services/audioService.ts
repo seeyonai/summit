@@ -6,8 +6,20 @@ export interface AudioConfig {
   audioConstraints: MediaStreamConstraints;
 }
 
+function computeWsUrl(path: string): string {
+  if (typeof window !== 'undefined' && window.location) {
+    const isSecure = window.location.protocol === 'https:';
+    const protocol = isSecure ? 'wss' : 'ws';
+    const host = window.location.hostname;
+    const port = window.location.port === '2590' ? '2591' : window.location.port;
+    const hostport = port ? `${host}:${port}` : host;
+    return `${protocol}://${hostport}${path.startsWith('/') ? path : `/${path}`}`;
+  }
+  return `ws://localhost:2591${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 export const DEFAULT_AUDIO_CONFIG: AudioConfig = {
-  wsUrl: `ws://localhost:2591/api/speech/ws`,
+  wsUrl: computeWsUrl('/api/speech/ws'),
   sampleRate: 16000,
   language: 'zh',
   chunkSize: 600,

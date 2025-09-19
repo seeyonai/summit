@@ -1,6 +1,6 @@
 import { getCollection, COLLECTIONS, MeetingDocument, HotwordDocument, RecordingDocument } from '../types/mongodb';
 import { ObjectId } from 'mongodb';
-import { Meeting, Hotword, Recording, RecordingCreate, SpeakerSegment, MeetingCreate, HotwordCreate } from '../types';
+import { RecordingCreate, MeetingCreate, HotwordCreate } from '../types';
 
 export interface SeedData {
   meetings: Array<MeetingCreate & { recordings?: RecordingCreate[] }>;
@@ -13,7 +13,13 @@ export class DataSeeder {
     meetings: [
       {
         title: '产品规划会议',
-        description: '讨论下季度产品功能和路线图',
+        agenda: [
+          { order: 1, text: '回顾上季度产品表现', status: 'resolved' },
+          { order: 2, text: '讨论下季度产品功能优先级', status: 'resolved' },
+          { order: 3, text: '确定用户界面改进计划', status: 'resolved' },
+          { order: 4, text: '分配产品需求文档任务', status: 'resolved' }
+        ],
+        summary: '讨论下季度产品功能和路线图',
         status: 'completed',
         scheduledStart: new Date('2024-01-15T09:00:00'),
         recordings: [
@@ -29,7 +35,32 @@ export class DataSeeder {
               { startTime: 24.12, endTime: 32.19, speakerIndex: 1 },
               { startTime: 32.47, endTime: 34.7, speakerIndex: 1 }
             ],
+            timeStampedNotes: [
+              { timestamp: 15.2, text: '重要决策点：用户界面改进计划已确定' },
+              { timestamp: 28.7, text: '需要在下周五之前完成产品需求文档' }
+            ],
             numSpeakers: 2,
+            sampleRate: 16000,
+            channels: 1,
+            format: 'wav',
+          },
+          {
+            filePath: '/recordings/product-meeting-2.wav',
+            filename: 'product-meeting-2.wav',
+            duration: 4800,
+            fileSize: 768000,
+            transcription: '后续会议记录：进一步讨论了产品需求文档的细节和实施计划。',
+            verbatimTranscript: '[逐字稿示例]\n嗯... 后续会议记录：进一步讨论了产品需求文档的细节和实施计划。',
+            speakerSegments: [
+              { startTime: 0.05, endTime: 18.42, speakerIndex: 0 },
+              { startTime: 18.75, endTime: 25.33, speakerIndex: 1 },
+              { startTime: 25.61, endTime: 30.15, speakerIndex: 2 }
+            ],
+            timeStampedNotes: [
+              { timestamp: 12.3, text: '确定了产品需求文档的负责人' },
+              { timestamp: 22.8, text: '制定了实施时间表' }
+            ],
+            numSpeakers: 3,
             sampleRate: 16000,
             channels: 1,
             format: 'wav',
@@ -60,11 +91,24 @@ export class DataSeeder {
           }
         ],
         participants: 8,
-        discussionPoints: []
+        disputedIssues: [
+          {
+            text: '是否应该优先开发移动端应用而不是Web端'
+          },
+          {
+            text: '产品功能发布的时间节点存在分歧'
+          }
+        ]
       },
       {
         title: '技术架构评审',
-        description: '新系统架构设计评审会议',
+        agenda: [
+          { order: 1, text: '介绍新系统架构设计', status: 'ongoing' },
+          { order: 2, text: '讨论微服务设计方案', status: 'resolved' },
+          { order: 3, text: '评审数据库选型', status: 'resolved' },
+          { order: 4, text: '确定技术实施路线图', status: 'pending' }
+        ],
+        summary: '新系统架构设计评审会议',
         status: 'in_progress',
         scheduledStart: new Date('2024-01-16T14:00:00'),
         recordings: [
@@ -79,6 +123,10 @@ export class DataSeeder {
               { startTime: 0.08, endTime: 23.84, speakerIndex: 0 },
               { startTime: 24.12, endTime: 32.19, speakerIndex: 1 },
               { startTime: 32.47, endTime: 34.7, speakerIndex: 1 }
+            ],
+            timeStampedNotes: [
+              { timestamp: 10.5, text: '架构师提出新的微服务设计方案' },
+              { timestamp: 18.3, text: '团队讨论了数据库选型问题' }
             ],
             numSpeakers: 2,
             sampleRate: 16000,
@@ -102,11 +150,20 @@ export class DataSeeder {
           }
         ],
         participants: 5,
-        discussionPoints: []
+        disputedIssues: [
+          {
+            text: '微服务架构与单体架构的选型争议'
+          }
+        ]
       },
       {
         title: '团队周会',
-        description: '本周工作总结和下周计划',
+        agenda: [
+          { order: 1, text: '本周工作总结', status: 'pending' },
+          { order: 2, text: '下周工作计划', status: 'pending' },
+          { order: 3, text: '问题与解决方案讨论', status: 'pending' }
+        ],
+        summary: '本周工作总结和下周计划',
         status: 'scheduled',
         scheduledStart: new Date('2024-01-17T10:00:00'),
         parsedTodos: [
@@ -118,7 +175,7 @@ export class DataSeeder {
           }
         ],
         participants: 12,
-        discussionPoints: []
+        disputedIssues: []
       }
     ],
     hotwords: [
@@ -156,6 +213,11 @@ export class DataSeeder {
           { startTime: 24.12, endTime: 32.19, speakerIndex: 1 },
           { startTime: 32.47, endTime: 34.7, speakerIndex: 1 }
         ],
+        timeStampedNotes: [
+          { timestamp: 5.2, text: '会议开始，主持人介绍议程' },
+          { timestamp: 12.8, text: '产品部门汇报了市场调研结果' },
+          { timestamp: 25.4, text: '讨论了预算分配问题' }
+        ],
         numSpeakers: 2,
         sampleRate: 16000,
         channels: 1,
@@ -188,9 +250,16 @@ export class DataSeeder {
       const { recordings, ...meetingData } = meeting;
       // Delete existing meeting
       await collection.deleteOne({ title: meetingData.title });
+      const meetingIds = [
+        '507f1f77bcf86cd799439011', // Product planning meeting ID
+        '507f1f77bcf86cd799439012', // Technical architecture review meeting ID
+        '507f1f77bcf86cd799439013'  // Team weekly meeting ID
+      ];
+      const meetingId = meetingIds[this.mockData.meetings.indexOf(meeting)];
+      
       const result = await collection.insertOne({
         ...meetingData,
-        _id: new ObjectId(),
+        _id: new ObjectId(meetingId),
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -199,6 +268,13 @@ export class DataSeeder {
         const meetingId = result.insertedId;
         const recordingCollection = getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
         for (const recording of recordings) {
+          await recordingCollection.deleteMany({ filename: recording.filename });
+          const recordingIds = [
+            '507f1f77bcf86cd799439014', // Product meeting recording 1
+            '507f1f77bcf86cd799439015', // Product meeting recording 2
+            '507f1f77bcf86cd799439016'  // Technical review recording
+          ];
+          
           const recordingData = {
             ...recording,
             _id: new ObjectId(),
@@ -206,6 +282,16 @@ export class DataSeeder {
             updatedAt: new Date(),
             meetingId,
           };
+          
+          // For recordings associated with meetings, use a predictable ID
+          if (meeting.title === '产品规划会议' && recording.filename === 'product-meeting.wav') {
+            recordingData._id = new ObjectId(recordingIds[0]);
+          } else if (meeting.title === '产品规划会议' && recording.filename === 'product-meeting-2.wav') {
+            recordingData._id = new ObjectId(recordingIds[1]);
+          } else if (meeting.title === '技术架构评审' && recording.filename === 'tech-review.wav') {
+            recordingData._id = new ObjectId(recordingIds[2]);
+          }
+          
           await recordingCollection.insertOne(recordingData);
           console.log(`🎵 Seeded recording ${recording.filename}`);
         }
@@ -220,11 +306,19 @@ export class DataSeeder {
 
     console.log('🔥 Seeding hotwords...');
 
+    const hotwordIds = [
+      '507f1f77bcf86cd799439018', // Product hotword
+      '507f1f77bcf86cd799439019', // Technical hotword
+      '507f1f77bcf86cd79943901a', // Design hotword
+      '507f1f77bcf86cd79943901b', // Development hotword
+      '507f1f77bcf86cd79943901c'  // Test hotword
+    ];
+    
     for (const hotword of this.mockData.hotwords) {
       const hotwordData = {
         word: hotword.word,
         isActive: hotword.isActive,
-        _id: new ObjectId(),
+        _id: new ObjectId(hotwordIds[this.mockData.hotwords.indexOf(hotword)]),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -241,14 +335,18 @@ export class DataSeeder {
 
     console.log('🎵 Seeding recordings...');
 
+    const standaloneRecordingIds = [
+      '507f1f77bcf86cd799439017' // Standalone meeting1 recording
+    ];
+    
     for (const recording of this.mockData.recordings) {
       const recordingData = {
         ...recording,
-        _id: new ObjectId(),
+        _id: new ObjectId(standaloneRecordingIds[0]),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      await collection.deleteOne({ filename: recording.filename });
+      await collection.deleteMany({ filename: recording.filename });
       await collection.insertOne(recordingData);
       console.log(`🎵 Seeded recording ${recording.filename}`);
     }

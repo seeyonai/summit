@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import meetingService from '../services/MeetingService';
+import audioProcessingService from '../services/AudioProcessingService';
 import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../types';
 import recordingService from '../services/RecordingService';
 
@@ -33,6 +34,8 @@ const serializeMeeting = (meeting: Meeting) => ({
   scheduledStart: toIsoString(meeting.scheduledStart),
   // @ts-ignore
   recordings: meeting.recordings?.map(serializeRecording) || [],
+  // @ts-ignore
+  combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
 });
 
 const deserializeRecording = (payload: RecordingPayload): Recording => ({
@@ -40,6 +43,44 @@ const deserializeRecording = (payload: RecordingPayload): Recording => ({
   _id: ObjectId.isValid(payload._id) ? new ObjectId(payload._id) : new ObjectId(),
   createdAt: payload.createdAt instanceof Date ? payload.createdAt : new Date(payload.createdAt || Date.now()),
 });
+
+const normalizeStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+};
+
+const resolveAudioStatusCode = (error: unknown, fallback = 500): number => {
+  if (error instanceof Error) {
+    if (error.message === 'Meeting not found') {
+      return 404;
+    }
+
+    if (error.message.includes('does not have a combined recording')) {
+      return 400;
+    }
+
+    if (error.message.includes('Recording') && error.message.includes('not found for meeting')) {
+      return 400;
+    }
+
+    if (error.message.includes('cannot be empty') || error.message.includes('required')) {
+      return 400;
+    }
+  }
+
+  const errorWithCode = error as NodeJS.ErrnoException;
+  if (errorWithCode?.code === 'ENOENT') {
+    return 404;
+  }
+
+  return fallback;
+};
 // Health check
 router.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy' });
@@ -159,6 +200,74 @@ router.delete('/:id/recordings/:recordingId', async (req: Request, res: Response
   } catch (error) {
     console.error('Error removing recording from meeting:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/:id/combine-recordings', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const body = req.body as Record<string, unknown>;
+    const filenames = normalizeStringArray(body.filenames || body.order || body.ordering);
+    const outputFilename = typeof body.outputFilename === 'string' ? body.outputFilename : undefined;
+
+    if (filenames.length === 0) {
+      return res.status(400).json({ error: 'An ordered list of recording filenames is required' });
+    }
+
+    const { meeting, combinedRecording } = await audioProcessingService.combineMeetingRecordings(
+      id,
+      filenames,
+      outputFilename
+    );
+
+    res.json({
+      success: true,
+      message: 'Combined recording created successfully',
+      combinedRecording: serializeRecording(combinedRecording),
+      meeting: serializeMeeting(meeting)
+    });
+  } catch (error) {
+    console.error('Error combining recordings:', error);
+    const status = resolveAudioStatusCode(error);
+    res.status(status).json({
+      error: error instanceof Error ? error.message : 'Failed to combine recordings'
+    });
+  }
+});
+
+router.post('/:id/export-audio', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const body = req.body as Record<string, unknown>;
+    const formatSingle = typeof body.format === 'string' ? [body.format.trim()].filter((value) => value.length > 0) : [];
+    const formatsFromArray = normalizeStringArray(body.formats);
+    const formatsFromFormatArray = Array.isArray(body.format) ? normalizeStringArray(body.format) : [];
+    const formats = formatsFromArray.length > 0
+      ? formatsFromArray
+      : (formatsFromFormatArray.length > 0 ? formatsFromFormatArray : formatSingle);
+    const bitrate = typeof body.bitrate === 'string' ? body.bitrate : undefined;
+    const outputBasename = typeof body.outputBasename === 'string' ? body.outputBasename : undefined;
+
+    if (formats.length === 0) {
+      return res.status(400).json({ error: 'At least one export format is required' });
+    }
+
+    const exportsResult = await audioProcessingService.exportCombinedRecording(id, formats, {
+      bitrate,
+      outputBasename
+    });
+
+    res.json({
+      success: true,
+      message: 'Audio exported successfully',
+      exports: exportsResult
+    });
+  } catch (error) {
+    console.error('Error exporting meeting audio:', error);
+    const status = resolveAudioStatusCode(error);
+    res.status(status).json({
+      error: error instanceof Error ? error.message : 'Failed to export meeting audio'
+    });
   }
 });
 
@@ -298,6 +407,51 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
     });
   } catch (error) {
     console.error('Error generating final transcript:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Generate AI advice for a todo item
+router.post('/:meetingId/todo-advice', async (req: Request, res: Response) => {
+  try {
+    const { meetingId } = req.params;
+    const { todoText } = req.body;
+    
+    if (!todoText) {
+      return res.status(400).json({ error: 'Todo text is required' });
+    }
+    
+    // TODO: Implement actual AI advice generation with OpenAI
+    // For now, generate a placeholder advice
+    const advice = `针对任务 "${todoText}" 的AI建议：
+    
+1. 建议的具体步骤
+   - 首先，明确任务的目标和预期结果
+   - 其次，制定详细的执行计划
+   - 最后，设定里程碑和检查点
+
+2. 可能遇到的挑战
+   - 时间管理问题
+   - 资源不足
+   - 团队协作障碍
+
+3. 解决方案推荐
+   - 使用项目管理工具跟踪进度
+   - 定期与相关人员沟通
+   - 寻求必要的支持和资源
+
+4. 时间安排建议
+   - 建议在3-5个工作日内完成
+   - 每天分配1-2小时专门处理此任务
+   - 预留时间用于意外情况处理`;
+
+    res.json({
+      success: true,
+      advice: advice,
+      message: 'AI advice generated successfully'
+    });
+  } catch (error) {
+    console.error('Error generating AI advice:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

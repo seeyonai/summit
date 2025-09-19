@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import type { Hotword } from '@/types';
-
-const HOTWORD_BACKEND_URL = (location.protocol === 'https:' ? 'https://' : 'http://') + 'localhost:2591';
+import { api } from '@/services/api';
 
 interface HotwordSelectionProps {
   isOpen: boolean;
@@ -27,12 +26,7 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
   const fetchHotwords = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${HOTWORD_BACKEND_URL}/api/hotwords`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch hotwords');
-      }
-      
-      const data = await response.json();
+      const data = await api<Hotword[]>(`/api/hotwords`);
       setHotwords(data);
       
       // Auto-select hotwords that match current hotwords

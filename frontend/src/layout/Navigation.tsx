@@ -44,7 +44,7 @@ export const Navigation: React.FC = () => {
             )} />
             <span className="font-medium">{item.label}</span>
             {isActive && (
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-lg opacity-50" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-lg opacity-30" />
             )}
           </Link>
         );

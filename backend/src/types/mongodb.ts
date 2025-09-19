@@ -34,7 +34,7 @@ export function meetingToApp(meetingDoc: MeetingDocument): Meeting {
   return {
     _id: meetingDoc._id,
     title: meetingDoc.title,
-    description: meetingDoc.description,
+    agenda: meetingDoc.agenda,
     status: meetingDoc.status,
     createdAt: meetingDoc.createdAt,
     updatedAt: meetingDoc.updatedAt,
@@ -42,8 +42,10 @@ export function meetingToApp(meetingDoc: MeetingDocument): Meeting {
     recordings: meetingDoc.recordings || [],
     finalTranscript: meetingDoc.finalTranscript,
     parsedTodos: meetingDoc.parsedTodos,
-    discussionPoints: meetingDoc.discussionPoints,
-    participants: meetingDoc.participants
+    disputedIssues: meetingDoc.disputedIssues,
+    summary: meetingDoc.summary,
+    participants: meetingDoc.participants,
+    combinedRecording: meetingDoc.combinedRecording
   };
 }
 
@@ -81,7 +83,8 @@ export function recordingToApp(recordingDoc: RecordingDocument): Recording {
 export function meetingToDoc(meeting: Meeting): Omit<MeetingDocument, '_id'> {
   return {
     title: meeting.title,
-    description: meeting.description,
+    agenda: meeting.agenda,
+    summary: meeting.summary,
     status: meeting.status,
     createdAt: meeting.createdAt,
     updatedAt: meeting.updatedAt,
@@ -89,8 +92,9 @@ export function meetingToDoc(meeting: Meeting): Omit<MeetingDocument, '_id'> {
     recordings: meeting.recordings,
     finalTranscript: meeting.finalTranscript,
     parsedTodos: meeting.parsedTodos,
-    discussionPoints: meeting.discussionPoints,
-    participants: meeting.participants
+    disputedIssues: meeting.disputedIssues,
+    participants: meeting.participants,
+    combinedRecording: meeting.combinedRecording
   };
 }
 

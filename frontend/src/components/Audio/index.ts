@@ -1,3 +1,11 @@
 export { default as FloatingRecordingPanel } from './FloatingRecordingPanel';
 export { default as RealTimeSpeechRecognition } from './RealTimeSpeechRecognition';
 export { default as MeetingDisplay } from './MeetingDisplay';
+export { default as MeetingHeader } from './MeetingHeader';
+export { default as LeftPanel } from './LeftPanel/LeftPanel';
+export { default as TranscriptArea } from './TranscriptArea/TranscriptArea';
+export { default as StatusBar } from './StatusBar';
+export { default as MinimalModeToggle } from './MinimalModeToggle';
+export { default as AiActionsDialog } from './AiActionsDialog';
+export { default as SettingsDialog } from './SettingsDialog';
+export { useMeetingTheme } from './useMeetingTheme';

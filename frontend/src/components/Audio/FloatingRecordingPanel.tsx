@@ -112,7 +112,7 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
         style={{ 
           transform: 'translate(0, 0)',
           transition: isDragging ? 'none' : 'all 0.3s ease',
-          background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+          background: 'linear-gradient(135deg, #1f1f1f 0%, #242424 100%)',
           backdropFilter: 'blur(10px)',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3)'
         }}
@@ -177,7 +177,7 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
         cursor: isDragging ? 'grabbing' : 'grab',
         transform: 'translate(0, 0)',
         transition: isDragging ? 'none' : 'all 0.3s ease',
-        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+        background: 'linear-gradient(135deg, #1f1f1f 0%, #242424 100%)',
         backdropFilter: 'blur(10px)',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3)'
       }}

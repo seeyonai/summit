@@ -12,7 +12,7 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
   // Extract todos and discussion points from transcript
   const extractAnnotations = (transcript: string) => {
     const todos: TodoItem[] = []
-    const discussionPoints: DiscussionPoint[] = []
+    const disputedIssues: DiscussionPoint[] = []
     
     const lines = transcript.split('\n')
     let todoId = 1
@@ -35,7 +35,7 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
       if (line.includes('[争论焦点]')) {
         const discussionText = line.replace(/\*\*\[争论焦点\]\*\*/, '').replace(/^[-*]\s*/, '').trim()
         if (discussionText) {
-          discussionPoints.push({
+          disputedIssues.push({
             id: discussionId++,
             title: discussionText,
             description: discussionText,
@@ -47,12 +47,12 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
       }
     })
     
-    return { todos, discussionPoints }
+    return { todos, disputedIssues }
   }
 
-  const { todos: extractedTodos, discussionPoints: extractedDiscussionPoints } = meeting.finalTranscript 
+  const { todos: extractedTodos, disputedIssues: extractedDiscussionPoints } = meeting.finalTranscript 
     ? extractAnnotations(meeting.finalTranscript)
-    : { todos: [], discussionPoints: [] }
+    : { todos: [], disputedIssues: [] }
 
   return (
     <div className="space-y-6">
@@ -79,15 +79,15 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
       {/* Extracted Annotations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Discussion Points */}
-        {(meeting.discussionPoints?.length || extractedDiscussionPoints.length) > 0 && (
+        {(meeting.disputedIssues?.length || extractedDiscussionPoints.length) > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-600" />
-              争论焦点 ({(meeting.discussionPoints?.length || 0) + extractedDiscussionPoints.length})
+              争论焦点 ({(meeting.disputedIssues?.length || 0) + extractedDiscussionPoints.length})
             </h3>
             
             <div className="space-y-3">
-              {meeting.discussionPoints?.map((point) => (
+              {meeting.disputedIssues?.map((point) => (
                 <div key={point.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-medium text-yellow-800">{point.title}</h4>

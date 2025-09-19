@@ -11,7 +11,7 @@ interface Meeting {
   time: string;
   status: 'incoming' | 'pending';
   participants?: number;
-  description?: string;
+  summary?: string;
 }
 
 interface IncomingMeetingsProps {
@@ -30,7 +30,7 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
         time: '14:00',
         status: 'incoming',
         participants: 5,
-        description: '讨论Q1产品路线图'
+        summary: '讨论Q1产品路线图'
       },
       {
         id: '2',
@@ -39,7 +39,7 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
         time: '10:00',
         status: 'incoming',
         participants: 3,
-        description: '新架构方案评审'
+        summary: '新架构方案评审'
       }
     ]);
   });
@@ -79,7 +79,7 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
                           即将开始
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-3">{meeting.description}</p>
+                      <p className="text-xs text-muted-foreground mb-3">{meeting.summary}</p>
                       <div className="flex items-center gap-6 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5" />

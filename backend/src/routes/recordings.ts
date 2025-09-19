@@ -1,8 +1,60 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import recordingService from '../services/RecordingService';
 import { RecordingUpdate } from '../types';
 
 const router = Router();
+
+// Ensure recordings directory exists
+const recordingsDir = path.join(process.cwd(), 'recordings');
+if (!fs.existsSync(recordingsDir)) {
+  fs.mkdirSync(recordingsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, recordingsDir);
+  },
+  filename: (req, file, cb) => {
+    // Generate unique filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const ext = path.extname(file.originalname);
+    const name = path.basename(file.originalname, ext);
+    cb(null, `${name}-${timestamp}${ext}`);
+  }
+});
+
+// File filter for audio files only
+const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedMimes = [
+    'audio/wav',
+    'audio/wave',
+    'audio/x-wav',
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/ogg',
+    'audio/webm',
+    'audio/m4a',
+    'audio/x-m4a'
+  ];
+  
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only audio files are allowed.'));
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  }
+});
 
 // Get all recordings
 router.get('/', async (req: Request, res: Response) => {
@@ -119,6 +171,56 @@ router.post('/:recordingId/polish', async (req: Request, res: Response) => {
     const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;
     res.status(statusCode).json({ 
       error: error instanceof Error ? error.message : 'Failed to polish transcription' 
+    });
+  }
+});
+
+// Upload audio file
+router.post('/upload', upload.single('audio'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+
+    // Get file information
+    const { filename, originalname, size, mimetype, path: filePath } = req.file;
+    
+    // Create recording record in database
+    const recordingData = {
+      filename,
+      originalFilename: originalname,
+      filePath,
+      fileSize: size,
+      format: path.extname(originalname).slice(1).toUpperCase(),
+      mimeType: mimetype,
+      createdAt: new Date(),
+      // Audio metadata will be extracted later if needed
+      duration: 0,
+      sampleRate: 0,
+      channels: 0
+    };
+
+    const result = await recordingService.createRecording(recordingData);
+    
+    res.status(201).json({
+      message: 'File uploaded successfully',
+      recording: result
+    });
+  } catch (error) {
+    // Clean up uploaded file if database operation fails
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    if (error instanceof multer.MulterError) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Maximum size is 50MB.' });
+      }
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Failed to upload file' 
     });
   }
 });

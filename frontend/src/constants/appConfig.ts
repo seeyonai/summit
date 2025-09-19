@@ -19,9 +19,6 @@ export const APP_CONFIG = {
     MEETINGS: '/meetings',
     MEETING_DETAIL: '/meetings/:id',
     HOTWORDS: '/hotwords',
-    TOOLS: '/tools',
-    SEGMENTATION: '/segmentation',
-    OFFLINE: '/offline',
   },
   
   // Navigation
@@ -31,7 +28,6 @@ export const APP_CONFIG = {
       { path: '/recordings', label: '录音管理', icon: 'Folder' },
       { path: '/meetings', label: '会议管理', icon: 'Users' },
       { path: '/hotwords', label: '热词管理', icon: 'Flame' },
-      { path: '/tools', label: '工具', icon: 'Wrench' },
     ],
   },
   

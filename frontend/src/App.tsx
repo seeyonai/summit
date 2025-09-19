@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { ThemeProvider, Header } from './layout';
 import { FloatingRecordingPanel, MeetingDisplay } from './components/Audio';
 import Dashboard from './pages/Dashboard';
-import SegmentationAnalysis from './pages/Segmentation';
-import OfflineTranscription from './pages/Offline';
 import HotwordManagement from './pages/Hotwords';
 import Meetings from './pages/Meetings';
 import MeetingDetail from './pages/Meetings/MeetingDetail';
 import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
-import Tools from './pages/Tools';
 
 function App() {
   const [showFloatingPanel, setShowFloatingPanel] = useState(false);
@@ -81,6 +79,8 @@ function App() {
     <ThemeProvider>
       <Router>
         <div className="min-h-screen bg-background">
+          <Toaster />
+
           <Header
             onToggleRecordingPanel={toggleFloatingPanel}
             isRecording={isRecording}
@@ -90,14 +90,11 @@ function App() {
           <main className="container mx-auto px-4 py-8 animate-fade-in">
             <Routes>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/segmentation" element={<SegmentationAnalysis />} />
-              <Route path="/offline" element={<OfflineTranscription />} />
-              <Route path="/hotwords" element={<HotwordManagement />} />
-              <Route path="/meetings" element={<Meetings />} />
-              <Route path="/meetings/:id" element={<MeetingDetail />} />
               <Route path="/recordings" element={<RecordingManagement />} />
               <Route path="/recordings/:id" element={<RecordingDetail />} />
-              <Route path="/tools" element={<Tools />} />
+              <Route path="/meetings" element={<Meetings />} />
+              <Route path="/meetings/:id" element={<MeetingDetail />} />
+              <Route path="/hotwords" element={<HotwordManagement />} />
             </Routes>
           </main>
 

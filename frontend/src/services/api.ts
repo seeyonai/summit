@@ -1,5 +1,46 @@
 import type { Meeting, MeetingWithRecordings, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment } from '@/types';
 
+// Resolve backend base URL internally (not exported)
+function resolveBaseUrl(): string {
+  const envBase = (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
+  if (envBase && typeof envBase === 'string' && envBase.trim().length > 0) {
+    return envBase.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    const { protocol, hostname, port } = window.location;
+    if (port === '2590') {
+      return `${protocol}//${hostname}:2591`;
+    }
+    return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+  }
+  return 'http://localhost:2591';
+}
+
+// Shared request helper
+export async function api<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const base = resolveBaseUrl();
+  const url = `${base}${endpoint}`;
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
+  const isJson = (response.headers.get('content-type') || '').includes('application/json');
+  if (!response.ok) {
+    const detail = isJson ? await response.json().catch(() => undefined) : undefined;
+    const message = typeof (detail as any)?.detail === 'string' ? (detail as any).detail : `HTTP error! status: ${response.status}`;
+    throw new Error(message);
+  }
+  return (isJson ? await response.json() : (undefined as unknown)) as T;
+}
+
+export function apiUrl(endpoint: string): string {
+  const base = resolveBaseUrl();
+  return `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+}
+
 interface RecordingUpdatePayload {
   filename?: string;
   transcription?: string;
@@ -8,34 +49,10 @@ interface RecordingUpdatePayload {
 
 type SegmentRecordingOptions = Pick<SegmentationRequest, 'oracleNumSpeakers' | 'returnText'>;
 
-const API_BASE_URL = 'http://localhost:2591';
-const BACKEND_API_BASE_URL = 'http://localhost:2591';
-
 class ApiService {
-  private getBaseUrl(endpoint: string): string {
-    if (endpoint.startsWith('/api/meetings') || endpoint.startsWith('/api/hotwords') || endpoint.startsWith('/api/segmentation')) {
-      return BACKEND_API_BASE_URL;
-    }
-    return API_BASE_URL;
-  }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const baseUrl = this.getBaseUrl(endpoint);
-    const url = `${baseUrl}${endpoint}`;
-
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
-      ...options
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
+    return api<T>(endpoint, options);
   }
 
   async get<T>(endpoint: string): Promise<T> {
@@ -177,8 +194,7 @@ class ApiService {
       formData.append('returnText', options.returnText ? 'true' : 'false');
     }
 
-    const baseUrl = this.getBaseUrl('/api/segmentation/upload');
-    const url = `${baseUrl}/api/segmentation/upload`;
+    const url = apiUrl('/api/segmentation/upload');
 
     const response = await fetch(url, {
       method: 'POST',
@@ -193,6 +209,16 @@ class ApiService {
     }
 
     return data as SegmentationResponse;
+  }
+
+  // AI Advice
+  async generateTodoAdvice(meetingId: string, todoText: string): Promise<{ advice: string }> {
+    return this.post<{ advice: string }>(`/api/meetings/${meetingId}/todo-advice`, { todoText });
+  }
+
+  // Meeting ↔ Recording association
+  async addRecordingToMeeting(meetingId: string, recording: Recording): Promise<MeetingWithRecordings> {
+    return this.post<MeetingWithRecordings>(`/api/meetings/${meetingId}/recordings`, recording);
   }
 }
 

@@ -6,6 +6,7 @@ import { getCollection, COLLECTIONS, RecordingDocument } from '../types/mongodb'
 import { SegmentationService } from './SegmentationService';
 import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
 import type { JsonRequestOptions } from '../utils/httpClient';
+import { getMeetingById as getMeetingByIdService } from './MeetingService';
 
 interface LiveRecordingStartResponse {
   id: string;
@@ -62,13 +63,15 @@ class RecordingServiceImpl {
   async getAllRecordings(): Promise<RecordingResponse[]> {
     const collection = this.getCollection();
     const documents = await collection.find({}).sort({ createdAt: -1 }).toArray();
-    return documents.map((doc) => this.toResponse(doc));
+    const responses = await Promise.all(documents.map((doc) => this.toResponse(doc, { includeMeeting: true })));
+    return responses;
   }
 
   async getRecordingsByMeetingId(meetingId: string): Promise<RecordingResponse[]> {
     const collection = this.getCollection();
     const documents = await collection.find({meetingId: new ObjectId(meetingId)}).sort({ createdAt: -1 }).toArray();
-    return documents.map((doc) => this.toResponse(doc));
+    const responses = await Promise.all(documents.map((doc) => this.toResponse(doc, { includeMeeting: true })));
+    return responses;
   }
 
   async getRecordingById(recordingId: string): Promise<RecordingResponse> {
@@ -78,7 +81,50 @@ class RecordingServiceImpl {
       throw new Error('Recording not found');
     }
 
-    return this.toResponse(document);
+    return await this.toResponse(document, { includeMeeting: true });
+  }
+
+  async createRecording(recordingData: {
+    filename: string;
+    originalFilename: string;
+    filePath: string;
+    fileSize: number;
+    format: string;
+    mimeType: string;
+    createdAt: Date;
+    duration: number;
+    sampleRate: number;
+    channels: number;
+  }): Promise<RecordingResponse> {
+    const now = new Date();
+    
+    const document: Omit<RecordingDocument, '_id'> = {
+      filePath: recordingData.filePath,
+      filename: recordingData.filename,
+      createdAt: recordingData.createdAt,
+      updatedAt: now,
+      duration: recordingData.duration || undefined,
+      fileSize: recordingData.fileSize || undefined,
+      transcription: undefined,
+      verbatimTranscript: undefined,
+      speakerSegments: undefined,
+      numSpeakers: undefined,
+      sampleRate: recordingData.sampleRate || undefined,
+      channels: recordingData.channels || undefined,
+      format: recordingData.format || undefined,
+      externalId: undefined,
+      source: 'upload',
+    };
+
+    const collection = this.getCollection();
+    const insertResult = await collection.insertOne(document as any);
+    const inserted = await collection.findOne({ _id: insertResult.insertedId });
+
+    if (!inserted) {
+      throw new Error('Failed to persist recording');
+    }
+
+    return await this.toResponse(inserted);
   }
 
   async startRecording(): Promise<{ id: string; filename: string; filePath: string; message: string }> {
@@ -296,8 +342,9 @@ class RecordingServiceImpl {
     return getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
   }
 
-  private toResponse(document: RecordingDocument): RecordingResponse {
-    return {
+  private async toResponse(document: RecordingDocument, options: { includeMeeting?: boolean } = {}): Promise<RecordingResponse> {
+    // Get the basic response structure
+    const baseResponse: RecordingResponse = {
       _id: document._id,
       filePath: document.filePath,
       filename: document.filename,
@@ -315,6 +362,31 @@ class RecordingServiceImpl {
       externalId: document.externalId,
       source: document.source,
     };
+
+    // If requested, and the recording has a meetingId, include a lightweight meeting summary
+    const { includeMeeting = false } = options;
+    if (includeMeeting && document.meetingId) {
+      const meetingId = document.meetingId.toHexString();
+      const meeting = await getMeetingByIdService(meetingId, { includeRecordings: false });
+      if (meeting) {
+        return {
+          ...baseResponse,
+          meeting: {
+            _id: meeting._id,
+            title: meeting.title,
+            status: meeting.status,
+            createdAt: meeting.createdAt,
+            updatedAt: meeting.updatedAt,
+            scheduledStart: meeting.scheduledStart,
+            summary: meeting.summary,
+            participants: meeting.participants,
+          },
+        };
+      }
+    }
+
+    // Return base response if no meetingId or meeting not found
+    return baseResponse;
   }
 
   private async findRecording(recordingId: string): Promise<RecordingDocument | null> {
@@ -413,15 +485,30 @@ class RecordingServiceImpl {
 const recordingServiceImpl = new RecordingServiceImpl();
 
 export async function getAllRecordings(): Promise<RecordingResponse[]> {
-  return recordingServiceImpl.getAllRecordings();
+  return await recordingServiceImpl.getAllRecordings();
 }
 
 export async function getRecordingsByMeetingId(meetingId: string) {
-  return recordingServiceImpl.getRecordingsByMeetingId(meetingId);
+  return await recordingServiceImpl.getRecordingsByMeetingId(meetingId);
 }
 
 export async function getRecordingById(recordingId: string): Promise<RecordingResponse> {
-  return recordingServiceImpl.getRecordingById(recordingId);
+  return await recordingServiceImpl.getRecordingById(recordingId);
+}
+
+export async function createRecording(recordingData: {
+  filename: string;
+  originalFilename: string;
+  filePath: string;
+  fileSize: number;
+  format: string;
+  mimeType: string;
+  createdAt: Date;
+  duration: number;
+  sampleRate: number;
+  channels: number;
+}): Promise<RecordingResponse> {
+  return await recordingServiceImpl.createRecording(recordingData);
 }
 
 export async function startRecording(): Promise<{ id: string; filename: string; filePath: string; message: string }> {
@@ -452,6 +539,7 @@ export const recordingService = {
   getAllRecordings,
   getRecordingById,
   getRecordingsByMeetingId,
+  createRecording,
   startRecording,
   updateRecording,
   deleteRecording,

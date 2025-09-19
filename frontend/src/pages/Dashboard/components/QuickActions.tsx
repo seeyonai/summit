@@ -26,20 +26,13 @@ const QuickActions: React.FC<QuickActionsProps> = ({ className }) => {
       to: '/hotwords',
       color: 'bg-orange-100 text-orange-800 border-orange-300'
     },
-    {
-      icon: Wrench,
-      label: '工具',
-      description: '访问各种工具功能',
-      to: '/tools',
-      color: 'bg-purple-100 text-purple-800 border-purple-300'
-    }
   ];
 
   return (
     <Card className={cn("card-hover border-l-4 border-l-purple-500 dark:border-l-purple-600", className)}>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500">
+          <div className="p-2.5 rounded-lg bg-gradient-to-r from-blue-500/30 to-purple-500/30">
             <div className="w-5 h-5 bg-white rounded"></div>
           </div>
           <div>

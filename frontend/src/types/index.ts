@@ -121,13 +121,15 @@ export type TodoItem = baseTypes.TodoItem;
 
 export type DiscussionPoint = baseTypes.DiscussionPoint;
 
+export type AgendaItem = baseTypes.AgendaItem;
+
 export type Meeting = baseTypes.Meeting & Id & Timestamp;
 
 export type MeetingWithRecordings = Meeting & { recordings: Recording[] };
 
 export type MeetingCreate = Pick<
   baseTypes.Meeting,
-  'title' | 'description' | 'scheduledStart' | 'participants'
+  'title' | 'summary' | 'scheduledStart' | 'participants'
 >;
 
 export type MeetingUpdate = Partial<Meeting> & Pick<Meeting, '_id'>;

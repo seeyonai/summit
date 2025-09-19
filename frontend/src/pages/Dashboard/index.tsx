@@ -18,7 +18,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/20 via-indigo-50/20 to-purple-50/20 dark:from-blue-950/10 dark:via-indigo-950/10 dark:to-purple-950/10"></div>
         <div className="relative text-center space-y-4 py-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
             <LayoutDashboard className="w-4 h-4" />

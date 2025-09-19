@@ -22,8 +22,30 @@ export interface UseAudioRecordingOptions {
 }
 
 export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
+  const computeWsUrl = (path: string): string => {
+    if (typeof window !== 'undefined' && window.location) {
+      const isSecure = window.location.protocol === 'https:';
+      const protocol = isSecure ? 'wss' : 'ws';
+      const host = window.location.hostname;
+      const port = window.location.port === '2590' ? '2591' : window.location.port;
+      const hostport = port ? `${host}:${port}` : host;
+      return `${protocol}://${hostport}${path.startsWith('/') ? path : `/${path}`}`;
+    }
+    return `ws://localhost:2591${path.startsWith('/') ? path : `/${path}`}`;
+  };
+
+  const computeHttpBase = (): string => {
+    if (typeof window !== 'undefined' && window.location) {
+      const { protocol, hostname, port } = window.location;
+      if (port === '2590') {
+        return `${protocol}//${hostname}:2591`;
+      }
+      return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+    }
+    return 'http://localhost:2591';
+  };
   const {
-    wsUrl = `ws://localhost:2591/api/speech/ws`,
+    wsUrl = computeWsUrl('/api/speech/ws'),
     sampleRate = 16000,
     language = 'zh',
     onRecordingComplete
@@ -117,8 +139,7 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
               }));
             }
             if (msg.type === 'audio_complete') {
-              const backendHostname = location.hostname || 'localhost';
-              const backendBaseUrl = `${location.protocol}//${backendHostname}:2591`;
+              const backendBaseUrl = computeHttpBase();
               onRecordingComplete?.({
                 filename: msg.filename,
                 downloadUrl: backendBaseUrl + msg.download_url,
