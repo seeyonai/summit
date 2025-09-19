@@ -46,7 +46,7 @@ class AudioProcessingService {
 
     if (Array.isArray(meeting.recordings)) {
       meeting.recordings
-        .filter((record): record is RecordingLike => Boolean(record && record.filename))
+        .filter((record): record is Recording => Boolean(record && record.filename && typeof record.filename === 'string'))
         .forEach((record) => {
           lookup.set(record.filename, {
             filename: record.filename,
@@ -254,7 +254,7 @@ class AudioProcessingService {
     const probe = await this.probeAudio(absolutePath).catch(() => null);
 
     return {
-      _id: new ObjectId(),
+      _id: new ObjectId(), // Keep ObjectId for the Recording type
       filename,
       filePath: `/recordings/${filename}`,
       createdAt: now,

@@ -15,7 +15,7 @@ interface Id {
 export type Recording = baseTypes.Recording & Timestamp & Id;
 
 export interface RecordingResponse {
-  _id: ObjectId;
+  _id: string;
   filePath: string;
   filename: string;
   createdAt: string;
@@ -32,12 +32,12 @@ export interface RecordingResponse {
   externalId?: string;
   source?: 'live' | 'upload';
   meeting?: {
-    _id: ObjectId;
+    _id: string;
     title: string;
     status: MeetingStatus;
-    createdAt: Date;
-    updatedAt?: Date;
-    scheduledStart?: Date;
+    createdAt: string;
+    updatedAt?: string;
+    scheduledStart?: string;
     summary?: string;
     participants?: number;
   };
@@ -55,7 +55,8 @@ export type MeetingStatus = baseTypes.MeetingStatus;
 
 export type TodoItem = baseTypes.TodoItem;
 
-export type DiscussionPoint = baseTypes.DiscussionPoint;
+// DiscussionPoint type is not defined in baseTypes, removing reference
+// export type DiscussionPoint = baseTypes.DiscussionPoint;
 
 export type AgendaItem = baseTypes.AgendaItem;
 

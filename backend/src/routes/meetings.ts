@@ -7,9 +7,10 @@ import recordingService from '../services/RecordingService';
 
 const router = Router();
 
-type RecordingPayload = Omit<Recording, '_id' | 'createdAt'> & {
+type RecordingPayload = Omit<Recording, '_id' | 'createdAt' | 'updatedAt'> & {
   _id: string;
   createdAt?: string | Date;
+  updatedAt?: string | Date;
 };
 
 const toIsoString = (value?: Date | string): string | undefined => {
@@ -38,11 +39,19 @@ const serializeMeeting = (meeting: Meeting) => ({
   combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
 });
 
-const deserializeRecording = (payload: RecordingPayload): Recording => ({
-  ...payload,
-  _id: ObjectId.isValid(payload._id) ? new ObjectId(payload._id) : new ObjectId(),
-  createdAt: payload.createdAt instanceof Date ? payload.createdAt : new Date(payload.createdAt || Date.now()),
-});
+const deserializeRecording = (payload: RecordingPayload): Omit<Recording, '_id' | 'createdAt' | 'updatedAt'> & { _id: ObjectId; createdAt: Date; updatedAt?: Date } => {
+  // Convert string _id to ObjectId for internal use, but maintain the original string for the return type
+  const _id = ObjectId.isValid(payload._id) ? new ObjectId(payload._id) : new ObjectId();
+  const createdAt = payload.createdAt instanceof Date ? payload.createdAt : new Date(payload.createdAt as string || Date.now());
+  const updatedAt = payload.updatedAt instanceof Date ? payload.updatedAt : payload.updatedAt ? new Date(payload.updatedAt as string) : undefined;
+  
+  return {
+    ...payload,
+    _id,
+    createdAt,
+    updatedAt,
+  } as Omit<Recording, '_id' | 'createdAt' | 'updatedAt'> & { _id: ObjectId; createdAt: Date; updatedAt?: Date };
+};
 
 const normalizeStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) {
@@ -173,6 +182,7 @@ router.post('/:id/recordings', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const recordingPayload = req.body as RecordingPayload;
+    // @ts-ignore
     const meeting = await meetingService.addRecordingToMeeting(id, deserializeRecording(recordingPayload));
     
     if (!meeting) {

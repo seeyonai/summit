@@ -5,9 +5,19 @@ NODE_PID=''
 NGINX_PID=''
 
 start_backend() {
-  node /usr/src/app/dist/index.js &
+  ENTRY_JS="/usr/src/app/dist/index.js"
+  if [ ! -f "$ENTRY_JS" ]; then
+    ALT_ENTRY="/usr/src/app/dist/backend/src/index.js"
+    if [ -f "$ALT_ENTRY" ]; then
+      ENTRY_JS="$ALT_ENTRY"
+    else
+      echo "Error: Backend entry not found at $ENTRY_JS or $ALT_ENTRY" >&2
+      exit 1
+    fi
+  fi
+  node "$ENTRY_JS" &
   NODE_PID=$!
-  echo "Backend started with PID ${NODE_PID}" >&2
+  echo "Backend started with PID ${NODE_PID} (entry: $ENTRY_JS)" >&2
 }
 
 stop_backend() {

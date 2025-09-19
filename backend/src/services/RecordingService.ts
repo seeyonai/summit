@@ -345,7 +345,7 @@ class RecordingServiceImpl {
   private async toResponse(document: RecordingDocument, options: { includeMeeting?: boolean } = {}): Promise<RecordingResponse> {
     // Get the basic response structure
     const baseResponse: RecordingResponse = {
-      _id: document._id,
+      _id: document._id.toString(),
       filePath: document.filePath,
       filename: document.filename,
       createdAt: document.createdAt.toISOString(),
@@ -372,12 +372,12 @@ class RecordingServiceImpl {
         return {
           ...baseResponse,
           meeting: {
-            _id: meeting._id,
+            _id: meeting._id.toString(),
             title: meeting.title,
             status: meeting.status,
-            createdAt: meeting.createdAt,
-            updatedAt: meeting.updatedAt,
-            scheduledStart: meeting.scheduledStart,
+            createdAt: meeting.createdAt.toISOString(),
+            updatedAt: meeting.updatedAt ? meeting.updatedAt.toISOString() : undefined,
+            scheduledStart: meeting.scheduledStart ? meeting.scheduledStart.toISOString() : undefined,
             summary: meeting.summary,
             participants: meeting.participants,
           },

@@ -10,11 +10,8 @@ export interface TimeStampedNote {
 }
 
 export interface Recording {
-  _id: string;
   filePath: string;
   filename: string;
-  createdAt: string;
-  updatedAt: string;
   duration?: number;
   fileSize?: number;
   transcription?: string;

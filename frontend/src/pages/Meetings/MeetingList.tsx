@@ -369,7 +369,7 @@ function MeetingList() {
   return (
     <div className="space-y-8">
         {/* Header Section with Stats */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600/90 to-purple-600/90 p-8 text-white shadow-xl">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/90 to-indigo-600/90 p-8 text-white shadow-xl">
           <div className="absolute inset-0 bg-black/10" />
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">

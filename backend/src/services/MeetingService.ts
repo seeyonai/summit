@@ -22,7 +22,16 @@ export const getMeetingById = async (id: string, options: { includeRecordings?: 
     return meetingToApp(meeting);
   }
   const recordings = await getRecordingsByMeetingId(id);
-  return meetingToApp({ ...meeting, recordings });
+  // Convert RecordingResponse[] to Recording[]
+  const recordingDocs = recordings.map(recording => {
+    return {
+      ...recording,
+      _id: recording._id,
+      createdAt: new Date(recording.createdAt),
+      updatedAt: recording.updatedAt ? new Date(recording.updatedAt) : undefined
+    };
+  });
+  return meetingToApp({ ...meeting, recordings: recordingDocs as any });
 };
 
 export const createMeeting = async (request: MeetingCreate): Promise<Meeting> => {

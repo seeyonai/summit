@@ -3,7 +3,8 @@ import {
   Meeting, 
   Recording, 
   Hotword, 
-  SpeakerSegment} from '../types';
+  SpeakerSegment,
+  RecordingResponse} from '../types';
 
 // MongoDB document interfaces
 export interface MeetingDocument extends Document, Omit<Meeting, '_id'> {
@@ -58,13 +59,13 @@ export function hotwordToApp(hotwordDoc: HotwordDocument): Hotword {
   };
 }
 
-export function recordingToApp(recordingDoc: RecordingDocument): Recording {
+export function recordingToApp(recordingDoc: RecordingDocument): RecordingResponse {
   return {
-    _id: recordingDoc._id,
+    _id: recordingDoc._id.toString(),
     filePath: recordingDoc.filePath,
     filename: recordingDoc.filename,
-    createdAt: recordingDoc.createdAt,
-    updatedAt: recordingDoc.updatedAt,
+    createdAt: recordingDoc.createdAt.toISOString(),
+    updatedAt: recordingDoc.updatedAt?.toISOString(),
     duration: recordingDoc.duration,
     fileSize: recordingDoc.fileSize,
     transcription: recordingDoc.transcription,
