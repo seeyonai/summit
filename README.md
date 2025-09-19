@@ -44,7 +44,7 @@ base/            # Shared TypeScript contracts
 ### Backend Setup (`backend/`)
 ```bash
 cd backend
-npm install
+npm install        # now includes dotenv for environment variable loading
 npm run dev         # starts TSX watcher on http://localhost:2591
 ```
 Optional steps:
@@ -64,6 +64,8 @@ Additional commands:
 - `npm run build` → type-check then build static assets.
 - `npm run preview` → preview the build output.
 - `npm run lint` → frontend ESLint configuration.
+
+Override the API base URL by setting `VITE_API_BASE_URL` in the frontend's `.env` file.
 
 ### Concurrent Development
 Start the backend first (port 2591), then the frontend (port 2590). The UI calls the API via hard-coded `http://localhost:2591` endpoints; set up a proxy or expose a `VITE_` env var if you need a different origin.

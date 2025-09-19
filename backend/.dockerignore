@@ -1,0 +1,35 @@
+# Exclude files not needed for Docker build context
+node_modules
+npm-debug.log*
+yarn-error.log*
+.pnpm-store
+
+# Local env and secrets
+.env
+.env.*
+
+# VCS and editor
+.git
+.gitignore
+.svn
+.hg
+*.swp
+*.swo
+*.DS_Store
+.vscode
+.idea
+
+# Tests and coverage
+coverage
+reports
+**/__tests__/
+**/__mocks__/
+*.spec.ts
+*.test.ts
+
+# Build outputs (built inside the image)
+dist
+
+# Misc
+Dockerfile
+README.md

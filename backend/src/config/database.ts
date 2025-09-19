@@ -1,9 +1,15 @@
 import { MongoClient, Db, Collection, Document } from 'mongodb';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 let db: Db;
 let client: MongoClient;
 
+// MongoDB connection URI - defaults to local MongoDB instance
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+// Database name - defaults to 'summit'
 const DB_NAME = process.env.DB_NAME || 'summit';
 
 export async function connectToDatabase(): Promise<Db> {

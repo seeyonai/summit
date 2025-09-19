@@ -1,7 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import dotenv from 'dotenv';
 import { connectToDatabase } from './config/database';
+
+// Load environment variables from .env file
+dotenv.config();
 import { DataSeeder } from './utils/seedData';
 import meetingsRouter from './routes/meetings';
 import hotwordsRouter from './routes/hotwords';

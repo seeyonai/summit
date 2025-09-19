@@ -2,6 +2,17 @@
 
 Backend API service for Summit AI meetings management.
 
+## Environment Setup
+
+Create a `.env` file in the root of the backend directory based on `.env.example`:
+
+```bash
+# Copy the example file to create your own environment configuration
+cp .env.example .env
+```
+
+Then modify the values in `.env` as needed for your development environment.
+
 ## Development
 
 ```bash
