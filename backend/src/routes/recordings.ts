@@ -8,7 +8,8 @@ import { RecordingUpdate } from '../types';
 const router = Router();
 
 // Ensure files directory exists (storage for uploaded audio)
-const filesDir = path.join(__dirname, '..', '..', 'files');
+// Note: __dirname here is backend/src/routes; we need repo-root /files
+const filesDir = path.join(__dirname, '..', '..', '..', 'files');
 if (!fs.existsSync(filesDir)) {
   fs.mkdirSync(filesDir, { recursive: true });
 }
@@ -183,13 +184,14 @@ router.post('/upload', upload.single('audio'), async (req: Request, res: Respons
     }
 
     // Get file information
-    const { filename, originalname, size, mimetype, path: filePath } = req.file;
+    const { filename, originalname, size, mimetype } = req.file;
     
     // Create recording record in database
     const recordingData = {
       filename,
       originalFilename: originalname,
-      filePath,
+      // Persist a web-accessible relative path rather than an absolute FS path
+      filePath: `/files/${filename}`,
       fileSize: size,
       format: path.extname(originalname).slice(1).toUpperCase(),
       mimeType: mimetype,

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiUrl } from '@/services/api';
 import type { Recording } from '@/types';
 
 interface RecordingDisplayProps {
@@ -91,7 +92,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           <audio controls className="w-48">
-            <source src={recording.filePath} type="audio/wav" />
+            <source src={apiUrl(recording.filePath)} type="audio/wav" />
             您的浏览器不支持音频播放
           </audio>
         </div>

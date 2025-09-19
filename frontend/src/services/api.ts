@@ -98,6 +98,61 @@ class ApiService {
     return this.delete(`/api/recordings/${id}`);
   }
 
+  async uploadRecording(
+    file: File,
+    onProgress?: (percent: number) => void
+  ): Promise<{ message: string; recording: Recording }> {
+    const url = apiUrl('/api/recordings/upload');
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('audio', file);
+
+      const xhr = new XMLHttpRequest();
+
+      if (xhr.upload && typeof onProgress === 'function') {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            onProgress(percent);
+          }
+        });
+      }
+
+      xhr.addEventListener('load', () => {
+        const ok = xhr.status >= 200 && xhr.status < 300;
+        if (!ok) {
+          try {
+            const parsed = JSON.parse(xhr.responseText || '{}');
+            const msg = typeof parsed?.error === 'string' ? parsed.error : `HTTP error! status: ${xhr.status}`;
+            reject(new Error(msg));
+          } catch {
+            reject(new Error(`HTTP error! status: ${xhr.status}`));
+          }
+          return;
+        }
+        try {
+          const data = JSON.parse(xhr.responseText || '{}');
+          resolve(data as { message: string; recording: Recording });
+        } catch (err) {
+          reject(err instanceof Error ? err : new Error('Invalid server response'));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error'));
+      });
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Upload aborted'));
+      });
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('Upload timed out'));
+      });
+
+      xhr.open('POST', url);
+      xhr.send(formData);
+    });
+  }
+
   async transcribeRecording(id: string): Promise<{ message: string; transcription: string }> {
     return this.post<{ message: string; transcription: string }>(`/api/recordings/${id}/transcribe`);
   }

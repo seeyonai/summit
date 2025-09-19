@@ -141,6 +141,7 @@ function RecordingList() {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const inputEl = event.target as HTMLInputElement;
 
     // Validate file type
     const allowedTypes = ['audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/m4a', 'audio/webm'];
@@ -161,43 +162,16 @@ function RecordingList() {
       setUploadProgress(0);
       setError(null);
 
-      const formData = new FormData();
-      formData.append('audio', file);
-
-      // Create XMLHttpRequest to track upload progress
-      const xhr = new XMLHttpRequest();
-      
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          setUploadProgress(progress);
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          setUploading(false);
-          setUploadProgress(0);
-          fetchRecordings(); // Refresh the recordings list
-          // Reset file input
-          event.target.value = '';
-        } else {
-          throw new Error('上传失败');
-        }
-      });
-
-      xhr.addEventListener('error', () => {
-        throw new Error('网络错误，上传失败');
-      });
-
-      xhr.open('POST', `${apiUrl('')}/recordings/upload`);
-      xhr.send(formData);
-
+      await apiService.uploadRecording(file, (p) => setUploadProgress(p));
+      setUploading(false);
+      setUploadProgress(0);
+      inputEl.value = '';
+      fetchRecordings();
     } catch (err) {
       setError(err instanceof Error ? err.message : '上传失败');
       setUploading(false);
       setUploadProgress(0);
-      event.target.value = '';
+      inputEl.value = '';
     }
   };
 

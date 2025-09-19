@@ -21,8 +21,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static file serving for audio files
+// Primary location: repo-root /files
 const filesDir = path.join(__dirname, '..', '..', 'files');
 app.use('/files', express.static(filesDir));
+// Backward-compat: also try backend/files for previously uploaded assets
+const legacyFilesDir = path.join(__dirname, '..', 'files');
+app.use('/files', express.static(legacyFilesDir));
 
 // Routes
 app.use('/api/meetings', meetingsRouter);
@@ -118,7 +122,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ error: 'Route not found:' + req.url });
 });
 
 // Start server with database connection
