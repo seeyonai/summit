@@ -30,10 +30,13 @@ ENV NODE_ENV=production \
     PORT=2591
 
 # Install nginx and prepare directories
-RUN apk add --no-cache nginx \
- && mkdir -p /run/nginx \
- && mkdir -p /var/log/nginx \
- && rm -rf /etc/nginx/conf.d/*
+RUN apt-get update \
+  && apt-get install -y nginx \
+  && rm -rf /var/lib/apt/lists/* \
+  && mkdir -p /run/nginx \
+  && mkdir -p /var/log/nginx \
+  && rm -f /etc/nginx/sites-enabled/default \
+  && rm -rf /etc/nginx/conf.d/*
 
 # Copy backend artifacts
 COPY --from=backend_deps /srv/backend/node_modules ./node_modules
