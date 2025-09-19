@@ -2,8 +2,8 @@
 
 ## Project Structure & Module Organization
 - `frontend/` (Vite + React + TypeScript) keeps views in `src/pages`, shared UI in `src/components` and `src/layout`, API clients in `src/services`, utilities in `src/utils`; use the `@/` alias from `tsconfig.json` for absolute imports.
-- `backend/api/` hosts the Express + MongoDB service; keep HTTP entry points under `src/routes`, persistence logic in `src/services` and `src/config`, and shared contracts in `src/types`. The seeder in `src/utils/seedData.ts` expects audio under `/recordings`.
-- `recordings/` stores generated audio served by the API, while each package emits build artifacts into a local `dist/` directory that should stay out of commits.
+- `backend/api/` hosts the Express + MongoDB service; keep HTTP entry points under `src/routes`, persistence logic in `src/services` and `src/config`, and shared contracts in `src/types`. The seeder in `src/utils/seedData.ts` expects audio under `/files`.
+- `files/` stores generated audio served by the API, while each package emits build artifacts into a local `dist/` directory that should stay out of commits.
 
 ## Build, Test, and Development Commands
 - Frontend: `cd frontend && npm install`, `npm run dev` (http://localhost:2590), `npm run build`, `npm run preview`, and `npm run lint` before sharing changes.
@@ -25,7 +25,7 @@
 ## Environment & Configuration
 - The API honours `MONGODB_URI` and `DB_NAME`; add overrides in `backend/api/.env` and call out any seed data implications.
 - The frontend reads runtime configuration from `VITE_`-prefixed variables via `import.meta.env`; avoid hard-coded URLs.
-- Store any new development audio under `recordings/` and keep sensitive or production data out of the repository.
+- Store any new development audio under `files/` and keep sensitive or production data out of the repository.
 
 ## Extra Rules
 

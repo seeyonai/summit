@@ -7,16 +7,16 @@ import { RecordingUpdate } from '../types';
 
 const router = Router();
 
-// Ensure recordings directory exists
-const recordingsDir = path.join(process.cwd(), 'recordings');
-if (!fs.existsSync(recordingsDir)) {
-  fs.mkdirSync(recordingsDir, { recursive: true });
+// Ensure files directory exists (storage for uploaded audio)
+const filesDir = path.join(__dirname, '..', '..', 'files');
+if (!fs.existsSync(filesDir)) {
+  fs.mkdirSync(filesDir, { recursive: true });
 }
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, recordingsDir);
+    cb(null, filesDir);
   },
   filename: (req, file, cb) => {
     // Generate unique filename with timestamp

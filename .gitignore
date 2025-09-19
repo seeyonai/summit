@@ -33,7 +33,8 @@ Thumbs.db
 # Logs
 *.log
 
-# Audio recordings (only apply at root level)
+# Audio files (only apply at root level)
+/files
 /recordings
 
 # Production files

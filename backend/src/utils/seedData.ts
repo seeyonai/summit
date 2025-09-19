@@ -28,7 +28,7 @@ export class DataSeeder {
             _id: new ObjectId().toHexString(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            filePath: '/recordings/product-meeting.wav',
+            filePath: '/files/product-meeting.wav',
             filename: 'product-meeting.wav',
             duration: 6400,
             fileSize: 1024000,
@@ -49,7 +49,7 @@ export class DataSeeder {
             format: 'wav',
           },
           {
-            filePath: '/recordings/product-meeting-2.wav',
+            filePath: '/files/product-meeting-2.wav',
             filename: 'product-meeting-2.wav',
             duration: 4800,
             fileSize: 768000,
@@ -117,7 +117,7 @@ export class DataSeeder {
         scheduledStart: new Date('2024-01-16T14:00:00'),
         recordings: [
           {
-            filePath: '/recordings/tech-review.wav',
+            filePath: '/files/tech-review.wav',
             filename: 'tech-review.wav',
             duration: 3200,
             fileSize: 512000,
@@ -206,7 +206,7 @@ export class DataSeeder {
     ],
     recordings: [
       {
-        filePath: '/recordings/meeting1.wav',
+        filePath: '/files/meeting1.wav',
         filename: 'meeting1.wav',
         duration: 5400,
         fileSize: 43200000,

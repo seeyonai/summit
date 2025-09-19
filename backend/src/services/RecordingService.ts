@@ -54,7 +54,7 @@ class RecordingServiceImpl {
   private segmentationService: SegmentationService;
 
   constructor() {
-    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'recordings');
+    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'files');
     this.liveServiceBase = ensureTrailingSlash(LIVE_SERVICE_URL);
     this.transcriptionServiceBase = ensureTrailingSlash(TRANSCRIPTION_SERVICE_URL);
     this.segmentationService = new SegmentationService();
@@ -136,7 +136,7 @@ class RecordingServiceImpl {
 
     const now = new Date();
     const filename = remoteResponse.filename || `recording-${now.getTime()}.wav`;
-    const filePathValue = remoteResponse.filePath || `/recordings/${filename}`;
+    const filePathValue = remoteResponse.filePath || `/files/${filename}`;
 
     const document: Omit<RecordingDocument, '_id'> = {
       filePath: filePathValue,
@@ -436,12 +436,12 @@ class RecordingServiceImpl {
     if (document.filePath) {
       const normalized = document.filePath.replace(/\\/g, '/');
 
-      if (normalized.startsWith('/recordings/')) {
-        return normalized.substring('/recordings/'.length);
+      if (normalized.startsWith('/files/')) {
+        return normalized.substring('/files/'.length);
       }
 
-      if (normalized.startsWith('recordings/')) {
-        return normalized.substring('recordings/'.length);
+      if (normalized.startsWith('files/')) {
+        return normalized.substring('files/'.length);
       }
 
       if (!normalized.startsWith('/')) {

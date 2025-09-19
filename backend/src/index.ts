@@ -20,9 +20,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static file serving for recordings
-const recordingsDir = path.join(__dirname, '..', '..', 'recordings');
-app.use('/recordings', express.static(recordingsDir));
+// Static file serving for audio files
+const filesDir = path.join(__dirname, '..', '..', 'files');
+app.use('/files', express.static(filesDir));
 
 // Routes
 app.use('/api/meetings', meetingsRouter);
@@ -40,7 +40,7 @@ app.post('/api/save-recording', (req, res) => {
     }
     
     // 为演示目的生成一个假的下载链接
-    const downloadUrl = `/recordings/${filename}`;
+    const downloadUrl = `/files/${filename}`;
     
     res.json({
       success: true,
@@ -105,7 +105,7 @@ app.get('/', (req, res) => {
       recordingsTranscribe: '/api/recordings/:id/transcribe',
       recordingsSegment: '/api/recordings/:id/segment',
       recordingsPolish: '/api/recordings/:id/polish',
-      recordingsStatic: '/recordings/*'
+      recordingsStatic: '/files/*'
     }
   });
 });

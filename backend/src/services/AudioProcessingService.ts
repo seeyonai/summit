@@ -32,7 +32,7 @@ class AudioProcessingService {
   private recordingsDir: string;
 
   constructor() {
-    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'recordings');
+    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'files');
   }
 
   async combineMeetingRecordings(meetingId: string, filenames: string[], outputFilename?: string): Promise<CombineResult> {
@@ -156,7 +156,7 @@ class AudioProcessingService {
       results.push({
         format: normalizedFormat,
         filename: safeTargetFilename,
-        filePath: `/recordings/${safeTargetFilename}`,
+        filePath: `/files/${safeTargetFilename}`,
       });
     }
 
@@ -256,7 +256,7 @@ class AudioProcessingService {
     return {
       _id: new ObjectId(), // Keep ObjectId for the Recording type
       filename,
-      filePath: `/recordings/${filename}`,
+      filePath: `/files/${filename}`,
       createdAt: now,
       updatedAt: now,
       duration: probe?.duration,
@@ -340,10 +340,10 @@ class AudioProcessingService {
     const normalized = candidate.replace(/\\/g, '/');
     let relativePath = normalized;
 
-    if (normalized.startsWith('/recordings/')) {
-      relativePath = normalized.substring('/recordings/'.length);
-    } else if (normalized.startsWith('recordings/')) {
-      relativePath = normalized.substring('recordings/'.length);
+    if (normalized.startsWith('/files/')) {
+      relativePath = normalized.substring('/files/'.length);
+    } else if (normalized.startsWith('files/')) {
+      relativePath = normalized.substring('files/'.length);
     }
 
     if (path.isAbsolute(relativePath)) {

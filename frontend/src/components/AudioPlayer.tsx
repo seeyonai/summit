@@ -45,7 +45,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ recording, onTimestampClick }
           controls 
           className="w-full"
         >
-          <source src={apiUrl(`/recordings/${recording.filename}`)} type="audio/wav" />
+          <source src={apiUrl(`/files/${recording.filename}`)} type="audio/wav" />
           您的浏览器不支持音频播放
         </audio>
         
@@ -89,7 +89,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ recording, onTimestampClick }
         
         <div className="flex items-center space-x-4">
           <a
-            href={apiUrl(`/recordings/${recording.filename}`)}
+            href={apiUrl(`/files/${recording.filename}`)}
             download
             className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
           >

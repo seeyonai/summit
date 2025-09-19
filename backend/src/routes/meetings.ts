@@ -314,7 +314,7 @@ router.post('/save-recording', (req: Request, res: Response) => {
     }
     
     // 为演示目的生成一个假的下载链接
-    const downloadUrl = `/recordings/${filename}`;
+    const downloadUrl = `/files/${filename}`;
     
     res.json({
       success: true,

@@ -41,7 +41,7 @@ import {
   UploadIcon
 } from 'lucide-react';
 
-const audioUrlFor = (filename: string) => apiUrl(`/recordings/${filename}`);
+const audioUrlFor = (filename: string) => apiUrl(`/files/${filename}`);
 
 function RecordingList() {
   const navigate = useNavigate();

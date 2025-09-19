@@ -21,8 +21,8 @@ frontend (Vite @ http://localhost:2590)
   ↳ consumes REST APIs exposed by the backend
 backend/api (Express @ http://localhost:2591)
   ↳ MongoDB persistence layer
-  ↳ Serves audio assets from /recordings
-recordings/
+  ↳ Serves audio assets from /files
+files/
   ↳ Generated and seeded audio artifacts
 ```
 
@@ -30,7 +30,7 @@ recordings/
 ```
 frontend/        # React application (pages under src/pages, shared UI in src/components & src/layout)
 backend/         # Express + MongoDB service (routes, services, config, types)
-recordings/      # Local audio assets exposed via the API and seeder
+files/           # Local audio assets exposed via the API and seeder
 base/            # Shared TypeScript contracts
 ```
 
@@ -52,7 +52,7 @@ Optional steps:
 - `npm start` → run the built server.
 - `npm run lint` → ESLint across `src/`.
 - `npm test` → Jest suite (stubs MongoDB).
-- Seed mock data by starting with `SEED_DATA=1 npm run dev` (expects sample audio under `recordings/`).
+- Seed mock data by starting with `SEED_DATA=1 npm run dev` (expects sample audio under `files/`).
 
 ### Frontend Setup (`frontend/`)
 ```bash
@@ -73,7 +73,7 @@ Start the backend first (port 2591), then the frontend (port 2590). The UI calls
 ## Environment Configuration
 - Backend honors `MONGODB_URI`, `DB_NAME`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
 - Frontend consumes `VITE_`-prefixed env vars via `import.meta.env`. Create `frontend/.env` to override defaults (e.g., `VITE_API_BASE_URL`).
-- Store large or generated audio in `recordings/`; the Express server exposes it at `/recordings/*`.
+- Store large or generated audio in `files/`; the Express server exposes it at `/files/*`.
 
 ## API Surface (Backend)
 Base URL: `http://localhost:2591`
@@ -83,7 +83,7 @@ Base URL: `http://localhost:2591`
 - **Recordings** (`/api/recordings`): list, detail, mock start, delete, transcription (`/transcribe`), diarization (`/segment`), and transcription polishing (`/polish`).
 - **Hotwords** (`/api/hotwords`): create, update, delete, batch fetch.
 - **Segmentation** (`/api/segmentation`): model metadata, diarization by stored path (`/analyze`), upload-and-analyze (`/upload`).
-- Static audio files are available at `/recordings/<filename>`.
+- Static audio files are available at `/files/<filename>`.
 
 OpenAPI draft specs for offline transcription live under `backend/openapi/`.
 
@@ -100,6 +100,6 @@ OpenAPI draft specs for offline transcription live under `backend/openapi/`.
 The UI is built with shared components in `src/components`, layout shells in `src/layout`, API clients in `src/services`, and domain types in `src/types`. The project enforces two-space indentation, single quotes, and trailing semicolons via ESLint.
 
 ## Data & Seeding
-- Sample audio referenced by the seeder must live in the repository-level `recordings/` directory.
+- Sample audio referenced by the seeder must live in the repository-level `files/` directory.
 - `DataSeeder` in `backend/src/utils/seedData.ts` populates meetings, hotwords, and recordings when `SEED_DATA` is truthy.
 - Mongo collections are defined in `backend/src/types/mongodb.ts`; shared DTOs live in `base/types.ts` and `backend/src/types/`.

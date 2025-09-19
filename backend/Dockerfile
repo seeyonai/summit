@@ -28,8 +28,8 @@ RUN npm ci --omit=dev --ignore-scripts
 # Copy compiled app
 COPY --from=builder /app/dist ./dist
 
-# Recordings directory expected by the app (served at /recordings)
-RUN mkdir -p /app/recordings \
+# Files directory expected by the app (served at /files)
+RUN mkdir -p /app/files \
   && chown -R node:node /app
 
 USER node

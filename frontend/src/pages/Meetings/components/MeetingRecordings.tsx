@@ -25,7 +25,7 @@ interface MeetingRecordingsProps {
   onViewTranscript: () => void;
 }
 
-const audioUrlFor = (filename: string) => apiUrl(`/recordings/${filename}`);
+const audioUrlFor = (filename: string) => apiUrl(`/files/${filename}`);
 
 function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps) {
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);

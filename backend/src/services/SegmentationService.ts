@@ -28,7 +28,7 @@ export class SegmentationService {
   private serviceBase: string;
 
   constructor() {
-    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'recordings');
+    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'files');
     this.serviceBase = ensureTrailingSlash(SEGMENTATION_SERVICE_URL);
   }
 
@@ -119,12 +119,12 @@ export class SegmentationService {
   private normalizeRelativePath(input: string): string {
     const normalizedSlashes = input.replace(/\\/g, '/');
 
-    if (normalizedSlashes.startsWith('/recordings/')) {
-      return normalizedSlashes.substring('/recordings/'.length);
+    if (normalizedSlashes.startsWith('/files/')) {
+      return normalizedSlashes.substring('/files/'.length);
     }
 
-    if (normalizedSlashes.startsWith('recordings/')) {
-      return normalizedSlashes.substring('recordings/'.length);
+    if (normalizedSlashes.startsWith('files/')) {
+      return normalizedSlashes.substring('files/'.length);
     }
 
     return normalizedSlashes.replace(/^\//, '');

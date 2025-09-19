@@ -73,7 +73,7 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
           ...meeting.recordings,
           {
             filename: recordingData.filename,
-            filePath: `/recordings/${recordingData.filename}`,
+            filePath: `/files/${recordingData.filename}`,
             duration: recordingData.duration,
             transcription: recordingData.transcription,
           }
