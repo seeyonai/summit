@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
 import { connectToDatabase } from './config/database';
+import { getFilesBaseDir } from './utils/filePaths';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -21,8 +22,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static file serving for audio files
-// Primary location: repo-root /files
-const filesDir = path.join(__dirname, '..', '..', 'files');
+// Resolve base directory for serving static recordings
+const filesDir = getFilesBaseDir();
 app.use('/files', express.static(filesDir));
 // Backward-compat: also try backend/files for previously uploaded assets
 const legacyFilesDir = path.join(__dirname, '..', 'files');
