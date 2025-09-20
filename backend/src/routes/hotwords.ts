@@ -38,13 +38,17 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { word } = req.body;
+    const { word, isActive } = req.body;
     
-    if (!word || typeof word !== 'string') {
-      return res.status(400).json({ error: 'Word is required and must be a string' });
+    const update: {word?: string, isActive?: boolean} = {};
+    if (word && typeof word === 'string') {
+      update.word = word;
+    }
+    if (isActive !== undefined && typeof isActive === 'boolean') {
+      update.isActive = isActive;
     }
     
-    const hotword = await hotwordService.updateHotword(id, word);
+    const hotword = await hotwordService.updateHotword(id, update);
     res.json(hotword);
   } catch (error) {
     console.error('Error updating hotword:', error);
