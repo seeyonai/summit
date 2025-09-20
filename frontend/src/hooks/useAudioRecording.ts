@@ -22,35 +22,6 @@ export interface UseAudioRecordingOptions {
 }
 
 export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
-  const computeWsUrl = (path: string): string => {
-    if (typeof window !== 'undefined' && window.location) {
-      const isSecure = window.location.protocol === 'https:';
-      const protocol = isSecure ? 'wss' : 'ws';
-      const host = window.location.hostname;
-      const port = window.location.port === '2590' ? '2591' : window.location.port;
-      const hostport = port ? `${host}:${port}` : host;
-      return `${protocol}://${hostport}${path.startsWith('/') ? path : `/${path}`}`;
-    }
-    return `ws://localhost:2591${path.startsWith('/') ? path : `/${path}`}`;
-  };
-
-  const computeHttpBase = (): string => {
-    if (typeof window !== 'undefined' && window.location) {
-      const { protocol, hostname, port } = window.location;
-      if (port === '2590') {
-        return `${protocol}//${hostname}:2591`;
-      }
-      return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
-    }
-    return 'http://localhost:2591';
-  };
-  const {
-    wsUrl = computeWsUrl('/api/speech/ws'),
-    sampleRate = 16000,
-    language = 'zh',
-    onRecordingComplete
-  } = options;
-
   const [state, setState] = useState<AudioRecordingState>({
     isRecording: false,
     partialText: '',
@@ -64,20 +35,13 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
   stateRef.current = state;
 
   const audioContextRef = useRef<AudioContext | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const recordingInfoRef = useRef<{ recordingId?: string; filename?: string }>({});
 
   const cleanup = useCallback(() => {
-    try {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: 'stop' }));
-      }
-    } catch (error) {
-      console.error('Error closing WebSocket:', error);
-    }
-    
     try {
       workletNodeRef.current?.disconnect();
     } catch (error) {
@@ -96,6 +60,14 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       console.error('Error closing audio context:', error);
     }
     
+    try {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    } catch (error) {
+      console.error('Error closing WebSocket:', error);
+    }
+    
     if (timerRef.current) {
       window.clearInterval(timerRef.current);
     }
@@ -103,74 +75,72 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
     audioContextRef.current = null;
     workletNodeRef.current = null;
     streamRef.current = null;
-    wsRef.current = null;
     timerRef.current = null;
+    wsRef.current = null;
   }, []);
 
   const startRecording = useCallback(async () => {
     setState(prev => ({ ...prev, error: null }));
 
     try {
-      // Initialize WebSocket
+      // Connect to WebSocket
+      const wsUrl = options.wsUrl || `ws://${window.location.hostname}:2591/ws/live-recorder`;
       wsRef.current = new WebSocket(wsUrl);
-      wsRef.current.binaryType = 'arraybuffer';
 
       wsRef.current.onopen = () => {
-        wsRef.current?.send(JSON.stringify({
-          type: 'start',
-          sampleRate,
-          lang: language
-        }));
+        console.log('WebSocket connected to backend on port 2591');
         setState(prev => ({ ...prev, isConnected: true }));
       };
 
       wsRef.current.onmessage = (event) => {
-        try {
-          if (typeof event.data === 'string') {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'partial') {
-              setState(prev => ({ ...prev, partialText: msg.text }));
-            }
-            if (msg.type === 'final') {
-              setState(prev => ({ 
-                ...prev, 
-                finalText: prev.finalText ? prev.finalText + '\n' + msg.text : msg.text,
-                partialText: ''
-              }));
-            }
-            if (msg.type === 'audio_complete') {
-              const backendBaseUrl = computeHttpBase();
-              onRecordingComplete?.({
-                filename: msg.filename,
-                downloadUrl: backendBaseUrl + msg.download_url,
-                transcription: stateRef.current.finalText,
-                duration: stateRef.current.recordingTime
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+          case 'recording_started':
+            recordingInfoRef.current = {
+              recordingId: data.recordingId,
+              filename: data.filename
+            };
+            break;
+          case 'chunk_received':
+            // Silent acknowledgment
+            break;
+          case 'recording_saved':
+            if (options.onRecordingComplete) {
+              options.onRecordingComplete({
+                filename: data.filename,
+                downloadUrl: data.downloadUrl,
+                transcription: '',
+                duration: data.duration
               });
             }
-            if (msg.type === 'error') {
-              setState(prev => ({ ...prev, error: msg.message }));
-            }
-          }
-        } catch (err) {
-          console.error('Error parsing WebSocket message:', err);
+            break;
+          case 'error':
+            setState(prev => ({ 
+              ...prev, 
+              error: data.message || 'WebSocket error'
+            }));
+            break;
         }
       };
 
-      wsRef.current.onerror = (err) => {
-        console.error('WebSocket error:', err);
+      wsRef.current.onclose = () => {
+        console.log('WebSocket disconnected from backend on port 2591');
+        setState(prev => ({ ...prev, isConnected: false }));
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        console.log('WebSocket connection failed to backend on port 2591');
         setState(prev => ({ 
           ...prev, 
-          error: '连接语音识别服务失败',
+          error: 'WebSocket connection error',
           isConnected: false 
         }));
       };
 
-      wsRef.current.onclose = () => {
-        setState(prev => ({ ...prev, isConnected: false }));
-      };
-
       // Initialize audio context
-      audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)({ sampleRate: 48000 });
+      audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)({ sampleRate: 16000 });
       await audioContextRef.current.audioWorklet.addModule('/pcm-worklet.js');
 
       // Get microphone access
@@ -189,9 +159,10 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
         numberOfOutputs: 0 
       });
 
-      workletNodeRef.current.port.onmessage = (e) => {
+      // Connect audio chunks to WebSocket
+      workletNodeRef.current.port.onmessage = (event) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(e.data);
+          wsRef.current.send(event.data);
         }
       };
 
@@ -203,47 +174,36 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       }, 1000);
 
       setState(prev => ({ ...prev, isRecording: true, partialText: '' }));
-
-    } catch (err) {
-      console.error('Error starting recording:', err);
+    } catch (error) {
+      console.error('Error starting recording:', error);
       setState(prev => ({ 
         ...prev, 
-        error: '无法访问麦克风，请检查权限设置',
+        error: '无法开始录音，请检查麦克风权限',
         isRecording: false 
       }));
       cleanup();
     }
-  }, [wsUrl, sampleRate, language, onRecordingComplete, cleanup]);
+  }, [cleanup, options.wsUrl, options.onRecordingComplete]);
 
   const stopRecording = useCallback(() => {
     cleanup();
+    
     setState(prev => ({ 
       ...prev, 
-      isRecording: false, 
-      partialText: '' 
+      isRecording: false,
+      isConnected: false
     }));
   }, [cleanup]);
 
-  const resetRecording = useCallback(() => {
-    setState({
-      isRecording: false,
-      partialText: '',
-      finalText: '',
-      recordingTime: 0,
-      isConnected: false,
-      error: null
-    });
-    cleanup();
-  }, [cleanup]);
-
   useEffect(() => {
-    return cleanup;
+    return () => {
+      cleanup();
+    };
   }, [cleanup]);
 
   return {
     ...state,
     startRecording,
-    stopRecording,
-    resetRecording
+    stopRecording
   };
 }

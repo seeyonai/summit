@@ -27,7 +27,6 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
             text: todoText,
             completed: false,
             priority: 'medium',
-            category: '会议'
           })
         }
       }
@@ -39,7 +38,6 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
             id: discussionId++,
             title: discussionText,
             description: discussionText,
-            category: '讨论',
             priority: 'medium',
             status: 'ongoing'
           })
@@ -104,9 +102,6 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
                   </div>
                   <p className="text-sm text-yellow-700 mb-2">{point.description}</p>
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {point.category}
-                    </Badge>
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       point.status === 'resolved' ? 'bg-green-100 text-green-800' :
                       point.status === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
@@ -128,9 +123,6 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
                   </div>
                   <p className="text-sm text-yellow-700 mb-2">{point.description}</p>
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {point.category}
-                    </Badge>
                     <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
                       进行中
                     </span>
@@ -174,11 +166,6 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
                             {todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低'}优先级
                           </Badge>
                         )}
-                        {todo.category && (
-                          <Badge variant="secondary" className="text-xs">
-                            {todo.category}
-                          </Badge>
-                        )}
                         {todo.dueDate && (
                           <span className="text-xs text-gray-500 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
@@ -204,9 +191,6 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
                           中优先级
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          {todo.category}
                         </Badge>
                       </div>
                     </div>

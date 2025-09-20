@@ -36,7 +36,6 @@ export interface TodoItem {
   text: string;
   completed: boolean;
   priority?: 'low' | 'medium' | 'high';
-  category?: string;
   dueDate?: string;
 }
 

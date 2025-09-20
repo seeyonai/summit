@@ -3,77 +3,56 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ThemeProvider, Header } from './layout';
 import { FloatingRecordingPanel, MeetingDisplay } from './components/Audio';
+import { useAudioRecording } from '@/hooks/useAudioRecording';
+import { recordingPanelBus } from '@/services/recordingPanelBus';
+import { RecordingPanelProvider, useRecordingPanel } from '@/contexts/RecordingPanelContext';
 import Dashboard from './pages/Dashboard';
 import HotwordManagement from './pages/Hotwords/HotwordListPage';
 import Meetings from './pages/Meetings';
 import MeetingDetail from './pages/Meetings/MeetingDetail';
 import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
+import LiveRecorderTest from './pages/LiveRecorderTest';
 
-function App() {
-  const [showFloatingPanel, setShowFloatingPanel] = useState(false);
-  const [isPanelMinimized, setIsPanelMinimized] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [partialText, setPartialText] = useState('');
-  const [finalText, setFinalText] = useState('');
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
-
-  const toggleFloatingPanel = () => {
-    setShowFloatingPanel(!showFloatingPanel);
-  };
-
-  const minimizePanel = () => {
-    setIsPanelMinimized(true);
-  };
-
-  const maximizePanel = () => {
-    setIsPanelMinimized(false);
-  };
-
-  const closePanel = () => {
-    setShowFloatingPanel(false);
-    setIsPanelMinimized(false);
-  };
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  const exitFullscreen = () => {
-    setIsFullscreen(false);
-  };
+function AppContent() {
+  const { isRecording, partialText, finalText, recordingTime, isConnected, startRecording: startMicRecording, stopRecording: stopMicRecording, resetRecording } = useAudioRecording();
+  const { 
+    showFloatingPanel, 
+    isFullscreen, 
+    toggleFloatingPanel, 
+    closePanel, 
+    exitFullscreen 
+  } = useRecordingPanel();
 
   const startRecording = () => {
-    setIsRecording(true);
-    setPartialText('');
-    setFinalText('');
-    setRecordingTime(0);
-    setIsConnected(true);
+    startMicRecording();
   };
 
   const stopRecording = () => {
-    setIsRecording(false);
-    setPartialText('');
+    stopMicRecording();
   };
 
   useEffect(() => {
-    let interval: number;
     if (isRecording) {
-      interval = window.setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
+      toggleFloatingPanel();
     }
-    return () => clearInterval(interval);
   }, [isRecording]);
 
+  // Listen to cross-app recording panel events
   useEffect(() => {
-    if (isRecording) {
-      setShowFloatingPanel(true);
-      setIsPanelMinimized(false);
-    }
-  }, [isRecording]);
+    const unsubscribe = recordingPanelBus.subscribe((event) => {
+      if (event.type === 'open') {
+        toggleFloatingPanel();
+        return;
+      }
+      if (event.type === 'close') {
+        closePanel();
+        return;
+      }
+      // start/stop are now handled within FloatingRecordingPanel itself
+    });
+    return unsubscribe;
+  }, [toggleFloatingPanel, closePanel]);
 
   return (
     <ThemeProvider>
@@ -82,9 +61,7 @@ function App() {
           <Toaster />
 
           <Header
-            onToggleRecordingPanel={toggleFloatingPanel}
             isRecording={isRecording}
-            showRecordingPanel={showFloatingPanel}
           />
 
           <main className="container mx-auto px-4 py-8 animate-fade-in">
@@ -95,25 +72,11 @@ function App() {
               <Route path="/meetings" element={<Meetings />} />
               <Route path="/meetings/:id" element={<MeetingDetail />} />
               <Route path="/hotwords" element={<HotwordManagement />} />
+              <Route path="/test-recorder" element={<LiveRecorderTest />} />
             </Routes>
           </main>
 
-          <FloatingRecordingPanel
-            isVisible={showFloatingPanel && !isFullscreen}
-            onMinimize={minimizePanel}
-            onClose={closePanel}
-            onMaximize={maximizePanel}
-            isRecording={isRecording}
-            isMinimized={isPanelMinimized}
-            isFullscreen={isFullscreen}
-            partialText={partialText}
-            finalText={finalText}
-            recordingTime={recordingTime}
-            isConnected={isConnected}
-            onStartRecording={startRecording}
-            onStopRecording={stopRecording}
-            onToggleFullscreen={toggleFullscreen}
-          />
+          <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} />
           
           <MeetingDisplay
             isVisible={isFullscreen}
@@ -130,6 +93,14 @@ function App() {
         </div>
       </Router>
     </ThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <RecordingPanelProvider>
+      <AppContent />
+    </RecordingPanelProvider>
   );
 }
 

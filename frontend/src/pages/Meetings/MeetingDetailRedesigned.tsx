@@ -13,6 +13,7 @@ import MeetingOverview from './components/MeetingOverview';
 import MeetingTranscript from './components/MeetingTranscript';
 import MeetingRecordings from './components/MeetingRecordings';
 import MeetingTasks from './components/MeetingTasks';
+import MeetingAnalysis from './components/MeetingAnalysis';
 import TranscriptDialog from '@/components/meetings/TranscriptDialog';
 import AdviceDialog from '@/components/meetings/AdviceDialog';
 import {
@@ -26,7 +27,8 @@ import {
   AlertCircleIcon,
   MicIcon,
   PlayIcon,
-  PauseIcon
+  PauseIcon,
+  BrainIcon
 } from 'lucide-react';
 
 // Lazy load heavy components
@@ -39,6 +41,7 @@ function MeetingDetailRedesigned() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [success, setSuccess] = useState<string | null>(null);
+  const [showAnalysisSuccess, setShowAnalysisSuccess] = useState(false);
   
   // Use custom hooks
   const {
@@ -74,6 +77,14 @@ function MeetingDetailRedesigned() {
     await deleteMeeting();
     navigate('/meetings');
   };
+
+  const handleAnalysisComplete = useCallback(() => {
+    setShowAnalysisSuccess(true);
+    // Trigger meeting refresh to get updated data
+    setTimeout(() => {
+      setShowAnalysisSuccess(false);
+    }, 3000);
+  }, []);
 
   useEffect(() => {
     if (success) {
@@ -247,11 +258,12 @@ function MeetingDetailRedesigned() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto">
+          <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
             <TabsTrigger value="overview">概览</TabsTrigger>
             <TabsTrigger value="transcript">转录</TabsTrigger>
             <TabsTrigger value="recordings">录音</TabsTrigger>
             <TabsTrigger value="tasks">任务</TabsTrigger>
+            <TabsTrigger value="analysis">分析</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -278,6 +290,13 @@ function MeetingDetailRedesigned() {
               meeting={meeting}
               onGenerateAdvice={handleGenerateAdvice}
               generatingAdvice={loadingById}
+            />
+          </TabsContent>
+
+          <TabsContent value="analysis">
+            <MeetingAnalysis
+              meeting={meeting}
+              onAnalysisComplete={handleAnalysisComplete}
             />
           </TabsContent>
         </Tabs>
@@ -310,6 +329,16 @@ function MeetingDetailRedesigned() {
           <div className="fixed bottom-4 right-4 z-50">
             <Alert className="bg-green-50 border-green-200 text-green-800">
               <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          </div>
+        )}
+
+        {/* Analysis Success Message */}
+        {showAnalysisSuccess && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+              <BrainIcon className="h-4 w-4" />
+              <AlertDescription>AI 分析完成！任务和争议问题已提取并保存。</AlertDescription>
             </Alert>
           </div>
         )}

@@ -12,7 +12,6 @@ interface Todo {
   text: string;
   completed?: boolean;
   priority?: 'high' | 'medium' | 'low';
-  category?: string;
   dueDate?: string;
 }
 
@@ -116,12 +115,6 @@ function TodoList({ todos, onGenerateAdvice, generatingAdvice = {}, className }:
                       <div className="flex flex-wrap items-center gap-2 mt-2">
                         {todo.priority && (
                           <StatusBadge status={todo.priority} type="priority" size="sm" />
-                        )}
-                        {todo.category && (
-                          <Badge variant="secondary" className="text-xs gap-1">
-                            <Tag className="w-3 h-3" />
-                            {todo.category}
-                          </Badge>
                         )}
                         {todo.dueDate && (
                           <Badge variant="outline" className="text-xs gap-1">

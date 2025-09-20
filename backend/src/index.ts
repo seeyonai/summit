@@ -12,6 +12,7 @@ import meetingsRouter from './routes/meetings';
 import hotwordsRouter from './routes/hotwords';
 import segmentationRouter from './routes/segmentation';
 import recordingsRouter from './routes/recordings';
+import { LiveRecorderService } from './services/LiveRecorderService';
 
 const app = express();
 const PORT = process.env.PORT || 2591;
@@ -25,38 +26,12 @@ app.use(express.urlencoded({ extended: true }));
 // Resolve base directory for serving static recordings
 const filesDir = getFilesBaseDir();
 app.use('/files', express.static(filesDir));
-// Backward-compat: also try backend/files for previously uploaded assets
-const legacyFilesDir = path.join(__dirname, '..', 'files');
-app.use('/files', express.static(legacyFilesDir));
 
 // Routes
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/hotwords', hotwordsRouter);
 app.use('/api/segmentation', segmentationRouter);
 app.use('/api/recordings', recordingsRouter);
-
-// Save recording endpoint
-app.post('/api/save-recording', (req, res) => {
-  try {
-    const { meetingId, transcription, duration, filename } = req.body;
-    
-    if (!meetingId || !transcription) {
-      return res.status(400).json({ error: 'Meeting ID and transcription are required' });
-    }
-    
-    // 为演示目的生成一个假的下载链接
-    const downloadUrl = `/files/${filename}`;
-    
-    res.json({
-      success: true,
-      filename: filename,
-      downloadUrl: downloadUrl,
-      message: '录音保存成功'
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -138,13 +113,17 @@ async function startServer() {
       await seeder.seedData();
     }
     
-    // Start the server
-    app.listen(PORT, () => {
+    // Start the HTTP API server
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Summit API server running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`📝 Meetings API: http://localhost:${PORT}/api/meetings`);
       console.log(`🗄️  Database: MongoDB connected`);
+      console.log(`🎙️  Live Recorder WebSocket: ws://localhost:${PORT}/ws/live-recorder`);
     });
+
+    // Initialize WebSocket service for live recording
+    const liveRecorderService = new LiveRecorderService(server);
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);

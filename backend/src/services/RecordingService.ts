@@ -23,7 +23,7 @@ interface TranscriptionServiceResponse {
   fileSize?: number;
 }
 
-const LIVE_SERVICE_URL = process.env.LIVE_SERVICE_URL || 'http://localhost:2592';
+const LIVE_SERVICE_URL = process.env.LIVE_SERVICE_URL || '';
 const TRANSCRIPTION_SERVICE_URL = process.env.TRANSCRIPTION_SERVICE_URL
   || process.env.TRANSCRIBE_SERVICE_URL
   || 'http://localhost:2594';
@@ -129,7 +129,7 @@ class RecordingServiceImpl {
   }
 
   async startRecording(): Promise<{ id: string; filename: string; filePath: string; message: string }> {
-    const remoteResponse = await this.callLiveService<LiveRecordingStartResponse>('/api/recordings', {
+    const remoteResponse = await this.callLiveService<LiveRecordingStartResponse>('/api/recordings/start', {
       method: 'POST',
       body: {},
       expectedStatus: [200, 201],

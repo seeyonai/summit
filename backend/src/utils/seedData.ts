@@ -76,21 +76,18 @@ export class DataSeeder {
             text: '完成用户界面设计稿',
             completed: true,
             priority: 'high',
-            category: '设计',
             dueDate: '2024-01-25'
           },
           {
             text: '准备产品需求文档',
             completed: false,
             priority: 'high',
-            category: '产品',
             dueDate: '2024-01-30'
           },
           {
             text: '与开发团队讨论技术实现',
             completed: false,
             priority: 'medium',
-            category: '开发',
             dueDate: '2024-02-05'
           }
         ],
@@ -144,13 +141,11 @@ export class DataSeeder {
             text: '完成架构图绘制',
             completed: true,
             priority: 'high',
-            category: '技术'
           },
           {
             text: '编写技术文档',
             completed: false,
             priority: 'medium',
-            category: '文档'
           }
         ],
         participants: 5,
@@ -175,7 +170,6 @@ export class DataSeeder {
             text: '准备周会PPT',
             completed: false,
             priority: 'low',
-            category: '会议'
           }
         ],
         participants: 12,

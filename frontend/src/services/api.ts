@@ -271,6 +271,35 @@ class ApiService {
     return this.post<{ advice: string }>(`/api/meetings/${meetingId}/todo-advice`, { todoText });
   }
 
+  // Transcript Analysis
+  async extractTranscriptAnalysis(meetingId: string): Promise<{
+    success: boolean;
+    data: {
+      disputedIssues: Array<{
+        id: string;
+        text: string;
+        severity: 'low' | 'medium' | 'high';
+        parties: string[];
+      }>;
+      todos: Array<{
+        id: string;
+        text: string;
+        completed: boolean;
+        assignee?: string;
+        dueDate?: string;
+        priority: 'low' | 'medium' | 'high';
+        category?: string;
+      }>;
+      metadata: {
+        totalChunks: number;
+        processingTime: string;
+      };
+    };
+    message: string;
+  }> {
+    return this.post(`/api/meetings/${meetingId}/extract-analysis`, {});
+  }
+
   // Meeting ↔ Recording association
   async addRecordingToMeeting(meetingId: string, recording: Recording): Promise<MeetingWithRecordings> {
     return this.post<MeetingWithRecordings>(`/api/meetings/${meetingId}/recordings`, recording);

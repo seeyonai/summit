@@ -1,4 +1,5 @@
 import React from 'react';
+import { recordingPanelBus } from '@/services/recordingPanelBus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,40 +17,32 @@ import {
   Monitor,
   MonitorOff
 } from 'lucide-react';
+import { useAudioRecording } from '@/hooks/useAudioRecording';
+import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
 
 interface FloatingRecordingPanelProps {
   isVisible: boolean;
-  onMinimize: () => void;
-  onClose: () => void;
-  onMaximize?: () => void;
-  isRecording: boolean;
-  isMinimized: boolean;
-  isFullscreen: boolean;
-  partialText: string;
-  finalText: string;
-  recordingTime: number;
-  isConnected: boolean;
-  onStartRecording: () => void;
-  onStopRecording: () => void;
-  onToggleFullscreen: () => void;
 }
 
-const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
-  isVisible,
-  onMinimize,
-  onClose,
-  onMaximize,
-  isRecording,
-  isMinimized,
-  isFullscreen,
-  partialText,
-  finalText,
-  recordingTime,
-  isConnected,
-  onStartRecording,
-  onStopRecording,
-  onToggleFullscreen,
-}) => {
+function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
+  const {
+    minimizePanel,
+    closePanel,
+    maximizePanel,
+    isMinimized,
+    isFullscreen,
+    toggleFullscreen
+  } = useRecordingPanel();
+  // Internal recorder state using the live WS endpoint
+  const {
+    isRecording,
+    partialText,
+    finalText,
+    recordingTime,
+    isConnected,
+    startRecording,
+    stopRecording
+  } = useAudioRecording({ });
   const [isDragging, setIsDragging] = React.useState(false);
   const [position, setPosition] = React.useState({ x: 20, y: 20 });
   const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
@@ -121,7 +114,7 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
         <Button
           size="sm"
           variant="ghost"
-          onClick={onMaximize || (() => {})}
+          onClick={maximizePanel}
           className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/10"
         >
           <Maximize2 className="w-4 h-4" />
@@ -144,22 +137,10 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
         
         <div className="flex items-center gap-1">
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onStartRecording}
-            disabled={isRecording}
-            className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/10"
-          >
+          <Button size="sm" variant="ghost" onClick={startRecording} disabled={isRecording} className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/10">
             <Mic className="w-4 h-4" />
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onStopRecording}
-            disabled={!isRecording}
-            className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/10"
-          >
+          <Button size="sm" variant="ghost" onClick={() => { stopRecording(); recordingPanelBus.stop(); }} disabled={!isRecording} className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/10">
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -196,7 +177,7 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={onToggleFullscreen}
+                onClick={toggleFullscreen}
                 className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10"
                 title={isFullscreen ? "退出大屏模式" : "开始实时大屏模式"}
               >
@@ -205,7 +186,7 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={onMinimize}
+                onClick={minimizePanel}
                 className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10"
               >
                 <Minus className="w-3 h-3" />
@@ -213,7 +194,7 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={onClose}
+                onClick={closePanel}
                 className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10"
               >
                 <X className="w-3 h-3" />
@@ -249,12 +230,7 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
         
         <CardContent className="space-y-3 pt-0">
           <div className="flex gap-2">
-            <Button
-              onClick={onStartRecording}
-              disabled={isRecording || !isConnected}
-              size="sm"
-              className={`flex-1 font-bold ${isRecording ? 'bg-gray-600 text-white' : 'bg-blue-500 hover:bg-blue-400 text-white'}`}
-            >
+            <Button onClick={startRecording} disabled={isRecording} size="sm" className={`flex-1 font-bold ${isRecording ? 'bg-gray-600 text-white' : 'bg-blue-500 hover:bg-blue-400 text-white'}`}>
               {isRecording ? (
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
@@ -268,7 +244,7 @@ const FloatingRecordingPanel: React.FC<FloatingRecordingPanelProps> = ({
               )}
             </Button>
             <Button
-              onClick={onStopRecording}
+              onClick={() => { stopRecording(); recordingPanelBus.stop(); }}
               disabled={!isRecording}
               variant="destructive"
               size="sm"

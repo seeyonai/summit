@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import meetingService from '../services/MeetingService';
 import audioProcessingService from '../services/AudioProcessingService';
+import transcriptExtractionService from '../services/TranscriptExtractionService';
 import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../types';
 import recordingService from '../services/RecordingService';
 
@@ -304,29 +305,6 @@ router.get('/upcoming', async (req: Request, res: Response) => {
   }
 });
 
-// Save recording (for real-time speech recognition)
-router.post('/save-recording', (req: Request, res: Response) => {
-  try {
-    const { meetingId, transcription, duration, filename } = req.body;
-    
-    if (!meetingId || !transcription) {
-      return res.status(400).json({ error: 'Meeting ID and transcription are required' });
-    }
-    
-    // 为演示目的生成一个假的下载链接
-    const downloadUrl = `/files/${filename}`;
-    
-    res.json({
-      success: true,
-      filename: filename,
-      downloadUrl: downloadUrl,
-      message: '录音保存成功'
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Generate verbatim transcript for a recording
 router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request, res: Response) => {
   try {
@@ -463,6 +441,68 @@ router.post('/:meetingId/todo-advice', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error generating AI advice:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Extract disputed issues and todos from meeting transcript
+router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) => {
+  try {
+    const { meetingId } = req.params;
+    
+    const meeting = await meetingService.getMeetingById(meetingId);
+    if (!meeting) {
+      return res.status(404).json({ error: 'Meeting not found' });
+    }
+    
+    if (!meeting.finalTranscript) {
+      return res.status(400).json({ 
+        error: 'Meeting must have a final transcript before analysis can be performed' 
+      });
+    }
+    
+    // Extract analysis using intext
+    const extractionResult = await transcriptExtractionService.extractFromTranscript(
+      meeting.finalTranscript
+    );
+    
+    // Format the results for meeting storage
+    const formattedAnalysis = transcriptExtractionService.formatExtractionForMeeting(extractionResult);
+    
+    // Update the meeting with extracted data
+    const updatedMeeting = await meetingService.updateMeeting(meetingId, {
+      _id: meeting._id,
+      disputedIssues: formattedAnalysis.disputedIssues,
+      parsedTodos: formattedAnalysis.todos
+    } as any);
+    
+    res.json({
+      success: true,
+      data: {
+        disputedIssues: formattedAnalysis.disputedIssues,
+        todos: formattedAnalysis.todos,
+        metadata: formattedAnalysis.metadata
+      },
+      message: 'Transcript analysis completed successfully',
+      meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null
+    });
+  } catch (error) {
+    console.error('Error extracting analysis from transcript:', error);
+    
+    if (error instanceof Error) {
+      if (error.message.includes('OPENAI_API_KEY')) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.' 
+        });
+      }
+      if (error.message.includes('Transcript text is required')) {
+        return res.status(400).json({ error: error.message });
+      }
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to extract analysis from transcript',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

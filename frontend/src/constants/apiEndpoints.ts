@@ -4,7 +4,6 @@ export const API_ENDPOINTS = {
   SPEECH: {
     HEALTH: '/health',
     MODEL_INFO: '/api/speech/model-info',
-    WEBSOCKET: '/api/speech/ws',
     RECORDINGS: '/api/recordings',
     RECORDING_DETAIL: (id: string) => `/api/recordings/${id}`,
     START_RECORDING: '/api/recordings/start',
@@ -17,6 +16,8 @@ export const API_ENDPOINTS = {
     HEALTH: '/health',
     MEETINGS: '/api/meetings',
     MEETING_DETAIL: (id: string) => `/api/meetings/${id}`,
+    MEETING_EXTRACT_ANALYSIS: (id: string) => `/api/meetings/${id}/extract-analysis`,
+    MEETING_TODO_ADVICE: (id: string) => `/api/meetings/${id}/todo-advice`,
     HOTWORDS: '/api/hotwords',
     HOTWORD_DETAIL: (id: string) => `/api/hotwords/${id}`,
     SEGMENTATION: {

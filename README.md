@@ -73,12 +73,11 @@ Start the backend first (port 2591), then the frontend (port 2590). The UI calls
 ## Environment Configuration
 - Backend honors `MONGODB_URI`, `DB_NAME`, `FILE_BASE_PATH`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
   - `FILE_BASE_PATH` sets the filesystem base directory for audio files. If unset, it defaults to the repository root `files/` during development. The Docker runtime sets it to `/usr/src/app/files`.
-  - `LIVE_SERVICE_URL` sets the URL for the live recording service (default: `http://localhost:2592`).
-  - `SEGMENTATION_SERVICE_URL` sets the URL for the speaker segmentation service (default: `http://localhost:2593`).
+    - `SEGMENTATION_SERVICE_URL` sets the URL for the speaker segmentation service (default: `http://localhost:2593`).
   - `TRANSCRIBE_SERVICE_URL` sets the URL for the transcription service (default: `http://localhost:2594`).
   - Static URLs continue to use `/files/<filename>`; the server maps these to the configured base directory.
 - Frontend consumes `VITE_`-prefixed env vars via `import.meta.env`. Create `frontend/.env` to override defaults (e.g., `VITE_API_BASE_URL`).
-- Store large or generated audio under the configured base directory. By default this is the repo `files/` directory; it is served at `/files/*`.
+  - Store large or generated audio under the configured base directory. By default this is the repo `files/` directory; it is served at `/files/*`.
 
 ### Files & Paths
 - Public paths stored in the database (e.g., `/files/example.wav`) are resolved to disk under `FILE_BASE_PATH`.

@@ -195,33 +195,6 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
         </Card>
       )}
 
-      {/* Key Points */}
-      {meeting.agenda && meeting.agenda.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>会议要点</CardTitle>
-            <CardDescription>会议讨论的主要议题</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {meeting.agenda.map((item, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-sm font-semibold text-indigo-600">{index + 1}</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-900">{item.title}</p>
-                    {item.description && (
-                      <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Disputed Issues */}
       {meeting.disputedIssues && meeting.disputedIssues.length > 0 && (
         <Card>

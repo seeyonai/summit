@@ -14,7 +14,6 @@ const navigationItems: NavItem[] = [
   { path: '/recordings', label: '录音', icon: Folder },
   { path: '/meetings', label: '会议', icon: Users },
   { path: '/hotwords', label: '热词', icon: Flame },
-  { path: '/tools', label: '工具', icon: Wrench }
 ];
 
 export const Navigation: React.FC = () => {

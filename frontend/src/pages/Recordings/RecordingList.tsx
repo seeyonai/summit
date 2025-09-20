@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiService, apiUrl } from '@/services/api';
+import { recordingPanelBus } from '@/services/recordingPanelBus';
+import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
 import { formatDuration, formatFileSize, formatDate } from '@/utils/formatHelpers';
 import type { Recording, Meeting } from '@/types';
 import {
@@ -45,6 +47,7 @@ const audioUrlFor = (filename: string) => apiUrl(`/files/${filename}`);
 
 function RecordingList() {
   const navigate = useNavigate();
+  const { toggleFloatingPanel } = useRecordingPanel();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,18 +81,29 @@ function RecordingList() {
   const startRecording = async () => {
     try {
       setRecording(true);
-      await apiService.startRecording();
-      
-      // Simulate recording for 5 seconds
-      setTimeout(() => {
-        setRecording(false);
-        fetchRecordings();
-      }, 5000);
+      const result = await apiService.startRecording();
+      // Open floating panel and mark global recording state
+      recordingPanelBus.start(result);
+      // Fetch list refresh in background (do not auto-stop UI)
+      fetchRecordings();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setRecording(false);
     }
   };
+
+  // Keep local button state in sync with panel actions
+  useEffect(() => {
+    const unsubscribe = recordingPanelBus.subscribe((event) => {
+      if (event.type === 'stop' || event.type === 'close') {
+        setRecording(false);
+      }
+      if (event.type === 'start') {
+        setRecording(true);
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   const deleteRecording = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -545,22 +559,13 @@ function RecordingList() {
                   </Button>
                 </div>
                 <Button
-                  onClick={startRecording}
-                  disabled={recording || uploading}
+                  onClick={toggleFloatingPanel}
+                  disabled={uploading}
                   size="lg"
-                  className={`${recording ? 'bg-red-500 hover:bg-red-600' : 'bg-white text-blue-600 hover:bg-blue-50'} transition-all duration-300 shadow-lg disabled:opacity-50`}
+                  className="bg-white text-blue-600 hover:bg-blue-50 transition-all duration-300 shadow-lg disabled:opacity-50"
                 >
-                  {recording ? (
-                    <>
-                      <div className="w-3 h-3 bg-white rounded-full animate-pulse mr-2" />
-                      录音中...
-                    </>
-                  ) : (
-                    <>
-                      <MicIcon className="w-5 h-5 mr-2" />
-                      快速录音
-                    </>
-                  )}
+                  <MicIcon className="w-5 h-5 mr-2" />
+                  快速录音
                 </Button>
               </div>
             </div>
