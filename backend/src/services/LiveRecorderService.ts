@@ -1,11 +1,9 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { Server } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { getFilesBaseDir, resolveWithinBase } from '../utils/filePaths';
 import { getCollection } from '../config/database';
-import { ObjectId } from 'mongodb';
 import { Recording } from '../types';
 
 interface ActiveRecording {
@@ -21,7 +19,7 @@ export class LiveRecorderService {
   private wss: WebSocketServer;
   private activeRecordings: Map<string, ActiveRecording> = new Map();
 
-  constructor(server: Server) {
+  constructor(server: any) {
     this.wss = new WebSocketServer({ 
       server,
       path: '/ws/live-recorder'

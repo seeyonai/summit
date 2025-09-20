@@ -19,9 +19,7 @@ interface SettingsDialogProps {
   onToggleTheme: () => void;
   showAgenda: boolean;
   onToggleAgenda: (show: boolean) => void;
-  showTranscript: boolean;
-  onToggleTranscript: (show: boolean) => void;
-  showGroupChat: boolean;
+    showGroupChat: boolean;
   onToggleGroupChat: (show: boolean) => void;
   isMinimalMode: boolean;
   onToggleMinimalMode: (minimal: boolean) => void;
@@ -45,8 +43,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
   onToggleTheme,
   showAgenda,
   onToggleAgenda,
-  showTranscript,
-  onToggleTranscript,
   showGroupChat,
   onToggleGroupChat,
   isMinimalMode,
@@ -85,22 +81,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
           
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label htmlFor="transcript-toggle" className="text-sm font-medium text-white">
-                显示实时转录
-              </Label>
-              <p className="text-xs text-slate-400">
-                在主面板中显示语音转录内容
-              </p>
-            </div>
-            <Switch
-              id="transcript-toggle"
-              checked={showTranscript}
-              onCheckedChange={onToggleTranscript}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
               <Label htmlFor="chat-toggle" className="text-sm font-medium text-white">
                 显示群聊
               </Label>
@@ -112,7 +92,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
               id="chat-toggle"
               checked={showGroupChat}
               onCheckedChange={onToggleGroupChat}
-              disabled={!showTranscript}
             />
           </div>
           

@@ -106,7 +106,7 @@ function MeetingList() {
 
   // Filtered meetings based on search and filter
   const filteredMeetings = useMemo(() => {
-    return meetings.filter(meeting => {
+    return (meetings || []).filter(meeting => {
       const matchesSearch = searchQuery === '' || 
         meeting.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         meeting.summary?.toLowerCase().includes(searchQuery.toLowerCase());

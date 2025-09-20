@@ -1,0 +1,109 @@
+/* Custom scrollbar styles for meeting display */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Smooth animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Meeting display specific animations */
+.meeting-display-enter {
+  animation: fade-in 0.5s ease-out;
+}
+
+.transcript-segment-enter {
+  animation: slide-up 0.3s ease-out;
+}
+
+.agenda-item-active {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glassmorphism effect enhancement */
+.glass-effect {
+  backdrop-filter: blur(20px);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Audio waveform animation */
+@keyframes wave {
+  0%, 100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.audio-wave {
+  animation: wave 1s ease-in-out infinite;
+}
+
+.audio-wave:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.audio-wave:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.audio-wave:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.audio-wave:nth-child(5) {
+  animation-delay: 0.4s;
+}

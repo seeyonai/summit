@@ -10,7 +10,9 @@ import {
   ZoomOut,
   Settings,
   Fullscreen,
-  Minimize2
+  Minimize2,
+  FileText,
+  FileX
 } from 'lucide-react';
 
 interface MeetingHeaderProps {
@@ -25,6 +27,8 @@ interface MeetingHeaderProps {
   onEnterMinimal: () => void;
   onOpenSettings: () => void;
   onExitFullscreen: () => void;
+  onToggleTranscript: () => void;
+  showTranscript: boolean;
   title: string;
   darkModeTextClasses: string;
   themeClasses: {
@@ -48,6 +52,8 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
   onEnterMinimal,
   onOpenSettings,
   onExitFullscreen,
+  onToggleTranscript,
+  showTranscript,
   title,
   darkModeTextClasses,
   themeClasses
@@ -122,6 +128,31 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
                   </>
                 )}
               </div>
+            </div>
+
+            <Separator orientation="vertical" className="h-10 bg-slate-700" />
+
+            {/* Transcript Toggle */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={onToggleTranscript}
+                variant="ghost"
+                size="sm"
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
+                  showTranscript 
+                    ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20' 
+                    : 'bg-slate-800/50 border border-slate-600/30 text-slate-400 hover:bg-slate-700/50'
+                }`}
+              >
+                {showTranscript ? (
+                  <FileText className="w-4 h-4" />
+                ) : (
+                  <FileX className="w-4 h-4" />
+                )}
+                <span className="text-sm font-medium">
+                  {showTranscript ? '显示实时转录' : '隐藏实时转录'}
+                </span>
+              </Button>
             </div>
           </div>
           

@@ -10,6 +10,7 @@ interface RecordingPanelContextType {
   closePanel: () => void;
   toggleFullscreen: () => void;
   exitFullscreen: () => void;
+  enterFullscreen: () => void;
 }
 
 const RecordingPanelContext = createContext<RecordingPanelContextType | undefined>(undefined);
@@ -44,6 +45,10 @@ export function RecordingPanelProvider({ children }: { children: ReactNode }) {
     setIsFullscreen(false);
   };
 
+  const enterFullscreen = () => {
+    setIsFullscreen(true);
+  };
+
   return (
     <RecordingPanelContext.Provider value={{
       showFloatingPanel,
@@ -54,7 +59,8 @@ export function RecordingPanelProvider({ children }: { children: ReactNode }) {
       maximizePanel,
       closePanel,
       toggleFullscreen,
-      exitFullscreen
+      exitFullscreen,
+      enterFullscreen
     }}>
       {children}
     </RecordingPanelContext.Provider>

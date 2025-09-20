@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ThemeProvider, Header } from './layout';
-import { FloatingRecordingPanel, MeetingDisplay } from './components/Audio';
+import { FloatingRecordingPanel } from './components/Audio';
 import { useAudioRecording } from '@/hooks/useAudioRecording';
 import { recordingPanelBus } from '@/services/recordingPanelBus';
 import { RecordingPanelProvider, useRecordingPanel } from '@/contexts/RecordingPanelContext';
@@ -15,22 +15,13 @@ import RecordingDetail from './pages/Recordings/components/RecordingDetail';
 import LiveRecorderTest from './pages/LiveRecorderTest';
 
 function AppContent() {
-  const { isRecording, partialText, finalText, recordingTime, isConnected, startRecording: startMicRecording, stopRecording: stopMicRecording, resetRecording } = useAudioRecording();
+  const { isRecording } = useAudioRecording();
   const { 
     showFloatingPanel, 
-    isFullscreen, 
-    toggleFloatingPanel, 
-    closePanel, 
-    exitFullscreen 
+    isFullscreen,
+    toggleFloatingPanel,
+    closePanel
   } = useRecordingPanel();
-
-  const startRecording = () => {
-    startMicRecording();
-  };
-
-  const stopRecording = () => {
-    stopMicRecording();
-  };
 
   useEffect(() => {
     if (isRecording) {
@@ -77,19 +68,6 @@ function AppContent() {
           </main>
 
           <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} />
-          
-          <MeetingDisplay
-            isVisible={isFullscreen}
-            isRecording={isRecording}
-            partialText={partialText}
-            finalText={finalText}
-            recordingTime={recordingTime}
-            isConnected={isConnected}
-            onStopRecording={stopRecording}
-            onExitFullscreen={exitFullscreen}
-            initialTitle=""
-            initialAgenda=""
-          />
         </div>
       </Router>
     </ThemeProvider>

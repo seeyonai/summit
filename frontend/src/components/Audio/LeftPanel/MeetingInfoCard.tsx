@@ -39,7 +39,7 @@ const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({
             <div className={`p-3 ${themeClasses.cardInner} rounded-lg border`}>
               <span className={`text-xs font-medium ${themeClasses.text.muted} uppercase tracking-wider`}>议程</span>
               <p className={`${themeClasses.text.secondary} mt-1 text-sm leading-relaxed`}>
-                {agenda || '未设置议程'}
+                {typeof agenda === 'string' ? agenda : '未设置议程'}
               </p>
             </div>
           )}
