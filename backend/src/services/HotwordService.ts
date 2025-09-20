@@ -39,8 +39,7 @@ export class HotwordService {
     return hotwordToApp(insertedHotword);
   }
 
-  async updateHotword(id: string, word: string): Promise<Hotword> {
-    const trimmedWord = word.trim();
+  async updateHotword(id: string, update: {word?: string, isActive?: boolean}): Promise<Hotword> {
     const collection = getCollection<HotwordDocument>(COLLECTIONS.HOTWORDS);
     
     // Check if hotword exists
@@ -52,17 +51,16 @@ export class HotwordService {
     // Check if new word already exists (excluding current hotword)
     const existing = await collection.findOne({ 
       _id: { $ne: new ObjectId(id) },
-      word: { $regex: new RegExp(`^${trimmedWord}$`, 'i') },
-      isActive: true
+      word: { $regex: new RegExp(`^${update.word}$`, 'i') },
     });
 
-    if (existing) {
+    if (existing && existing._id.toString() !== id) {
       throw new Error('Hotword already exists');
     }
 
     const result = await collection.findOneAndUpdate(
       { _id: new ObjectId(id) },
-      { $set: { word: trimmedWord } },
+      { $set: update },
       { returnDocument: 'after' }
     );
 

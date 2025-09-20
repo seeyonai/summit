@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { AlertCircle, Download, Upload } from 'lucide-react';
 import type { Hotword } from '@/types';
 import { exportHotwords } from '@/pages/Hotwords/utils/hotwordUtils';

@@ -68,7 +68,7 @@ const HotwordList: React.FC<HotwordListProps> = ({
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">状态:</label>
+                <label className="text-sm text-gray-600">是否启用:</label>
                 <input
                   type="checkbox"
                   checked={hotword.isActive}

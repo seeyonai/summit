@@ -139,7 +139,7 @@ const HotwordManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">热词管理</h1>
+        <h1 className="text-3xl font-bold tracking-tight">热词</h1>
         <p className="text-muted-foreground">管理语音识别中的热词，提高识别准确率</p>
       </div>
 
