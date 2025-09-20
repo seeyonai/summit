@@ -25,9 +25,9 @@ export const APP_CONFIG = {
   NAVIGATION: {
     ITEMS: [
       { path: '/', label: '开始', icon: 'LayoutDashboard' },
-      { path: '/recordings', label: '录音管理', icon: 'Folder' },
-      { path: '/meetings', label: '会议管理', icon: 'Users' },
-      { path: '/hotwords', label: '热词管理', icon: 'Flame' },
+      { path: '/recordings', label: '录音', icon: 'Folder' },
+      { path: '/meetings', label: '会议', icon: 'Users' },
+      { path: '/hotwords', label: '热词', icon: 'Flame' },
     ],
   },
   
