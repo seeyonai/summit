@@ -129,7 +129,8 @@ router.delete('/:recordingId', async (req: Request, res: Response) => {
 router.post('/:recordingId/transcribe', async (req: Request, res: Response) => {
   try {
     const { recordingId } = req.params;
-    const result = await recordingService.transcribeRecording(recordingId);
+    const { hotword } = req.body;
+    const result = await recordingService.transcribeRecording(recordingId, hotword);
     res.json(result);
   } catch (error) {
     const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;

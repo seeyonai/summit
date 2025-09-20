@@ -153,8 +153,17 @@ class ApiService {
     });
   }
 
-  async transcribeRecording(id: string): Promise<{ message: string; transcription: string }> {
-    return this.post<{ message: string; transcription: string }>(`/api/recordings/${id}/transcribe`);
+  async transcribeRecording(id: string, hotword?: string): Promise<{ message: string; transcription: string }> {
+    const payload: Record<string, unknown> = {};
+    
+    if (hotword && typeof hotword === 'string' && hotword.trim().length > 0) {
+      payload.hotword = hotword.trim();
+    }
+
+    return this.post<{ message: string; transcription: string }>(
+      `/api/recordings/${id}/transcribe`,
+      Object.keys(payload).length > 0 ? payload : undefined
+    );
   }
 
   async segmentRecording(id: string, options: SegmentRecordingOptions = {}): Promise<{ message: string; segments: SpeakerSegment[] }> {

@@ -237,12 +237,19 @@ class RecordingServiceImpl {
     return { message: '录音删除成功' };
   }
 
-  async transcribeRecording(recordingId: string): Promise<{ message: string; transcription: string }> {
+  async transcribeRecording(recordingId: string, hotword?: string): Promise<{ message: string; transcription: string }> {
     const document = await this.findRecordingOrThrow(recordingId);
     const absolutePath = await this.resolveAbsoluteFilePath(document);
     console.log('Transcribing recording:', absolutePath);
     const fileBuffer = await fs.readFile(absolutePath);
     const filename = path.basename(absolutePath);
+
+    const formData: Record<string, string> = {};
+
+    // Add hotword if provided
+    if (hotword && typeof hotword === 'string' && hotword.trim().length > 0) {
+      formData.hotword = hotword.trim();
+    }
 
     const transcriptionResponse = await uploadMultipart<TranscriptionServiceResponse>(
       this.buildTranscriptionUrl('/api/upload-transcribe'),
@@ -251,7 +258,8 @@ class RecordingServiceImpl {
         filename,
         contentType: getMimeType(filename),
         buffer: fileBuffer,
-      }
+      },
+      Object.keys(formData).length > 0 ? formData : undefined
     );
 
     const updates: Partial<RecordingDocument> = {
@@ -498,8 +506,8 @@ export async function deleteRecording(recordingId: string): Promise<{ message: s
   return recordingServiceImpl.deleteRecording(recordingId);
 }
 
-export async function transcribeRecording(recordingId: string): Promise<{ message: string; transcription: string }> {
-  return recordingServiceImpl.transcribeRecording(recordingId);
+export async function transcribeRecording(recordingId: string, hotword?: string): Promise<{ message: string; transcription: string }> {
+  return recordingServiceImpl.transcribeRecording(recordingId, hotword);
 }
 
 export async function segmentRecording(recordingId: string, oracleNumSpeakers?: number): Promise<{ message: string; segments: SpeakerSegment[] }> {
