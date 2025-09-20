@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
+import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../utils/httpClient';
 import { SegmentationRequest, SegmentationResponse, SegmentationModelInfo, SpeakerSegment } from '../types';
 import { getFilesBaseDir, normalizePublicOrRelative, resolveWithinBase } from '../utils/filePaths';
 
@@ -21,8 +21,6 @@ interface ApiSegmentationResponse {
 }
 
 const SEGMENTATION_SERVICE_URL = process.env.SEGMENTATION_SERVICE_URL || 'http://localhost:2593';
-const VALID_EXTENSIONS = new Set(['.wav', '.mp3', '.flac', '.m4a']);
-
 export class SegmentationService {
   private recordingsDir: string;
 
@@ -48,26 +46,14 @@ export class SegmentationService {
     }
 
     const normalizedPath = normalizePublicOrRelative(request.audioFilePath);
-    this.ensureAudioFileExists(normalizedPath);
+    const absolutePath = this.resolveAudioFilePath(normalizedPath);
 
-    const payload: Record<string, unknown> = {
-      audio_file_path: normalizedPath,
-    };
-
-    if (this.isValidOracleHint(request.oracleNumSpeakers)) {
-      payload.oracle_num_speakers = request.oracleNumSpeakers;
-    }
-
-    if (typeof request.returnText === 'boolean') {
-      payload.return_text = request.returnText;
-    }
+    const audioBuffer = await fs.promises.readFile(absolutePath);
+    const contentType = this.determineContentType(absolutePath);
+    const targetUrl = this.buildAnalyzeUrl(request.oracleNumSpeakers, request.returnText);
 
     try {
-      const response = await requestJson<ApiSegmentationResponse>(this.buildUrl('/api/analyze'), {
-        method: 'POST',
-        body: payload,
-        expectedStatus: [200],
-      });
+      const response = await this.sendAnalyzeRequest(targetUrl, audioBuffer, contentType);
 
       return this.mapSegmentationResponse(response, normalizedPath);
     } catch (error) {
@@ -75,36 +61,12 @@ export class SegmentationService {
     }
   }
 
-  async uploadAndAnalyze(file: Express.Multer.File, oracleNumSpeakers?: number, returnText = false): Promise<SegmentationResponse> {
-    const fileExtension = path.extname(file.originalname).toLowerCase();
-
-    if (!VALID_EXTENSIONS.has(fileExtension)) {
-      throw new Error('File must be an audio file (wav, mp3, flac, m4a)');
-    }
-
-    const targetUrl = this.buildUploadUrl(oracleNumSpeakers, returnText);
-    const contentType = file.mimetype || this.guessMimeType(fileExtension);
-
-    try {
-      const response = await uploadMultipart<ApiSegmentationResponse>(targetUrl, {
-        fieldName: 'file',
-        filename: file.originalname,
-        contentType,
-        buffer: file.buffer,
-      });
-
-      return this.mapSegmentationResponse(response);
-    } catch (error) {
-      this.handleApiError(error);
-    }
-  }
-
   private buildUrl(pathname: string): string {
     return new URL(pathname, this.serviceBase).toString();
   }
 
-  private buildUploadUrl(oracleNumSpeakers?: number, returnText?: boolean): string {
-    const url = new URL('/api/upload', this.serviceBase);
+  private buildAnalyzeUrl(oracleNumSpeakers?: number, returnText?: boolean): string {
+    const url = new URL('/api/analyze', this.serviceBase);
 
     if (this.isValidOracleHint(oracleNumSpeakers)) {
       url.searchParams.set('oracle_num_speakers', String(oracleNumSpeakers));
@@ -117,11 +79,12 @@ export class SegmentationService {
     return url.toString();
   }
 
-  private ensureAudioFileExists(relativePath: string): void {
+  private resolveAudioFilePath(relativePath: string): string {
     const absolutePath = resolveWithinBase(this.recordingsDir, relativePath);
     if (!fs.existsSync(absolutePath)) {
       throw new Error(`Audio file not found: ${relativePath}`);
     }
+    return absolutePath;
   }
 
   private isValidOracleHint(value: unknown): value is number {
@@ -179,21 +142,6 @@ export class SegmentationService {
     };
   }
 
-  private guessMimeType(extension: string): string {
-    switch (extension) {
-      case '.wav':
-        return 'audio/wav';
-      case '.mp3':
-        return 'audio/mpeg';
-      case '.flac':
-        return 'audio/flac';
-      case '.m4a':
-        return 'audio/m4a';
-      default:
-        return 'application/octet-stream';
-    }
-  }
-
   private extractErrorDetail(body: string): string | null {
     try {
       const parsed = JSON.parse(body);
@@ -237,5 +185,47 @@ export class SegmentationService {
     }
 
     throw new Error('Unknown segmentation service error');
+  }
+
+  private determineContentType(filePath: string): string {
+    const extension = path.extname(filePath).toLowerCase();
+
+    switch (extension) {
+      case '.wav':
+        return 'audio/wav';
+      case '.mp3':
+        return 'audio/mpeg';
+      case '.flac':
+        return 'audio/flac';
+      case '.m4a':
+        return 'audio/x-m4a';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
+  private async sendAnalyzeRequest(url: string, audioBuffer: Buffer, contentType: string): Promise<ApiSegmentationResponse> {
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'Content-Type': contentType,
+      'Content-Length': audioBuffer.byteLength.toString(10),
+    };
+
+    const response = await httpRequest(url, {
+      method: 'POST',
+      headers,
+      body: audioBuffer,
+      expectedStatus: [200],
+    });
+
+    if (response.data.length === 0) {
+      throw new Error('Segmentation service returned empty response');
+    }
+
+    try {
+      return JSON.parse(response.data.toString('utf8')) as ApiSegmentationResponse;
+    } catch (error) {
+      throw new Error(`Failed to parse segmentation response: ${(error as Error).message}`);
+    }
   }
 }
