@@ -7,6 +7,7 @@ import { SegmentationService } from './SegmentationService';
 import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
 import type { JsonRequestOptions } from '../utils/httpClient';
 import { getMeetingById as getMeetingByIdService } from './MeetingService';
+import { getFilesBaseDir, makeRelativeToBase, resolveWithinBase } from '../utils/filePaths';
 
 interface LiveRecordingStartResponse {
   id: string;
@@ -54,7 +55,7 @@ class RecordingServiceImpl {
   private segmentationService: SegmentationService;
 
   constructor() {
-    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'files');
+    this.recordingsDir = getFilesBaseDir();
     this.liveServiceBase = ensureTrailingSlash(LIVE_SERVICE_URL);
     this.transcriptionServiceBase = ensureTrailingSlash(TRANSCRIPTION_SERVICE_URL);
     this.segmentationService = new SegmentationService();
@@ -239,6 +240,7 @@ class RecordingServiceImpl {
   async transcribeRecording(recordingId: string): Promise<{ message: string; transcription: string }> {
     const document = await this.findRecordingOrThrow(recordingId);
     const absolutePath = await this.resolveAbsoluteFilePath(document);
+    console.log('Transcribing recording:', absolutePath);
     const fileBuffer = await fs.readFile(absolutePath);
     const filename = path.basename(absolutePath);
 
@@ -413,43 +415,16 @@ class RecordingServiceImpl {
   }
 
   private async resolveAbsoluteFilePath(document: RecordingDocument): Promise<string> {
-    if (document.filePath && path.isAbsolute(document.filePath)) {
-      return document.filePath;
-    }
-
-    const relativePath = this.getRelativeFilePath(document);
-    const normalized = path.normalize(relativePath).replace(/^(\.\/*)+/, '');
-    const absolutePath = path.resolve(this.recordingsDir, normalized);
-
-    const relativeToRoot = path.relative(this.recordingsDir, absolutePath);
-
-    if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
-      throw new Error('Invalid recording file path');
-    }
-
+    const candidate = document.filePath || document.filename;
+    const relative = makeRelativeToBase(this.recordingsDir, candidate);
+    const normalized = path.normalize(relative).replace(/^(\.\/*)+/, '').replace(/^[\\/]+/, '');
+    const absolutePath = resolveWithinBase(this.recordingsDir, normalized);
     await fs.access(absolutePath);
-
     return absolutePath;
   }
 
   private getRelativeFilePath(document: RecordingDocument): string {
-    if (document.filePath) {
-      const normalized = document.filePath.replace(/\\/g, '/');
-
-      if (normalized.startsWith('/files/')) {
-        return normalized.substring('/files/'.length);
-      }
-
-      if (normalized.startsWith('files/')) {
-        return normalized.substring('files/'.length);
-      }
-
-      if (!normalized.startsWith('/')) {
-        return normalized;
-      }
-    }
-
-    return document.filename;
+    return makeRelativeToBase(this.recordingsDir, document.filePath || document.filename);
   }
 
   private async deleteRecordingFile(document: RecordingDocument): Promise<void> {
