@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
 import { SegmentationRequest, SegmentationResponse, SegmentationModelInfo, SpeakerSegment } from '../types';
+import { getFilesBaseDir, normalizePublicOrRelative, resolveWithinBase } from '../utils/filePaths';
 
 interface ApiModelInfo {
   model: string;
@@ -28,7 +29,7 @@ export class SegmentationService {
   private serviceBase: string;
 
   constructor() {
-    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'files');
+    this.recordingsDir = getFilesBaseDir();
     this.serviceBase = ensureTrailingSlash(SEGMENTATION_SERVICE_URL);
   }
 
@@ -46,7 +47,7 @@ export class SegmentationService {
       throw new Error('audioFilePath is required');
     }
 
-    const normalizedPath = this.normalizeRelativePath(request.audioFilePath);
+    const normalizedPath = normalizePublicOrRelative(request.audioFilePath);
     this.ensureAudioFileExists(normalizedPath);
 
     const payload: Record<string, unknown> = {
@@ -116,28 +117,8 @@ export class SegmentationService {
     return url.toString();
   }
 
-  private normalizeRelativePath(input: string): string {
-    const normalizedSlashes = input.replace(/\\/g, '/');
-
-    if (normalizedSlashes.startsWith('/files/')) {
-      return normalizedSlashes.substring('/files/'.length);
-    }
-
-    if (normalizedSlashes.startsWith('files/')) {
-      return normalizedSlashes.substring('files/'.length);
-    }
-
-    return normalizedSlashes.replace(/^\//, '');
-  }
-
   private ensureAudioFileExists(relativePath: string): void {
-    const absolutePath = path.resolve(this.recordingsDir, relativePath);
-    const relativeToRoot = path.relative(this.recordingsDir, absolutePath);
-
-    if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
-      throw new Error('Invalid audio file path');
-    }
-
+    const absolutePath = resolveWithinBase(this.recordingsDir, relativePath);
     if (!fs.existsSync(absolutePath)) {
       throw new Error(`Audio file not found: ${relativePath}`);
     }
