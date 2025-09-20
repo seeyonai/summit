@@ -21,7 +21,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ className }) => {
     },
     {
       icon: Flame,
-      label: '热词管理',
+      label: '热词',
       description: '管理语音识别热词',
       to: '/hotwords',
       color: 'bg-orange-100 text-orange-800 border-orange-300'

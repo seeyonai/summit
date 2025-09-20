@@ -374,7 +374,7 @@ function MeetingList() {
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h1 className="text-4xl font-bold mb-2">会议管理中心</h1>
+                <h1 className="text-4xl font-bold mb-2">会议</h1>
                 <p className="text-indigo-100 text-lg">智能管理您的会议记录和任务进度</p>
               </div>
               <Button

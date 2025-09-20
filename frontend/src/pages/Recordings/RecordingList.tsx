@@ -510,7 +510,7 @@ function RecordingList() {
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h1 className="text-4xl font-bold mb-2">录音管理中心</h1>
+                <h1 className="text-4xl font-bold mb-2">录音</h1>
                 <p className="text-blue-100 text-lg">智能管理和分析您的音频记录</p>
               </div>
               <div className="flex gap-3">

@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 import { ThemeProvider, Header } from './layout';
 import { FloatingRecordingPanel, MeetingDisplay } from './components/Audio';
 import Dashboard from './pages/Dashboard';
-import HotwordManagement from './pages/Hotwords';
+import HotwordManagement from './pages/Hotwords/HotwordListPage';
 import Meetings from './pages/Meetings';
 import MeetingDetail from './pages/Meetings/MeetingDetail';
 import RecordingManagement from './pages/Recordings';
