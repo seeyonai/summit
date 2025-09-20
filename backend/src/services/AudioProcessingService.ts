@@ -6,6 +6,7 @@ import { ObjectId } from 'mongodb';
 import meetingService from './MeetingService';
 import recordingService from './RecordingService';
 import { Meeting, Recording } from '../types';
+import { getFilesBaseDir, resolveWithinBase, makeRelativeToBase } from '../utils/filePaths';
 
 interface CombineResult {
   meeting: Meeting;
@@ -32,7 +33,7 @@ class AudioProcessingService {
   private recordingsDir: string;
 
   constructor() {
-    this.recordingsDir = path.resolve(__dirname, '..', '..', '..', 'files');
+    this.recordingsDir = getFilesBaseDir();
   }
 
   async combineMeetingRecordings(meetingId: string, filenames: string[], outputFilename?: string): Promise<CombineResult> {
@@ -238,14 +239,7 @@ class AudioProcessingService {
   }
 
   private resolveWithinRecordingsDir(filename: string): string {
-    const absolute = path.resolve(this.recordingsDir, filename);
-    const relative = path.relative(this.recordingsDir, absolute);
-
-    if (relative.startsWith('..') || path.isAbsolute(relative)) {
-      throw new Error('Attempted to write outside recordings directory');
-    }
-
-    return absolute;
+    return resolveWithinBase(this.recordingsDir, filename);
   }
 
   private async buildRecordingMetadata(filename: string, absolutePath: string): Promise<Recording> {
@@ -337,25 +331,10 @@ class AudioProcessingService {
       throw new Error('Recording does not define a filename');
     }
 
-    const normalized = candidate.replace(/\\/g, '/');
-    let relativePath = normalized;
-
-    if (normalized.startsWith('/files/')) {
-      relativePath = normalized.substring('/files/'.length);
-    } else if (normalized.startsWith('files/')) {
-      relativePath = normalized.substring('files/'.length);
-    }
-
-    if (path.isAbsolute(relativePath)) {
-      const relative = path.relative(this.recordingsDir, relativePath);
-      if (relative.startsWith('..') || path.isAbsolute(relative)) {
-        throw new Error('Recording file is outside recordings directory');
-      }
-      return relativePath;
-    }
-
-    const normalizedRelative = path.normalize(relativePath).replace(/^[/\\]+/, '');
-    return this.resolveWithinRecordingsDir(normalizedRelative);
+    const relative = makeRelativeToBase(this.recordingsDir, candidate);
+    const normalizedRelative = path.normalize(relative).replace(/^[/\\]+/, '');
+    const absolute = this.resolveWithinRecordingsDir(normalizedRelative);
+    return absolute;
   }
 
   private async runFfmpeg(args: string[]): Promise<void> {
