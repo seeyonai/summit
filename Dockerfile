@@ -27,7 +27,8 @@ RUN npm run build
 FROM docker.m.daocloud.io/library/node:20 AS runtime
 WORKDIR /usr/src/app
 ENV NODE_ENV=production \
-    PORT=2591
+    PORT=2591 \
+    FILE_BASE_PATH=/usr/src/app/files
 
 # Install nginx and prepare directories
 RUN apt-get update \
@@ -35,6 +36,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && mkdir -p /run/nginx \
   && mkdir -p /var/log/nginx \
+  && mkdir -p /usr/src/app/files \
   && rm -f /etc/nginx/sites-enabled/default \
   && rm -rf /etc/nginx/conf.d/*
 
