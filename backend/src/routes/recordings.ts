@@ -205,7 +205,7 @@ router.post('/upload', upload.single('audio'), async (req: Request, res: Respons
     const result = await recordingService.createRecording(recordingData);
     
     res.status(201).json({
-      message: 'File uploaded successfully',
+      message: '文件上传成功',
       recording: result
     });
   } catch (error) {

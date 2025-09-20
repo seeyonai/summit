@@ -67,7 +67,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     await hotwordService.deleteHotword(id);
-    res.json({ message: 'Hotword deleted successfully' });
+    res.json({ message: '热词删除成功' });
   } catch (error) {
     console.error('Error deleting hotword:', error);
     if (error instanceof Error && error.message === 'Hotword not found') {

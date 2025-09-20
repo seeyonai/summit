@@ -170,7 +170,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Meeting not found' });
     }
     
-    res.json({ message: 'Meeting deleted successfully' });
+    res.json({ message: '会议删除成功' });
   } catch (error) {
     console.error('Error deleting meeting:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -232,7 +232,7 @@ router.post('/:id/combine-recordings', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: 'Combined recording created successfully',
+      message: '合并录音创建成功',
       combinedRecording: serializeRecording(combinedRecording),
       meeting: serializeMeeting(meeting)
     });
@@ -269,7 +269,7 @@ router.post('/:id/export-audio', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: 'Audio exported successfully',
+      message: '音频导出成功',
       exports: exportsResult
     });
   } catch (error) {
@@ -320,7 +320,7 @@ router.post('/save-recording', (req: Request, res: Response) => {
       success: true,
       filename: filename,
       downloadUrl: downloadUrl,
-      message: 'Recording saved successfully'
+      message: '录音保存成功'
     });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -356,7 +356,7 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request,
     res.json({
       success: true,
       verbatimTranscript: recording.verbatimTranscript,
-      message: 'Verbatim transcript generated successfully',
+      message: '逐字稿生成成功',
       meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null
     });
   } catch (error) {
@@ -413,7 +413,7 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
     res.json({
       success: true,
       finalTranscript: meeting.finalTranscript,
-      message: 'Final transcript generated successfully'
+      message: '最终纪要生成成功',
     });
   } catch (error) {
     console.error('Error generating final transcript:', error);
@@ -458,7 +458,7 @@ router.post('/:meetingId/todo-advice', async (req: Request, res: Response) => {
     res.json({
       success: true,
       advice: advice,
-      message: 'AI advice generated successfully'
+      message: 'AI建议生成成功'
     });
   } catch (error) {
     console.error('Error generating AI advice:', error);

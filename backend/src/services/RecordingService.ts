@@ -169,7 +169,7 @@ class RecordingServiceImpl {
       id: inserted._id.toHexString(),
       filename: inserted.filename,
       filePath: inserted.filePath,
-      message: remoteResponse.message || 'Recording started',
+      message: remoteResponse.message || '录音已开始',
     };
   }
 
@@ -195,7 +195,7 @@ class RecordingServiceImpl {
     }
 
     if (Object.keys(updates).length === 0) {
-      return { message: 'No changes applied' };
+      return { message: '未应用任何更改' };
     }
 
     if (document.externalId) {
@@ -211,7 +211,7 @@ class RecordingServiceImpl {
     const collection = this.getCollection();
     await collection.updateOne({ _id: document._id }, { $set: updates });
 
-    return { message: 'Recording updated successfully' };
+    return { message: '录音更新成功' };
   }
 
   async deleteRecording(recordingId: string): Promise<{ message: string }> {
@@ -234,7 +234,7 @@ class RecordingServiceImpl {
     await collection.deleteOne({ _id: document._id });
     await this.deleteRecordingFile(document).catch(() => undefined);
 
-    return { message: 'Recording deleted successfully' };
+    return { message: '录音删除成功' };
   }
 
   async transcribeRecording(recordingId: string): Promise<{ message: string; transcription: string }> {
@@ -279,7 +279,7 @@ class RecordingServiceImpl {
     }
 
     return {
-      message: 'Transcription completed successfully',
+      message: '转录完成成功',
       transcription: transcriptionResponse.text,
     };
   }
@@ -335,7 +335,7 @@ class RecordingServiceImpl {
     );
 
     return {
-      message: 'Transcription polished successfully',
+      message: '转录优化成功',
       polishedTranscription: polished,
     };
   }

@@ -51,7 +51,7 @@ app.post('/api/save-recording', (req, res) => {
       success: true,
       filename: filename,
       downloadUrl: downloadUrl,
-      message: 'Recording saved successfully'
+      message: '录音保存成功'
     });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -86,7 +86,7 @@ app.get('/health', async (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Summit AI Backend API',
+    message: 'Summit AI 后端 API',
     version: '1.0.0',
     service: 'Summit API Server',
     port: PORT,
