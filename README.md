@@ -71,9 +71,16 @@ Override the API base URL by setting `VITE_API_BASE_URL` in the frontend's `.env
 Start the backend first (port 2591), then the frontend (port 2590). The UI calls the API via hard-coded `http://localhost:2591` endpoints; set up a proxy or expose a `VITE_` env var if you need a different origin.
 
 ## Environment Configuration
-- Backend honors `MONGODB_URI`, `DB_NAME`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
+- Backend honors `MONGODB_URI`, `DB_NAME`, `FILE_BASE_PATH`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
+  - `FILE_BASE_PATH` sets the filesystem base directory for audio files. If unset, it defaults to the repository root `files/` during development. The Docker runtime sets it to `/usr/src/app/files`.
+  - Static URLs continue to use `/files/<filename>`; the server maps these to the configured base directory.
 - Frontend consumes `VITE_`-prefixed env vars via `import.meta.env`. Create `frontend/.env` to override defaults (e.g., `VITE_API_BASE_URL`).
-- Store large or generated audio in `files/`; the Express server exposes it at `/files/*`.
+- Store large or generated audio under the configured base directory. By default this is the repo `files/` directory; it is served at `/files/*`.
+
+### Files & Paths
+- Public paths stored in the database (e.g., `/files/example.wav`) are resolved to disk under `FILE_BASE_PATH`.
+- The server prevents path traversal and will only read/write inside the configured base directory.
+- In Docker, the image ensures `/usr/src/app/files` exists. You can mount a volume there to persist uploads.
 
 ## API Surface (Backend)
 Base URL: `http://localhost:2591`
