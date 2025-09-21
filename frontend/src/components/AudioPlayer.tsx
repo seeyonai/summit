@@ -87,22 +87,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ recording, onTimestampClick }
           </div>
         )}
         
-        <div className="flex items-center space-x-4">
-          <a
-            href={apiUrl(`/files/${recording.filename}`)}
-            download
-            className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
-          >
-            <DownloadIcon className="h-4 w-4" />
-            <span>下载录音文件</span>
-          </a>
-          <span className="text-sm text-gray-500">
-            时长: {recording.duration ? formatTime(recording.duration) : '未知'}
-          </span>
-          <span className="text-sm text-gray-500">
-            大小: {formatFileSize(recording.fileSize)}
-          </span>
-        </div>
       </div>
     </div>
   );

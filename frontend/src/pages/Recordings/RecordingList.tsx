@@ -28,16 +28,10 @@ import {
   RefreshCwIcon,
   GridIcon,
   ListIcon,
-  ChevronRightIcon,
-  Volume2Icon,
   ActivityIcon,
-  SparklesIcon,
   FolderOpenIcon,
-  MoreVerticalIcon,
   CheckCircleIcon,
-  XCircleIcon,
   AlertCircleIcon,
-  FileTextIcon,
   UsersIcon,
   EyeIcon,
   UploadIcon
@@ -75,20 +69,6 @@ function RecordingList() {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const startRecording = async () => {
-    try {
-      setRecording(true);
-      const result = await apiService.startRecording();
-      // Open floating panel and mark global recording state
-      recordingPanelBus.start(result);
-      // Fetch list refresh in background (do not auto-stop UI)
-      fetchRecordings();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setRecording(false);
     }
   };
 
