@@ -1,28 +1,23 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiService, apiUrl } from '@/services/api';
+import { apiService } from '@/services/api';
 import { recordingPanelBus } from '@/services/recordingPanelBus';
 import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
-import { formatDuration, formatFileSize, formatDate } from '@/utils/formatHelpers';
+import { formatDuration, formatFileSize } from '@/utils/formatHelpers';
 import type { Recording, Meeting } from '@/types';
+import RecordingCard from '@/components/RecordingCard';
+import RecordingListItem from '@/components/RecordingListItem';
 import {
   MicIcon,
-  PlayIcon,
-  PauseIcon,
-  DownloadIcon,
-  TrashIcon,
-  LinkIcon,
   SearchIcon,
   FilterIcon,
-  CalendarIcon,
   ClockIcon,
   FileAudioIcon,
   RefreshCwIcon,
@@ -30,14 +25,9 @@ import {
   ListIcon,
   ActivityIcon,
   FolderOpenIcon,
-  CheckCircleIcon,
   AlertCircleIcon,
-  UsersIcon,
-  EyeIcon,
   UploadIcon
 } from 'lucide-react';
-
-const audioUrlFor = (filename: string) => apiUrl(`/files/${filename}`);
 
 function RecordingList() {
   const navigate = useNavigate();
@@ -53,8 +43,6 @@ function RecordingList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'transcribed' | 'untranscribed'>('all');
-  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
-  const [audioRefs, setAudioRefs] = useState<{ [key: string]: HTMLAudioElement }>({});
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -180,32 +168,6 @@ function RecordingList() {
     setShowAssociationModal(true);
   };
 
-  const toggleAudioPlayback = (recordingId: string, audioUrl: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    
-    if (playingAudio === recordingId) {
-      audioRefs[recordingId]?.pause();
-      setPlayingAudio(null);
-    } else {
-      // Pause any currently playing audio
-      if (playingAudio && audioRefs[playingAudio]) {
-        audioRefs[playingAudio].pause();
-      }
-      
-      // Create or get audio element
-      if (!audioRefs[recordingId]) {
-        const audio = new Audio(audioUrl);
-        audio.onended = () => setPlayingAudio(null);
-        setAudioRefs(prev => ({ ...prev, [recordingId]: audio }));
-        audio.play();
-      } else {
-        audioRefs[recordingId].play();
-      }
-      
-      setPlayingAudio(recordingId);
-    }
-  };
-
   // Filtered recordings based on search and filter
   const filteredRecordings = useMemo(() => {
     return recordings.filter(recording => {
@@ -236,265 +198,21 @@ function RecordingList() {
     };
   }, [recordings]);
 
-  const RecordingCard = ({ recording }: { recording: Recording }) => (
-    <Card 
-      className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-gray-200 hover:border-blue-300 overflow-hidden"
-      onClick={() => navigate(`/recordings/${recording._id}`)}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base font-semibold truncate">
-              {recording.filename}
-            </CardTitle>
-            <CardDescription className="mt-1 text-xs">
-              {formatDate(recording.createdAt)}
-            </CardDescription>
-            {/* Meeting Information */}
-            {recording.meeting && (
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs text-gray-500">会议:</span>
-                <span className="text-xs font-medium text-gray-700 truncate">{recording.meeting.title}</span>
-                <Badge 
-                  variant="outline"
-                  className={
-                    recording.meeting.status === 'completed' ? 'bg-green-50 text-green-600 border-green-200' :
-                    recording.meeting.status === 'in_progress' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                    recording.meeting.status === 'scheduled' ? 'bg-gray-50 text-gray-600 border-gray-200' :
-                    'bg-red-50 text-red-600 border-red-200'
-                  }
-                >
-                  {recording.meeting.status === 'completed' ? '已完成' :
-                   recording.meeting.status === 'in_progress' ? '进行中' :
-                   recording.meeting.status === 'scheduled' ? '已安排' : '失败'}
-                </Badge>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-1">
-            {recording.transcription && (
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                <CheckCircleIcon className="w-3 h-3 mr-1" />
-                已转录
-              </Badge>
-            )}
-            {recording.speakerSegments && recording.speakerSegments.length > 0 && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                <UsersIcon className="w-3 h-3 mr-1" />
-                {recording.numSpeakers || '多'}人
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* Audio Waveform Visualization */}
-        <div className="relative h-16 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 rounded-lg overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center gap-1 px-4">
-            {Array.from({ length: 30 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 bg-gradient-to-t from-blue-400/60 to-indigo-400/60 rounded-full opacity-40"
-                style={{
-                  height: `${Math.random() * 100}%`,
-                  animationDelay: `${i * 0.05}s`
-                }}
-              />
-            ))}
-          </div>
-          <button
-            onClick={(e) => toggleAudioPlayback(recording._id, audioUrlFor(recording.filename), e)}
-            className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/10 transition-colors"
-          >
-            <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
-              {playingAudio === recording._id ? (
-                <PauseIcon className="w-5 h-5 text-blue-600" />
-              ) : (
-                <PlayIcon className="w-5 h-5 text-blue-600 ml-1" />
-              )}
-            </div>
-          </button>
-        </div>
+  // Recording actions for shared components
+  const getRecordingId = (recording: unknown): string => {
+    const rec = recording as Record<string, unknown>;
+    return (rec._id as string) || (rec.filename as string) || '';
+  };
+  
+  const recordingActions = {
+    onAssociate: (recording: unknown, e?: React.MouseEvent) => openAssociationModal(recording as unknown as Recording, e),
+    onDelete: (recording: unknown, e?: React.MouseEvent) => deleteRecording(getRecordingId(recording), e)
+  };
 
-        {/* Recording Info */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="flex items-center gap-1 text-gray-600">
-            <ClockIcon className="w-3 h-3" />
-            <span>{formatDuration(recording.duration || 0)}</span>
-          </div>
-          <div className="flex items-center gap-1 text-gray-600">
-            <FolderOpenIcon className="w-3 h-3" />
-            <span>{formatFileSize(recording.fileSize || 0)}</span>
-          </div>
-          <div className="flex items-center gap-1 text-gray-600">
-            <FileAudioIcon className="w-3 h-3" />
-            <span>{recording.format || 'WAV'}</span>
-          </div>
-        </div>
+  const handleRecordingClick = (recording: unknown) => {
+    navigate(`/recordings/${getRecordingId(recording)}`);
+  };
 
-        {/* Transcription Preview */}
-        {recording.transcription && (
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 mb-1 font-medium">转录预览</p>
-            <p className="text-xs text-gray-700 line-clamp-2">
-              {recording.transcription}
-            </p>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/recordings/${recording._id}`);
-            }}
-          >
-            <EyeIcon className="w-3 h-3 mr-1" />
-            查看
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => openAssociationModal(recording, e)}
-          >
-            <LinkIcon className="w-3 h-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(audioUrlFor(recording.filename), '_blank');
-            }}
-          >
-            <DownloadIcon className="w-3 h-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={(e) => deleteRecording(recording._id, e)}
-          >
-            <TrashIcon className="w-3 h-3" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const RecordingListItem = ({ recording }: { recording: Recording }) => (
-    <div 
-      className="group bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 p-4 cursor-pointer"
-      onClick={() => navigate(`/recordings/${recording._id}`)}
-    >
-      <div className="flex items-center gap-4">
-        {/* Play Button */}
-        <button
-          onClick={(e) => toggleAudioPlayback(recording._id, audioUrlFor(recording.filename), e)}
-          className="w-12 h-12 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform"
-        >
-          {playingAudio === recording._id ? (
-            <PauseIcon className="w-5 h-5" />
-          ) : (
-            <PlayIcon className="w-5 h-5 ml-0.5" />
-          )}
-        </button>
-
-        {/* Recording Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-gray-900 truncate">{recording.filename}</h3>
-            {recording.transcription && (
-              <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-                已转录
-              </Badge>
-            )}
-            {recording.speakerSegments && recording.speakerSegments.length > 0 && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
-                {recording.numSpeakers || '多'}人对话
-              </Badge>
-            )}
-            {/* Meeting Status Badge */}
-            {recording.meeting && (
-              <Badge 
-                variant="outline"
-                className={
-                  recording.meeting.status === 'completed' ? 'bg-green-50 text-green-600 border-green-200' :
-                  recording.meeting.status === 'in_progress' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                  recording.meeting.status === 'scheduled' ? 'bg-gray-50 text-gray-600 border-gray-200' :
-                  'bg-red-50 text-red-600 border-red-200'
-                }
-              >
-                {recording.meeting.status === 'completed' ? '已完成' :
-                 recording.meeting.status === 'in_progress' ? '进行中' :
-                 recording.meeting.status === 'scheduled' ? '已安排' : '失败'}
-              </Badge>
-            )}
-          </div>
-          {/* Meeting Title */}
-          {recording.meeting && (
-            <div className="mb-1">
-              <span className="text-sm text-gray-500">会议: </span>
-              <span className="text-sm font-medium text-gray-700">{recording.meeting.title}</span>
-            </div>
-          )}
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span className="flex items-center gap-1">
-              <CalendarIcon className="w-3 h-3" />
-              {formatDate(recording.createdAt)}
-            </span>
-            <span className="flex items-center gap-1">
-              <ClockIcon className="w-3 h-3" />
-              {formatDuration(recording.duration || 0)}
-            </span>
-            <span className="flex items-center gap-1">
-              <FolderOpenIcon className="w-3 h-3" />
-              {formatFileSize(recording.fileSize || 0)}
-            </span>
-          </div>
-          {recording.transcription && (
-            <p className="mt-2 text-sm text-gray-600 line-clamp-1">
-              {recording.transcription}
-            </p>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => openAssociationModal(recording, e)}
-          >
-            <LinkIcon className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(audioUrlFor(recording.filename), '_blank');
-            }}
-          >
-            <DownloadIcon className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={(e) => deleteRecording(recording._id, e)}
-          >
-            <TrashIcon className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="space-y-8">
@@ -600,21 +318,21 @@ function RecordingList() {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <Input
                 type="text"
                 placeholder="搜索录音文件或转录内容..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 h-11 border-gray-200 focus:border-blue-500 transition-colors"
+                className="pl-10 pr-4 h-11 border-gray-200 dark:border-gray-600 focus:border-blue-500 transition-colors"
               />
             </div>
             
             <div className="flex gap-2">
-              <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+              <Select value={filterStatus} onValueChange={(value: 'all' | 'transcribed' | 'untranscribed') => setFilterStatus(value)}>
                 <SelectTrigger className="w-[180px] h-11">
                   <FilterIcon className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="筛选状态" />
@@ -626,7 +344,7 @@ function RecordingList() {
                 </SelectContent>
               </Select>
               
-              <div className="flex border border-gray-200 rounded-lg">
+              <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
@@ -690,13 +408,25 @@ function RecordingList() {
           viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRecordings.map((recording) => (
-                <RecordingCard key={recording._id} recording={recording} />
+                <RecordingCard 
+                  key={recording._id} 
+                  recording={recording}
+                  showMeetingInfo={true}
+                  showTranscriptionPreview={true}
+                  actions={recordingActions}
+                  onClick={handleRecordingClick}
+                />
               ))}
             </div>
           ) : (
             <div className="space-y-3">
               {filteredRecordings.map((recording) => (
-                <RecordingListItem key={recording._id} recording={recording} />
+                <RecordingListItem 
+                  key={recording._id} 
+                  recording={recording}
+                  actions={recordingActions}
+                  onClick={handleRecordingClick}
+                />
               ))}
             </div>
           )
@@ -706,13 +436,13 @@ function RecordingList() {
         {!loading && !error && filteredRecordings.length === 0 && (
           <Card className="p-12">
             <div className="text-center">
-              <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
+              <div className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4">
                 <FileAudioIcon className="w-full h-full" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 {searchQuery || filterStatus !== 'all' ? '没有找到匹配的录音' : '暂无录音'}
               </h3>
-              <p className="text-gray-500 mb-6">
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
                 {searchQuery || filterStatus !== 'all' 
                   ? '尝试调整搜索条件或筛选器'
                   : '点击"快速录音"开始录制您的第一个录音'}

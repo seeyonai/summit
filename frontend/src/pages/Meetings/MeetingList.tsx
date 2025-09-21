@@ -142,11 +142,11 @@ function MeetingList() {
 
   const getStatusColor = (status: MeetingStatus) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'scheduled': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
+      case 'in_progress': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      case 'completed': return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
+      case 'failed': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
     }
   };
 
@@ -177,7 +177,7 @@ function MeetingList() {
 
     return (
       <Card 
-        className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-gray-200 hover:border-blue-300 overflow-hidden"
+        className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-gray-200 hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-400 overflow-hidden"
         onClick={() => navigate(`/meetings/${meeting._id}`)}
       >
         <CardHeader className="pb-3">
@@ -200,8 +200,8 @@ function MeetingList() {
         <CardContent className="space-y-4">
           {/* Meeting Summary */}
           {meeting.summary && (
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-700 line-clamp-2">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">
                 {meeting.summary}
               </p>
             </div>
@@ -211,10 +211,10 @@ function MeetingList() {
           {totalTodos > 0 && (
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-600">任务进度</span>
-                <span className="font-medium">{completedTodos}/{totalTodos}</span>
+                <span className="text-gray-600 dark:text-gray-400">任务进度</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{completedTodos}/{totalTodos}</span>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-green-400/60 to-green-500/60 transition-all duration-300"
                   style={{ width: `${todoProgress}%` }}
@@ -225,16 +225,16 @@ function MeetingList() {
 
           {/* Meeting Info */}
           <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="flex items-center gap-1 text-gray-600">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
               <Users className="w-3 h-3" />
               <span>{meeting.participants || 0} 人</span>
             </div>
-            <div className="flex items-center gap-1 text-gray-600">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
               <Mic className="w-3 h-3" />
               <span>{meeting.recordings?.length || 0} 录音</span>
             </div>
             {meeting.agenda && meeting.agenda.length > 0 && (
-              <div className="flex items-center gap-1 text-gray-600">
+              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                 <FileTextIcon className="w-3 h-3" />
                 <span>{meeting.agenda.length} 议程</span>
               </div>
@@ -259,7 +259,7 @@ function MeetingList() {
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-green-50 hover:bg-green-100 text-green-700"
+                className="bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/30 dark:hover:bg-green-800/30 dark:text-green-400"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/meetings/${meeting._id}`);
@@ -271,7 +271,7 @@ function MeetingList() {
             <Button
               size="sm"
               variant="outline"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
               onClick={(e) => deleteMeeting(meeting._id, e)}
             >
               <TrashIcon className="w-3 h-3" />
@@ -289,7 +289,7 @@ function MeetingList() {
 
     return (
       <div 
-        className="group bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 p-4 cursor-pointer"
+        className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-400 hover:shadow-md transition-all duration-300 p-4 cursor-pointer"
         onClick={() => navigate(`/meetings/${meeting._id}`)}
       >
         <div className="flex items-center gap-4">
@@ -305,17 +305,17 @@ function MeetingList() {
           {/* Meeting Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-gray-900 truncate">{meeting.title}</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{meeting.title}</h3>
               <Badge variant="outline" className={getStatusColor(meeting.status)}>
                 {getStatusText(meeting.status)}
               </Badge>
               {totalTodos > 0 && (
-                <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
                   {completedTodos}/{totalTodos} 任务
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {formatDate(meeting.scheduledStart)}
@@ -330,7 +330,7 @@ function MeetingList() {
               </span>
             </div>
             {meeting.summary && (
-              <p className="mt-2 text-sm text-gray-600 line-clamp-1">
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
                 {meeting.summary}
               </p>
             )}
@@ -354,12 +354,12 @@ function MeetingList() {
             <Button
               size="sm"
               variant="ghost"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
               onClick={(e) => deleteMeeting(meeting._id, e)}
             >
               <TrashIcon className="w-4 h-4" />
             </Button>
-            <ChevronRightIcon className="w-4 h-4 text-gray-400" />
+            <ChevronRightIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           </div>
         </div>
       </div>
@@ -437,16 +437,16 @@ function MeetingList() {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <Input
                 type="text"
                 placeholder="搜索会议标题或概要..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 h-11 border-gray-200 focus:border-indigo-500 transition-colors"
+                className="pl-10 pr-4 h-11 border-gray-200 focus:border-indigo-500 dark:border-gray-600 dark:focus:border-indigo-400 transition-colors"
               />
             </div>
             
@@ -464,7 +464,7 @@ function MeetingList() {
                 </SelectContent>
               </Select>
               
-              <div className="flex border border-gray-200 rounded-lg">
+              <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
@@ -544,13 +544,13 @@ function MeetingList() {
         {!loading && !error && filteredMeetings.length === 0 && (
           <Card className="p-12">
             <div className="text-center">
-              <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
+              <div className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4">
                 <Calendar className="w-full h-full" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 {searchQuery || filterStatus !== 'all' ? '没有找到匹配的会议' : '暂无会议'}
               </h3>
-              <p className="text-gray-500 mb-6">
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
                 {searchQuery || filterStatus !== 'all' 
                   ? '尝试调整搜索条件或筛选器'
                   : '点击"创建会议"开始您的第一个会议'}

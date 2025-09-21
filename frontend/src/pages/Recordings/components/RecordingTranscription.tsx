@@ -283,7 +283,7 @@ function RecordingTranscription({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
       <div className="p-6">
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-start">
@@ -292,10 +292,10 @@ function RecordingTranscription({
                 <FileTextIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   转录内容
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   音频的文字转录结果
                 </p>
               </div>
@@ -322,7 +322,7 @@ function RecordingTranscription({
           <div className="flex flex-wrap gap-2 items-center">
             {/* Search */}
             <div className="relative flex-1 min-w-[200px]">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
               <Input
                 placeholder="搜索转录内容..."
                 value={searchTerm}
@@ -344,7 +344,7 @@ function RecordingTranscription({
             <select
               value={fontSize}
               onChange={(e) => setFontSize(e.target.value as 'sm' | 'base' | 'lg')}
-              className="px-2 py-1 border border-gray-200 rounded-md text-sm"
+              className="px-2 py-1 border border-gray-200 dark:border-gray-600 rounded-md text-sm"
             >
               <option value="sm">小</option>
               <option value="base">中</option>
@@ -375,7 +375,7 @@ function RecordingTranscription({
                 <select
                   value={exportFormat}
                   onChange={(e) => setExportFormat(e.target.value as 'txt' | 'docx')}
-                  className="px-2 py-1 border border-gray-200 rounded-md text-sm"
+                  className="px-2 py-1 border border-gray-200 dark:border-gray-600 rounded-md text-sm"
                 >
                   <option value="txt">TXT</option>
                   <option value="docx">DOCX</option>
@@ -405,10 +405,10 @@ function RecordingTranscription({
         <Separator className="my-4" />
         {/* Transcription Progress */}
         {transcribing && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-600">转录进度</span>
-              <span className="text-sm font-medium text-gray-900">{Math.round(transcriptionProgress)}%</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">转录进度</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{Math.round(transcriptionProgress)}%</span>
             </div>
             <Progress value={transcriptionProgress} className="w-full h-2" />
           </div>
@@ -418,15 +418,15 @@ function RecordingTranscription({
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">转录文本</label>
-                <div className="text-xs text-gray-500">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">转录文本</label>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   {getWordStats(editForm.transcription || '').words} 词 · {getWordStats(editForm.transcription || '').characters} 字符
                 </div>
               </div>
               <textarea
                 value={editForm.transcription || ''}
                 onChange={(e) => setEditForm({...editForm, transcription: e.target.value})}
-                className={`w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[300px] focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 min-h-[300px] focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 
                   ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}
                 placeholder="输入转录文本"
               />
@@ -435,15 +435,15 @@ function RecordingTranscription({
             {recording.verbatimTranscript && (
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">逐字稿</label>
-                  <div className="text-xs text-gray-500">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">逐字稿</label>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {getWordStats(editForm.verbatimTranscript || '').words} 词 · {getWordStats(editForm.verbatimTranscript || '').characters} 字符
                   </div>
                 </div>
                 <textarea
                   value={editForm.verbatimTranscript || ''}
                   onChange={(e) => setEditForm({...editForm, verbatimTranscript: e.target.value})}
-                  className={`w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                  className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 
                     ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}
                   placeholder="输入逐字稿"
                 />
@@ -455,15 +455,18 @@ function RecordingTranscription({
             {recording.transcription ? (
               <>
                 {/* Transcription Display */}
-                <div className={`bg-gray-50 rounded-lg p-6 text-gray-800 whitespace-pre-wrap 
+                <div className={`bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-gray-800 dark:text-gray-200 whitespace-pre-wrap 
                   ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}>
-                  {searchTerm ? highlightSearchTerm(formatText(recording.transcription)) : formatText(recording.transcription)}
+                  {searchTerm
+                    ? highlightSearchTerm(formatText(recording.transcription))
+                    : formatText(recording.transcription)
+                  }
                 </div>
                 
                 {recording.verbatimTranscript && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">逐字稿</h4>
-                    <div className={`bg-gray-50 rounded-lg p-6 text-gray-800 whitespace-pre-wrap border border-gray-200
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">逐字稿</h4>
+                    <div className={`bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-gray-800 dark:text-gray-200 whitespace-pre-wrap border border-gray-200 dark:border-gray-700
                       ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}>
                       {searchTerm ? highlightSearchTerm(recording.verbatimTranscript) : recording.verbatimTranscript}
                     </div>
@@ -471,40 +474,40 @@ function RecordingTranscription({
                 )}
                 
                 {/* Word Statistics */}
-                <div className="grid grid-cols-4 gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {getWordStats(recording.transcription).characters.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500">字符</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">字符</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {getWordStats(recording.transcription).words.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500">词数</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">词数</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {getWordStats(recording.transcription).sentences.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500">句数</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">句数</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {getWordStats(recording.transcription).paragraphs.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500">段落</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">段落</p>
                   </div>
                 </div>
               </>
             ) : (
               <div className="text-center py-12">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MicIcon className="w-6 h-6 text-gray-400" />
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MicIcon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                 </div>
-                <h3 className="text-sm font-medium text-gray-900 mb-1">暂无转录内容</h3>
-                <p className="text-sm text-gray-500 mb-4">点击下方按钮开始转录</p>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">暂无转录内容</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">点击下方按钮开始转录</p>
                 <Button
                   onClick={generateTranscription}
                   disabled={transcribing}
@@ -562,7 +565,7 @@ function RecordingTranscription({
             {/* Selected Hotwords */}
             {hotwords.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   已选择的热词
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -570,11 +573,11 @@ function RecordingTranscription({
                     <Badge
                       key={word}
                       variant="secondary"
-                      className="cursor-pointer hover:bg-red-100"
+                      className="cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30"
                       onClick={() => removeHotword(word)}
                     >
                       {word}
-                      <span className="ml-1 text-red-500">×</span>
+                      <span className="ml-1 text-red-500 dark:text-red-400">×</span>
                     </Badge>
                   ))}
                 </div>
@@ -583,7 +586,7 @@ function RecordingTranscription({
 
             {/* Predefined Hotwords */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 预设热词
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -603,7 +606,7 @@ function RecordingTranscription({
 
             {/* Custom Hotword Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 添加自定义热词
               </label>
               <div className="flex gap-2">

@@ -62,7 +62,7 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
     
     return (
       <div className="space-y-4">
-        <div className="relative h-24 bg-gray-100 rounded-xl overflow-hidden">
+        <div className="relative h-24 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
           {recording.speakerSegments.map((segment, index) => {
             const left = (segment.startTime / maxTime) * 100;
             const width = ((segment.endTime - segment.startTime) / maxTime) * 100;
@@ -81,8 +81,8 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
             );
           })}
           <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-            <span className="text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">0:00</span>
-            <span className="text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">{formatTime(maxTime)}</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 px-2 py-1 rounded">0:00</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 px-2 py-1 rounded">{formatTime(maxTime)}</span>
           </div>
         </div>
         
@@ -187,20 +187,20 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                       return (
                         <div 
                           key={index} 
-                          className={`flex items-center gap-3 p-3 bg-gray-50 rounded-lg border-l-4 ${speakerColors[segment.speakerIndex % speakerColors.length]}`}
+                          className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 ${speakerColors[segment.speakerIndex % speakerColors.length]}`}
                         >
                           <div className="flex-shrink-0">
-                            <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
-                              <span className="text-sm font-bold">{segment.speakerIndex + 1}</span>
+                            <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{segment.speakerIndex + 1}</span>
                             </div>
                           </div>
                           <div className="flex-grow">
                             <div className="flex items-center gap-2 text-sm">
-                              <ClockIcon className="w-3 h-3 text-gray-500" />
+                              <ClockIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
                               <span className="font-medium">
                                 {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
                               </span>
-                              <span className="text-gray-500">
+                              <span className="text-gray-500 dark:text-gray-400">
                                 ({formatTime(segment.endTime - segment.startTime)})
                               </span>
                             </div>
@@ -237,8 +237,8 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
             </div>
           ) : (
             <div className="text-center py-12">
-              <UsersIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">暂无说话人分析结果</p>
+              <UsersIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400 mb-4">暂无说话人分析结果</p>
               <div className="space-y-3">
                 <Button
                   onClick={() => runSpeakerSegmentation()}
@@ -287,30 +287,30 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50/20 rounded-lg">
-                <MessageSquareIcon className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-blue-900">
+              <div className="text-center p-4 bg-blue-50/20 dark:bg-blue-900/10 rounded-lg">
+                <MessageSquareIcon className="w-8 h-8 text-blue-500 dark:text-blue-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                   {recording.speakerSegments.length}
                 </p>
-                <p className="text-sm text-blue-700">总发言次数</p>
+                <p className="text-sm text-blue-700 dark:text-blue-300">总发言次数</p>
               </div>
               
-              <div className="text-center p-4 bg-green-50/20 rounded-lg">
-                <TrendingUpIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-900">
+              <div className="text-center p-4 bg-green-50/20 dark:bg-green-900/10 rounded-lg">
+                <TrendingUpIcon className="w-8 h-8 text-green-500 dark:text-green-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                   {Math.round((recording.speakerSegments.length / (recording.duration || 1)) * 60)}
                 </p>
-                <p className="text-sm text-green-700">每分钟切换</p>
+                <p className="text-sm text-green-700 dark:text-green-300">每分钟切换</p>
               </div>
               
-              <div className="text-center p-4 bg-purple-50/20 rounded-lg">
-                <ClockIcon className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-purple-900">
+              <div className="text-center p-4 bg-purple-50/20 dark:bg-purple-900/10 rounded-lg">
+                <ClockIcon className="w-8 h-8 text-purple-500 dark:text-purple-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                   {formatTime(
                     recording.speakerSegments.reduce((acc, s) => acc + (s.endTime - s.startTime), 0) / recording.speakerSegments.length
                   )}
                 </p>
-                <p className="text-sm text-purple-700">平均发言时长</p>
+                <p className="text-sm text-purple-700 dark:text-purple-300">平均发言时长</p>
               </div>
             </div>
           </CardContent>

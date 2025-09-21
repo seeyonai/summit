@@ -161,11 +161,11 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
         </CardContent>
       </Card>
 
-      {/* Speaker Analysis */}
+      {/* Speaker Statistics */}
       {speakerStats && Object.keys(speakerStats).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>发言人分析</CardTitle>
+            <CardTitle>发言人统计</CardTitle>
             <CardDescription>会议中各发言人的参与情况</CardDescription>
           </CardHeader>
           <CardContent>

@@ -10,11 +10,9 @@ import { useTodoAdvice } from "@/hooks/useTodoAdvice";
 import { formatDate } from "@/utils/date";
 import { useAudioRecording } from "@/hooks/useAudioRecording";
 import { useRecordingPanel } from "@/contexts/RecordingPanelContext";
-import MeetingOverview from "./components/MeetingOverview";
 import MeetingTranscript from "./components/MeetingTranscript";
 import MeetingRecordings from "./components/MeetingRecordings";
-import MeetingTasks from "./components/MeetingTasks";
-import MeetingAnalysis from "./components/MeetingAnalysis";
+import MeetingTasksAndAnalysis from "./components/MeetingTasksAndAnalysis";
 import TranscriptDialog from "@/components/meetings/TranscriptDialog";
 import AdviceDialog from "@/components/meetings/AdviceDialog";
 import {
@@ -31,6 +29,9 @@ import {
   PauseIcon,
   BrainIcon,
   MaximizeIcon,
+  TargetIcon,
+  FileTextIcon,
+  HeadphonesIcon,
 } from "lucide-react";
 
 // Lazy load heavy components
@@ -47,11 +48,11 @@ const OngoingMeetingDisplay = lazy(
 function MeetingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
   const [success, setSuccess] = useState<string | null>(null);
   const [showAnalysisSuccess, setShowAnalysisSuccess] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const showMeetingDisplay = searchParams.get("display") === "full";
+  const activeTab = searchParams.get("tab") || "recordings";
 
   const {
     isRecording,
@@ -129,6 +130,12 @@ function MeetingDetail() {
     setSearchParams(nextParams);
   }, [searchParams, setSearchParams]);
 
+  const handleTabChange = useCallback((value: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("tab", value);
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
+
   const handleMeetingRecordingComplete = useCallback(
     (recordingInfo: any) => {
       // Handle recording completion
@@ -177,15 +184,15 @@ function MeetingDetail() {
   const getStatusColor = (status?: string) => {
     switch (status) {
       case "scheduled":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400";
       case "in_progress":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400";
       case "completed":
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300";
       case "failed":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300";
     }
   };
 
@@ -258,19 +265,19 @@ function MeetingDetail() {
       {/* Header */}
       <div className="mb-8">
         <Button
-          onClick={() => navigate("/meetings")}
+          onClick={() => history.back()}
           variant="ghost"
           className="mb-4"
         >
-          <ArrowLeftIcon className="w-4 h-4 mr-2" />
-          返回列表
+          <ArrowLeftIcon className="w-4 h-4 -ml-2 mr-2" />
+          返回
         </Button>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="">
           <div className="flex justify-between items-start mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {meeting.title}
                 </h1>
                 <Badge
@@ -281,8 +288,8 @@ function MeetingDetail() {
                   {getStatusText(meeting.status)}
                 </Badge>
               </div>
-              <p className="text-gray-600">{meeting.summary || "暂无概要"}</p>
-              <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">{meeting.summary || "暂无概要"}</p>
+              <div className="flex items-center gap-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <CalendarIcon className="w-4 h-4" />
                   {formatDate(meeting.scheduledStart)}
@@ -319,7 +326,7 @@ function MeetingDetail() {
               <Button
                 onClick={handleDeleteMeeting}
                 variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
               >
                 <TrashIcon className="w-4 h-4 mr-2" />
                 删除
@@ -332,15 +339,15 @@ function MeetingDetail() {
 
           {/* Real-time Recording for In-Progress Meetings */}
           {canRecord && (
-            <div className="bg-gradient-to-r from-green-50/20 to-emerald-50/20 rounded-xl p-6 border border-green-200/50">
+            <div className="bg-gradient-to-r from-green-50/20 to-emerald-50/20 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border border-green-200/50 dark:border-green-700/50">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
                     <MicIcon className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">实时录音</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">实时录音</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       会议正在进行中，可以开始录音
                     </p>
                   </div>
@@ -368,20 +375,23 @@ function MeetingDetail() {
       {/* Main Content Tabs */}
       <Tabs
         value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-6"
+        onValueChange={handleTabChange}
+        className="space-y-6 w-full"
       >
-        <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
-          <TabsTrigger value="overview">概览</TabsTrigger>
-          <TabsTrigger value="recordings">录音</TabsTrigger>
-          <TabsTrigger value="transcript">记录</TabsTrigger>
-          <TabsTrigger value="tasks">任务</TabsTrigger>
-          <TabsTrigger value="analysis">分析</TabsTrigger>
+        <TabsList className="grid grid-cols-4 w-full">
+          <TabsTrigger value="recordings" className="flex items-center gap-2">
+            <HeadphonesIcon className="w-4 h-4" />
+            录音
+          </TabsTrigger>
+          <TabsTrigger value="transcript" className="flex items-center gap-2">
+            <FileTextIcon className="w-4 h-4" />
+            记录
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="flex items-center gap-2">
+            <TargetIcon className="w-4 h-4" />
+            任务与分析
+          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="overview">
-          <MeetingOverview meeting={meeting} />
-        </TabsContent>
 
         <TabsContent value="transcript">
           <MeetingTranscript meeting={meeting} />
@@ -395,16 +405,10 @@ function MeetingDetail() {
         </TabsContent>
 
         <TabsContent value="tasks">
-          <MeetingTasks
+          <MeetingTasksAndAnalysis
             meeting={meeting}
             onGenerateAdvice={handleGenerateAdvice}
             generatingAdvice={loadingById}
-          />
-        </TabsContent>
-
-        <TabsContent value="analysis">
-          <MeetingAnalysis
-            meeting={meeting}
             onAnalysisComplete={handleAnalysisComplete}
           />
         </TabsContent>
@@ -446,7 +450,7 @@ function MeetingDetail() {
       {/* Success Message */}
       {success && (
         <div className="fixed bottom-4 right-4 z-50">
-          <Alert className="bg-green-50 border-green-200 text-green-800">
+          <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-400">
             <AlertDescription>{success}</AlertDescription>
           </Alert>
         </div>
@@ -455,7 +459,7 @@ function MeetingDetail() {
       {/* Analysis Success Message */}
       {showAnalysisSuccess && (
         <div className="fixed bottom-4 right-4 z-50">
-          <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+          <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-400">
             <BrainIcon className="h-4 w-4" />
             <AlertDescription>
               AI 分析完成！任务和争议问题已提取并保存。

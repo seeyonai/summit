@@ -64,33 +64,33 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <FileAudioIcon className="w-5 h-5 text-gray-500 mt-0.5" />
+                <FileAudioIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">文件名</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">文件名</p>
                   <p className="font-medium break-all">{recording.filename}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <HashIcon className="w-5 h-5 text-gray-500 mt-0.5" />
+                <HashIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">文件路径</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">文件路径</p>
                   <p className="font-medium text-sm break-all">{recording.filePath}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <HardDriveIcon className="w-5 h-5 text-gray-500 mt-0.5" />
+                <HardDriveIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">文件大小</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">文件大小</p>
                   <p className="font-medium">{formatFileSize(recording.fileSize)}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <LayersIcon className="w-5 h-5 text-gray-500 mt-0.5" />
+                <LayersIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">音频格式</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">音频格式</p>
                   <p className="font-medium">{recording.format || 'WAV'}</p>
                 </div>
               </div>
@@ -98,25 +98,25 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
             
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <CalendarIcon className="w-5 h-5 text-gray-500 mt-0.5" />
+                <CalendarIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">创建时间</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">创建时间</p>
                   <p className="font-medium">{formatDate(recording.createdAt)}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <ClockIcon className="w-5 h-5 text-gray-500 mt-0.5" />
+                <ClockIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">录音时长</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">录音时长</p>
                   <p className="font-medium">{formatDuration(recording.duration)}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <WifiIcon className="w-5 h-5 text-gray-500 mt-0.5" />
+                <WifiIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">采样率</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">采样率</p>
                   <p className="font-medium">
                     {recording.sampleRate ? `${recording.sampleRate.toLocaleString()} Hz` : '-'}
                   </p>
@@ -124,9 +124,9 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
               </div>
               
               <div className="flex items-start gap-3">
-                <InfoIcon className="w-5 h-5 text-gray-500 mt-0.5" />
+                <InfoIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">声道数</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">声道数</p>
                   <p className="font-medium">
                     {recording.channels ? `${recording.channels} ${recording.channels === 1 ? '(单声道)' : '(立体声)'}` : '-'}
                   </p>
@@ -145,9 +145,9 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${recording.transcription ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div className={`w-3 h-3 rounded-full ${recording.transcription ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
                 <span className="font-medium">转录状态</span>
               </div>
               <Badge variant={recording.transcription ? 'default' : 'secondary'}>
@@ -155,9 +155,9 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
               </Badge>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${recording.verbatimTranscript ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div className={`w-3 h-3 rounded-full ${recording.verbatimTranscript ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
                 <span className="font-medium">逐字稿</span>
               </div>
               <Badge variant={recording.verbatimTranscript ? 'default' : 'secondary'}>
@@ -165,9 +165,9 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
               </Badge>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${recording.speakerSegments && recording.speakerSegments.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div className={`w-3 h-3 rounded-full ${recording.speakerSegments && recording.speakerSegments.length > 0 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
                 <span className="font-medium">说话人分离</span>
               </div>
               <Badge variant={recording.speakerSegments && recording.speakerSegments.length > 0 ? 'default' : 'secondary'}>
@@ -175,9 +175,9 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
               </Badge>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${recording.source ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                <div className={`w-3 h-3 rounded-full ${recording.source ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
                 <span className="font-medium">录音来源</span>
               </div>
               <Badge variant="outline">
@@ -198,12 +198,12 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
           <CardContent>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-500">外部ID</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">外部ID</p>
                 <p className="font-medium font-mono text-sm">{recording.externalId}</p>
               </div>
               {recording.timeStampedNotes && recording.timeStampedNotes.length > 0 && (
                 <div>
-                  <p className="text-sm text-gray-500 mb-2">时间戳笔记</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">时间戳笔记</p>
                   <div className="space-y-2">
                     {recording.timeStampedNotes.map((note, index) => (
                       <div key={index} className="flex gap-2 text-sm">
@@ -227,32 +227,32 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {recording.sampleRate ? Math.round(recording.sampleRate / 1000) : '-'}
               </p>
-              <p className="text-xs text-gray-600">kHz 采样率</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">kHz 采样率</p>
             </div>
             
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {recording.channels || '-'}
               </p>
-              <p className="text-xs text-gray-600">声道</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">声道</p>
             </div>
             
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {recording.fileSize ? Math.round((recording.fileSize / recording.duration!) * 8 / 1000) : '-'}
               </p>
-              <p className="text-xs text-gray-600">kbps 比特率</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">kbps 比特率</p>
             </div>
             
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {recording.format || 'WAV'}
               </p>
-              <p className="text-xs text-gray-600">格式</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">格式</p>
             </div>
           </div>
         </CardContent>

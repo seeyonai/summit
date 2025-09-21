@@ -203,7 +203,7 @@ function RecordingDetailRedesign() {
     
     return (
       <div className="space-y-4">
-        <div className="relative h-20 bg-gray-100 rounded-xl overflow-hidden">
+        <div className="relative h-20 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
           {recording.speakerSegments.map((segment, index) => {
             const left = (segment.startTime / maxTime) * 100;
             const width = ((segment.endTime - segment.startTime) / maxTime) * 100;
@@ -222,8 +222,8 @@ function RecordingDetailRedesign() {
             );
           })}
           <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-            <span className="text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">0:00</span>
-            <span className="text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">{formatTime(maxTime)}</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 px-2 py-1 rounded">0:00</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 px-2 py-1 rounded">{formatTime(maxTime)}</span>
           </div>
         </div>
         
@@ -244,10 +244,10 @@ function RecordingDetailRedesign() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-sm text-gray-600">加载录音详情...</p>
+          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">加载录音详情...</p>
         </div>
       </div>
     );
@@ -255,15 +255,15 @@ function RecordingDetailRedesign() {
 
   if (error || !recording) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
-                <AlertCircleIcon className="h-8 w-8 text-red-500" />
+              <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+                <AlertCircleIcon className="h-8 w-8 text-red-500 dark:text-red-400" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">录音未找到</h2>
-              <p className="text-gray-600 mb-6">{error || '请求的录音不存在或已被删除'}</p>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">录音未找到</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">{error || '请求的录音不存在或已被删除'}</p>
               <Button
                 onClick={() => navigate('/recordings')}
                 variant="outline"
@@ -285,12 +285,12 @@ function RecordingDetailRedesign() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <Button
-              onClick={() => navigate('/recordings')}
+              onClick={() => history.back()}
               variant="ghost"
-              className="hover:bg-gray-100"
+              className="hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              返回列表
+              返回
             </Button>
             <div className="flex items-center gap-2">
               <TooltipProvider>
@@ -323,7 +323,7 @@ function RecordingDetailRedesign() {
           </div>
           
           {/* Main Content */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div className="flex-1">
@@ -332,7 +332,7 @@ function RecordingDetailRedesign() {
                       <HeadphonesIcon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                         {recording.filename}
                       </h1>
                         
@@ -341,17 +341,17 @@ function RecordingDetailRedesign() {
                         <div className="mb-3">
                           <div className="inline-flex items-center gap-2 text-sm">
                             <LinkIcon className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-600">关联会议:</span>
-                            <span className="font-medium text-gray-900">{recording.meeting.title}</span>
+                            <span className="text-gray-600 dark:text-gray-400">关联会议:</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{recording.meeting.title}</span>
                             <Badge 
                               variant={recording.meeting.status === 'completed' ? 'default' : 
                                       recording.meeting.status === 'in_progress' ? 'secondary' : 
                                       recording.meeting.status === 'scheduled' ? 'outline' : 'destructive'}
                               className={
-                                recording.meeting.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                recording.meeting.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                                recording.meeting.status === 'scheduled' ? 'bg-gray-100 text-gray-700' :
-                                'bg-red-100 text-red-700'
+                                recording.meeting.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                                recording.meeting.status === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                                recording.meeting.status === 'scheduled' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' :
+                                'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                               }
                             >
                               {recording.meeting.status === 'completed' ? '已完成' :
@@ -362,7 +362,7 @@ function RecordingDetailRedesign() {
                         </div>
                       )}
                         
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <CalendarIcon className="w-4 h-4" />
                           <span>{formatDate(recording.createdAt)}</span>
@@ -420,54 +420,54 @@ function RecordingDetailRedesign() {
 
               {/* Statistics Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 mb-6">
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <ActivityIcon className="w-4 h-4 text-gray-500" />
-                    <span className="text-xs text-gray-600">音频质量</span>
+                    <ActivityIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">音频质量</span>
                   </div>
-                  <p className="text-lg font-semibold text-gray-900">优秀</p>
-                  <p className="text-xs text-gray-500">320 kbps</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">优秀</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">320 kbps</p>
                 </div>
                 
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <BarChart3Icon className="w-4 h-4 text-gray-500" />
-                    <span className="text-xs text-gray-600">转录进度</span>
+                    <BarChart3Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">转录进度</span>
                   </div>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {recording.transcription ? '100%' : '0%'}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
                     {recording.transcription ? '已完成' : '待处理'}
                   </p>
                 </div>
                 
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <FileTextIcon className="w-4 h-4 text-gray-500" />
-                    <span className="text-xs text-gray-600">字数统计</span>
+                    <FileTextIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">字数统计</span>
                   </div>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {recording.transcription ? recording.transcription.length.toLocaleString() : 0}
                   </p>
-                  <p className="text-xs text-gray-500">总字符</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">总字符</p>
                 </div>
                 
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <TrendingUpIcon className="w-4 h-4 text-gray-500" />
-                    <span className="text-xs text-gray-600">分析状态</span>
+                    <TrendingUpIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">分析状态</span>
                   </div>
-                  <p className="text-lg font-semibold text-gray-900">就绪</p>
-                  <p className="text-xs text-gray-500">可以分析</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">就绪</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">可以分析</p>
                 </div>
               </div>
 
               {/* Audio Player */}
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <HeadphonesIcon className="w-4 h-4 text-gray-500" />
-                  <h3 className="text-sm font-medium text-gray-700">音频播放器</h3>
+                  <HeadphonesIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">音频播放器</h3>
                 </div>
                 <AudioPlayer 
                   recording={recording} 
@@ -487,15 +487,15 @@ function RecordingDetailRedesign() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">转录状态</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">转录状态</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {recording.transcription ? '已完成' : '未转录'}
                   </p>
                 </div>
                 {recording.transcription ? (
                   <CheckCircleIcon className="w-8 h-8 text-green-500" />
                 ) : (
-                  <AlertCircleIcon className="w-8 h-8 text-gray-400" />
+                  <AlertCircleIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                 )}
               </div>
             </CardContent>
@@ -505,8 +505,8 @@ function RecordingDetailRedesign() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">说话人数</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">说话人数</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map(s => s.speakerIndex)).size : 0)}
                   </p>
                 </div>
@@ -519,8 +519,8 @@ function RecordingDetailRedesign() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">音频格式</p>
-                  <p className="text-2xl font-bold">{recording.format || 'WAV'}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">音频格式</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{recording.format || 'WAV'}</p>
                 </div>
                 <FileAudioIcon className="w-8 h-8 text-purple-500" />
               </div>
@@ -531,8 +531,8 @@ function RecordingDetailRedesign() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">采样率</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">采样率</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {recording.sampleRate ? `${recording.sampleRate / 1000}k` : '-'}
                   </p>
                 </div>
@@ -594,8 +594,8 @@ function RecordingDetailRedesign() {
         {/* Success/Error Messages */}
         {success && (
           <div className="fixed bottom-4 right-4 z-50">
-            <Alert className="bg-green-50 border-green-200">
-              <CheckCircleIcon className="h-4 w-4 text-green-600" />
+            <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+              <CheckCircleIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           </div>
