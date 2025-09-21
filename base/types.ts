@@ -25,6 +25,20 @@ export interface Recording {
   source?: 'live' | 'upload';
   externalId?: string;
   meeting?: Meeting;
+  metadata?: {
+    duration?: number;
+    sampleRate?: number;
+    channels?: number;
+    bitrate?: number | null;
+    codec?: string | null;
+    container?: string | null;
+    title?: string | null;
+    artist?: string | null;
+    album?: string | null;
+    year?: number | null;
+    genre?: string[] | null;
+    comment?: string | null;
+  };
 }
 
 export type RecordingUpdate = Partial<Recording>;

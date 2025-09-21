@@ -75,7 +75,60 @@ router.get('/:recordingId', async (req: Request, res: Response) => {
   try {
     const { recordingId } = req.params;
     const recording = await recordingService.getRecordingById(recordingId);
-    res.json(recording);
+    
+    // Extract audio metadata using music-metadata
+    const metadata: {
+      duration?: number;
+      sampleRate?: number;
+      channels?: number;
+      bitrate?: number | null;
+      codec?: string | null;
+      container?: string | null;
+      title?: string | null;
+      artist?: string | null;
+      album?: string | null;
+      year?: number | null;
+      genre?: string[] | null;
+    } = {};
+    
+    if (recording.filePath) {
+      try {
+        // Construct absolute path from stored relative path
+        const absolutePath = path.join(__dirname, '..', '..', '..', recording.filePath);
+        
+        if (fs.existsSync(absolutePath)) {
+          const audioMetadata = await parseFile(absolutePath);
+          
+          // Extract relevant metadata fields
+          metadata.duration = typeof audioMetadata.format.duration === 'number' && Number.isFinite(audioMetadata.format.duration)
+            ? audioMetadata.format.duration
+            : 0;
+          metadata.sampleRate = typeof audioMetadata.format.sampleRate === 'number' && Number.isFinite(audioMetadata.format.sampleRate)
+            ? audioMetadata.format.sampleRate
+            : 0;
+          metadata.channels = typeof audioMetadata.format.numberOfChannels === 'number' && Number.isFinite(audioMetadata.format.numberOfChannels)
+            ? audioMetadata.format.numberOfChannels
+            : 0;
+          metadata.bitrate = audioMetadata.format.bitrate || null;
+          metadata.codec = audioMetadata.format.codec || null;
+          metadata.container = audioMetadata.format.container || null;
+          
+          // Extract common metadata if available
+          if (audioMetadata.common) {
+            metadata.title = audioMetadata.common.title || null;
+            metadata.artist = audioMetadata.common.artist || null;
+            metadata.album = audioMetadata.common.album || null;
+            metadata.year = audioMetadata.common.year || null;
+            metadata.genre = audioMetadata.common.genre || null;
+          }
+        }
+      } catch (error) {
+        // If metadata parsing fails, continue with empty metadata
+        console.warn(`Failed to parse metadata for recording ${recordingId}:`, error);
+      }
+    }
+    
+    res.json({...recording, metadata});
   } catch (error) {
     const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;
     res.status(statusCode).json({ 

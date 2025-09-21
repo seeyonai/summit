@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
+import os from 'os';
 import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../utils/httpClient';
 import { SegmentationRequest, SegmentationResponse, SegmentationModelInfo, SpeakerSegment } from '../types';
 import { getFilesBaseDir, normalizePublicOrRelative, resolveWithinBase } from '../utils/filePaths';
@@ -23,12 +25,67 @@ interface ApiSegmentationResponse {
 const SEGMENTATION_SERVICE_URL = process.env.SEGMENTATION_SERVICE_URL || 'http://localhost:2593';
 export class SegmentationService {
   private recordingsDir: string;
-
   private serviceBase: string;
 
   constructor() {
     this.recordingsDir = getFilesBaseDir();
     this.serviceBase = ensureTrailingSlash(SEGMENTATION_SERVICE_URL);
+  }
+
+  private async getAudioSampleRate(filePath: string): Promise<number | undefined> {
+    try {
+      const args = ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', filePath];
+      const { stdout } = await this.runProcess('ffprobe', args);
+      const payload = JSON.parse(stdout);
+      const audioStream = Array.isArray(payload.streams)
+        ? payload.streams.find((stream: Record<string, unknown>) => stream.codec_type === 'audio')
+        : undefined;
+
+      return audioStream?.sample_rate ? Number(audioStream.sample_rate) : undefined;
+    } catch (error) {
+      console.warn(`Failed to probe audio sample rate for ${filePath}:`, error);
+      return undefined;
+    }
+  }
+
+  private async resampleTo16kHz(inputPath: string, outputPath: string): Promise<void> {
+    const args = [
+      '-i', inputPath,
+      '-ar', '16000',
+      '-ac', '1',
+      '-c:a', 'pcm_s16le',
+      '-y',
+      outputPath
+    ];
+    await this.runProcess('ffmpeg', args);
+  }
+
+  private async runProcess(command: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
+    return new Promise((resolve, reject) => {
+      const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      child.on('error', (error) => {
+        reject(error);
+      });
+
+      child.on('close', (code) => {
+        if (code !== 0) {
+          reject(new Error(`${command} exited with code ${code}: ${stderr.trim()}`));
+        } else {
+          resolve({ stdout, stderr });
+        }
+      });
+    });
   }
 
   async getModelInfo(): Promise<SegmentationModelInfo> {
@@ -48,8 +105,29 @@ export class SegmentationService {
     const normalizedPath = normalizePublicOrRelative(request.audioFilePath);
     const absolutePath = this.resolveAudioFilePath(normalizedPath);
 
-    const audioBuffer = await fs.promises.readFile(absolutePath);
-    const contentType = this.determineContentType(absolutePath);
+    let audioBuffer: Buffer;
+    let contentType: string;
+
+    const sampleRate = await this.getAudioSampleRate(absolutePath);
+    
+    if (sampleRate && sampleRate !== 16000) {
+      console.log(`Audio sample rate is ${sampleRate}Hz, resampling to 16kHz for segmentation`);
+      
+      const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'summit-resample-'));
+      const resampledPath = path.join(tempDir, 'resampled.wav');
+      
+      try {
+        await this.resampleTo16kHz(absolutePath, resampledPath);
+        audioBuffer = await fs.promises.readFile(resampledPath);
+        contentType = 'audio/wav';
+      } finally {
+        await fs.promises.rm(tempDir, { recursive: true, force: true });
+      }
+    } else {
+      audioBuffer = await fs.promises.readFile(absolutePath);
+      contentType = this.determineContentType(absolutePath);
+    }
+
     const targetUrl = this.buildAnalyzeUrl(request.oracleNumSpeakers, request.returnText);
 
     try {

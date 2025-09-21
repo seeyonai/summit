@@ -20,6 +20,7 @@ import {
   UsersIcon,
   TrashIcon
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface RecordingCardProps {
   recording: Recording;
@@ -48,7 +49,7 @@ function RecordingCard({
   className = ''
 }: RecordingCardProps) {
   const { playingAudio, toggleAudioPlayback } = useAudioPlayback();
-  
+  const navigate = useNavigate();
   const recordingId = ('_id' in recording ? recording._id : undefined) || recording.filename;
   const hasTranscription = !!recording.transcription;
   const hasSpeakers = recording.speakerSegments && recording.speakerSegments.length > 0;
@@ -73,7 +74,7 @@ function RecordingCard({
   const defaultActions = {
     onView: (recording: Recording, e?: React.MouseEvent) => {
       e?.stopPropagation();
-      window.open(`/recordings/${('_id' in recording ? recording._id : undefined) || recording.filename}`, '_blank');
+      navigate(`/recordings/${('_id' in recording ? recording._id : undefined) || recording.filename}`);
     },
     onDownload: (recording: Recording, e?: React.MouseEvent) => {
       e?.stopPropagation();

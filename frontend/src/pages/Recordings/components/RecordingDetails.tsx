@@ -9,7 +9,11 @@ import {
   HardDriveIcon,
   WifiIcon,
   LayersIcon,
-  InfoIcon
+  InfoIcon,
+  ZapIcon,
+  MusicIcon,
+  Disc3Icon,
+  MicIcon
 } from 'lucide-react';
 
 interface RecordingDetailsProps {
@@ -137,56 +141,105 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
         </CardContent>
       </Card>
 
-      {/* Processing Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle>处理状态</CardTitle>
-          <CardDescription>录音文件的各项处理进度</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${recording.transcription ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
-                <span className="font-medium">转录状态</span>
+      {/* Audio Metadata from music-metadata */}
+      {recording.metadata && (
+        <Card>
+          <CardHeader>
+            <CardTitle>音频元数据</CardTitle>
+            <CardDescription>从音频文件中提取的详细信息</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Technical Audio Metadata */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <ZapIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">比特率</p>
+                      <p className="font-medium">
+                        {recording.metadata.bitrate ? `${recording.metadata.bitrate} kbps` : '-'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Disc3Icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">容器格式</p>
+                      <p className="font-medium">
+                        {recording.metadata.container || '-'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <LayersIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">编码器</p>
+                      <p className="font-medium">
+                        {recording.metadata.codec || '-'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {/* Common ID3 Metadata */}
+                  {recording.metadata.title && (
+                    <div className="flex items-start gap-3">
+                      <MusicIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">标题</p>
+                        <p className="font-medium">{recording.metadata.title}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {recording.metadata.artist && (
+                    <div className="flex items-start gap-3">
+                      <MicIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">艺术家</p>
+                        <p className="font-medium">{recording.metadata.artist}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {recording.metadata.album && (
+                    <div className="flex items-start gap-3">
+                      <Disc3Icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">专辑</p>
+                        <p className="font-medium">{recording.metadata.album}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <Badge variant={recording.transcription ? 'default' : 'secondary'}>
-                {recording.transcription ? '已完成' : '未转录'}
-              </Badge>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${recording.verbatimTranscript ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
-                <span className="font-medium">逐字稿</span>
+              
+              {/* Additional Metadata Tags */}
+              <div className="flex flex-wrap gap-2">
+                {recording.metadata.year && (
+                  <Badge variant="outline">
+                    {recording.metadata.year}年
+                  </Badge>
+                )}
+                {recording.metadata.genre && (
+                  <Badge variant="outline">
+                    {Array.isArray(recording.metadata.genre) ? recording.metadata.genre.join(', ') : recording.metadata.genre}
+                  </Badge>
+                )}
+                {recording.metadata.comment && (
+                  <Badge variant="secondary">
+                    备注: {recording.metadata.comment}
+                  </Badge>
+                )}
               </div>
-              <Badge variant={recording.verbatimTranscript ? 'default' : 'secondary'}>
-                {recording.verbatimTranscript ? '已生成' : '未生成'}
-              </Badge>
             </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${recording.speakerSegments && recording.speakerSegments.length > 0 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
-                <span className="font-medium">说话人分离</span>
-              </div>
-              <Badge variant={recording.speakerSegments && recording.speakerSegments.length > 0 ? 'default' : 'secondary'}>
-                {recording.speakerSegments && recording.speakerSegments.length > 0 ? `${recording.numSpeakers || new Set(recording.speakerSegments.map(s => s.speakerIndex)).size}人` : '未分析'}
-              </Badge>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${recording.source ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
-                <span className="font-medium">录音来源</span>
-              </div>
-              <Badge variant="outline">
-                {recording.source === 'live' ? '实时录音' : recording.source === 'upload' ? '上传文件' : '未知'}
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Additional Metadata */}
       {recording.externalId && (
@@ -229,30 +282,30 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {recording.sampleRate ? Math.round(recording.sampleRate / 1000) : '-'}
+                {recording.metadata?.sampleRate ? Math.round(recording.metadata.sampleRate / 1000) : recording.sampleRate ? Math.round(recording.sampleRate / 1000) : '-'}
               </p>
               <p className="text-xs text-gray-600 dark:text-gray-400">kHz 采样率</p>
             </div>
             
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {recording.channels || '-'}
+                {recording.metadata?.channels || recording.channels || '-'}
               </p>
               <p className="text-xs text-gray-600 dark:text-gray-400">声道</p>
             </div>
             
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {recording.fileSize ? Math.round((recording.fileSize / recording.duration!) * 8 / 1000) : '-'}
+                {recording.metadata?.bitrate || (recording.fileSize && recording.duration ? Math.round((recording.fileSize / recording.duration) * 8 / 1000) : '-')}
               </p>
               <p className="text-xs text-gray-600 dark:text-gray-400">kbps 比特率</p>
             </div>
             
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {recording.format || 'WAV'}
+                {recording.metadata?.duration ? Math.round(recording.metadata.duration) : recording.duration || '-'}
               </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">格式</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">秒时长</p>
             </div>
           </div>
         </CardContent>

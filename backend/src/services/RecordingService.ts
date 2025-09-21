@@ -63,7 +63,7 @@ class RecordingServiceImpl {
 
   async getAllRecordings(): Promise<RecordingResponse[]> {
     const collection = this.getCollection();
-    const documents = await collection.find({}).sort({ createdAt: -1 }).toArray();
+    const documents = await collection.find({}).sort({ createdAt: 1 }).toArray();
     const responses = await Promise.all(documents.map((doc) => this.toResponse(doc, { includeMeeting: true })));
     return responses;
   }

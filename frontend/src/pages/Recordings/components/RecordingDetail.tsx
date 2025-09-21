@@ -35,9 +35,7 @@ import {
   FileTextIcon,
   SparklesIcon,
   TrendingUpIcon,
-  ZapIcon,
   CheckCircleIcon,
-  MicIcon,
   UsersIcon
 } from 'lucide-react';
 
@@ -423,10 +421,14 @@ function RecordingDetailRedesign() {
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <ActivityIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">音频质量</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">比特率</span>
                   </div>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">优秀</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">320 kbps</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {recording.metadata?.bitrate || (recording.fileSize && recording.duration ? Math.round((recording.fileSize / recording.duration) * 8 / 1000) : '-')} kbps
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    {recording.metadata?.codec || recording.format || 'WAV'}
+                  </p>
                 </div>
                 
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
@@ -455,11 +457,15 @@ function RecordingDetailRedesign() {
                 
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <TrendingUpIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">分析状态</span>
+                    <UsersIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">说话人数</span>
                   </div>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">就绪</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">可以分析</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map(s => s.speakerIndex)).size : 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    声道数: {recording.metadata?.channels || recording.channels || '-'}
+                  </p>
                 </div>
               </div>
 
@@ -481,67 +487,7 @@ function RecordingDetailRedesign() {
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">转录状态</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {recording.transcription ? '已完成' : '未转录'}
-                  </p>
-                </div>
-                {recording.transcription ? (
-                  <CheckCircleIcon className="w-8 h-8 text-green-500" />
-                ) : (
-                  <AlertCircleIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">说话人数</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map(s => s.speakerIndex)).size : 0)}
-                  </p>
-                </div>
-                <UsersIcon className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">音频格式</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{recording.format || 'WAV'}</p>
-                </div>
-                <FileAudioIcon className="w-8 h-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">采样率</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {recording.sampleRate ? `${recording.sampleRate / 1000}k` : '-'}
-                  </p>
-                </div>
-                <ActivityIcon className="w-8 h-8 text-orange-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
+  
         {/* Speaker Timeline */}
         {recording.speakerSegments && recording.speakerSegments.length > 0 && (
           <Card className="mb-6">
