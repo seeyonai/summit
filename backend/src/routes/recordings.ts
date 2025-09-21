@@ -264,6 +264,15 @@ router.post('/:recordingId/align', async (req: Request, res: Response) => {
     }
 
     const result = await alignerService.alignAudioWithText({ audioFilePath: filePath, text: cleaned });
+    
+    // Save alignment results to database
+    if (result.success && result.alignments && result.alignments.length > 0) {
+      const updateData: RecordingUpdate = {
+        alignmentItems: result.alignments
+      };
+      await recordingService.updateRecording(recordingId, updateData);
+    }
+    
     res.json(result);
   } catch (error) {
     const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;

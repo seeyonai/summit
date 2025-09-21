@@ -194,6 +194,16 @@ class RecordingServiceImpl {
       remoteUpdates.verbatimTranscript = updateData.verbatimTranscript;
     }
 
+    if (Array.isArray(updateData.organizedSpeeches)) {
+      updates.organizedSpeeches = updateData.organizedSpeeches;
+      remoteUpdates.organizedSpeeches = updateData.organizedSpeeches;
+    }
+
+    if (Array.isArray(updateData.alignmentItems)) {
+      updates.alignmentItems = updateData.alignmentItems;
+      remoteUpdates.alignmentItems = updateData.alignmentItems;
+    }
+
     if (Object.keys(updates).length === 0) {
       return { message: '未应用任何更改' };
     }
@@ -365,12 +375,15 @@ class RecordingServiceImpl {
       transcription: document.transcription,
       verbatimTranscript: document.verbatimTranscript,
       speakerSegments: document.speakerSegments,
+      timeStampedNotes: document.timeStampedNotes,
+      alignmentItems: document.alignmentItems,
       numSpeakers: document.numSpeakers,
       sampleRate: document.sampleRate,
       channels: document.channels,
       format: document.format,
       externalId: document.externalId,
       source: document.source,
+      organizedSpeeches: document.organizedSpeeches,
     };
 
     // If requested, and the recording has a meetingId, include a lightweight meeting summary

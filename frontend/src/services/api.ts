@@ -45,6 +45,13 @@ interface RecordingUpdatePayload {
   filename?: string;
   transcription?: string;
   verbatimTranscript?: string;
+  organizedSpeeches?: Array<{
+    speakerIndex: number;
+    startTime: number;
+    endTime: number;
+    rawText: string;
+    polishedText: string;
+  }>;
 }
 
 type SegmentRecordingOptions = Pick<SegmentationRequest, 'oracleNumSpeakers' | 'returnText'>;
@@ -188,7 +195,11 @@ class ApiService {
   }
 
   async organizeRecording(id: string): Promise<{ speeches: Array<{ speakerIndex: number; startTime: number; endTime: number; rawText: string; polishedText: string }>; message: string }>{
-    return this.post(`/api/recordings/${id}/organize`);
+    const result = await this.post(`/api/recordings/${id}/organize`);
+    if (result.speeches && result.speeches.length > 0) {
+      await this.updateRecording(id, { organizedSpeeches: result.speeches });
+    }
+    return result;
   }
 
   // Alignment

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,13 +42,14 @@ import {
 function RecordingDetailRedesign() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [recording, setRecording] = useState<Recording | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<{ transcription?: string; verbatimTranscript?: string }>({});
-  const [activeTab, setActiveTab] = useState('transcription');
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'transcription');
   const [, setTranscribing] = useState(false);
   const [showHotwordSelection, setShowHotwordSelection] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -415,7 +416,14 @@ function RecordingDetailRedesign() {
         {/* Speaker Timeline moved to RecordingAnalysis to avoid duplication */}
 
         {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={(value) => {
+            setActiveTab(value);
+            setSearchParams({ tab: value });
+          }} 
+          className="mt-6"
+        >
           <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="transcription">转录</TabsTrigger>
             <TabsTrigger value="alignment">对齐</TabsTrigger>
@@ -459,6 +467,7 @@ function RecordingDetailRedesign() {
               recording={recording}
               setSuccess={setSuccess}
               setError={setError}
+              onRefresh={fetchRecording}
             />
           </TabsContent>
         </Tabs>

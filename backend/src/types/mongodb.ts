@@ -76,7 +76,8 @@ export function recordingToApp(recordingDoc: RecordingDocument): RecordingRespon
     channels: recordingDoc.channels,
     format: recordingDoc.format,
     externalId: recordingDoc.externalId,
-    source: recordingDoc.source
+    source: recordingDoc.source,
+    organizedSpeeches: recordingDoc.organizedSpeeches
   };
 }
 
@@ -123,6 +124,7 @@ export function recordingToDoc(recording: Omit<Recording, 'id'>): Omit<Recording
     channels: recording.channels,
     format: recording.format,
     externalId: recording.externalId,
-    source: recording.source
+    source: recording.source,
+    organizedSpeeches: recording.organizedSpeeches
   };
 }

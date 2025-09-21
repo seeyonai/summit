@@ -4,9 +4,23 @@ export interface SpeakerSegment {
   speakerIndex: number;
 }
 
+export interface OrganizedSpeech {
+  speakerIndex: number;
+  startTime: number;
+  endTime: number;
+  rawText: string;
+  polishedText: string;
+}
+
 export interface TimeStampedNote {
   timestamp: number;
   text: string;
+}
+
+export interface AlignmentItem {
+  key: string;
+  text: string;
+  timestamp: number[][];
 }
 
 export interface Recording {
@@ -18,6 +32,7 @@ export interface Recording {
   verbatimTranscript?: string;
   speakerSegments?: SpeakerSegment[];
   timeStampedNotes?: TimeStampedNote[];
+  alignmentItems?: AlignmentItem[];
   numSpeakers?: number;
   sampleRate?: number;
   channels?: number;
@@ -25,6 +40,7 @@ export interface Recording {
   source?: 'live' | 'upload';
   externalId?: string;
   meeting?: Meeting;
+  organizedSpeeches?: OrganizedSpeech[];
   metadata?: {
     duration?: number;
     sampleRate?: number;

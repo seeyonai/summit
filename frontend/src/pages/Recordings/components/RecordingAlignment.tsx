@@ -25,6 +25,21 @@ function RecordingAlignment({
   const [activeTokenIndex, setActiveTokenIndex] = useState<number | null>(null);
   const [globalOffsetMs, setGlobalOffsetMs] = useState(0);
 
+  // Load persisted alignment data on mount
+  useEffect(() => {
+    if (recording.alignmentItems && recording.alignmentItems.length > 0) {
+      const first = recording.alignmentItems[0];
+      const tokens = (first.timestamp || []).map((pair, idx) => ({
+        text: (first.text || '').split(/\s+/)[idx] || '',
+        startMs: Number(pair[0]) || 0,
+        endMs: Number(pair[1]) || 0,
+      })).filter(t => t.endMs > t.startMs);
+      const totalTokens = Math.max(tokens.length, ((first.text || '').split(/\s+/).filter(Boolean).length));
+      const coverage = totalTokens > 0 ? Math.round((tokens.length / totalTokens) * 100) : 0;
+      setAlignment({ tokens, coverage });
+    }
+  }, [recording.alignmentItems]);
+
   const getAudioElement = (): HTMLAudioElement | null => {
     const el = document.querySelector('audio');
     return el instanceof HTMLAudioElement ? el : null;
@@ -125,6 +140,9 @@ function RecordingAlignment({
             <div className="flex items-center gap-2 text-sm">
               <Badge variant={alignment.coverage >= 80 ? 'default' : alignment.coverage >= 50 ? 'secondary' : 'destructive'}>
                 对齐质量: {alignment.coverage}%
+              </Badge>
+              <Badge variant="outline">
+                {recording.alignmentItems ? '已保存' : '未保存'}
               </Badge>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 dark:text-gray-400">时间偏移</span>

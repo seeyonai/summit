@@ -31,6 +31,13 @@ export interface RecordingResponse {
   format?: string;
   externalId?: string;
   source?: 'live' | 'upload';
+  organizedSpeeches?: Array<{
+    speakerIndex: number;
+    startTime: number;
+    endTime: number;
+    rawText: string;
+    polishedText: string;
+  }>;
   meeting?: {
     _id: string;
     title: string;

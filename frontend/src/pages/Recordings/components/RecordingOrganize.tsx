@@ -10,17 +10,10 @@ interface RecordingOrganizeProps {
   recording: Recording;
   setSuccess: (message: string) => void;
   setError: (message: string) => void;
+  onRefresh?: () => void;
 }
 
-interface OrganizedSpeech {
-  speakerIndex: number;
-  startTime: number;
-  endTime: number;
-  rawText: string;
-  polishedText: string;
-}
-
-function RecordingOrganize({ recording, setSuccess, setError }: RecordingOrganizeProps) {
+function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: RecordingOrganizeProps) {
   const [loading, setLoading] = useState(false);
   const [speeches, setSpeeches] = useState<OrganizedSpeech[] | null>(null);
 
@@ -52,6 +45,10 @@ function RecordingOrganize({ recording, setSuccess, setError }: RecordingOrganiz
       const { speeches: data, message } = await apiService.organizeRecording(recording._id);
       setSpeeches(data);
       if (message) setSuccess(message);
+      // Refresh parent recording data to sync the organizedSpeeches field
+      if (onRefresh) {
+        await onRefresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '组织失败');
     } finally {
@@ -61,10 +58,13 @@ function RecordingOrganize({ recording, setSuccess, setError }: RecordingOrganiz
 
   useEffect(() => {
     if (recording?._id) {
-      load();
+      if (recording?.organizedSpeeches?.length) {
+        setSpeeches(recording.organizedSpeeches);
+      }
+      // Only auto-load if there's no existing organized data
+      // This prevents re-running on tab switches
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recording?._id]);
+  }, [recording?._id, recording?.organizedSpeeches]);
 
   return (
     <div className="space-y-6">
