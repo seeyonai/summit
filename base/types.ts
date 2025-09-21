@@ -90,8 +90,6 @@ export interface Meeting {
   parsedTodos?: TodoItem[];
   disputedIssues?: DisputedIssue[];
   participants?: number;
-  recordings?: Recording[];
-  combinedRecording?: Recording;
 }
 
 export interface SegmentationResponse {

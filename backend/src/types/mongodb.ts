@@ -40,13 +40,11 @@ export function meetingToApp(meetingDoc: MeetingDocument): Meeting {
     createdAt: meetingDoc.createdAt,
     updatedAt: meetingDoc.updatedAt,
     scheduledStart: meetingDoc.scheduledStart,
-    recordings: meetingDoc.recordings || [],
     finalTranscript: meetingDoc.finalTranscript,
     parsedTodos: meetingDoc.parsedTodos,
     disputedIssues: meetingDoc.disputedIssues,
     summary: meetingDoc.summary,
     participants: meetingDoc.participants,
-    combinedRecording: meetingDoc.combinedRecording
   };
 }
 
@@ -91,12 +89,10 @@ export function meetingToDoc(meeting: Meeting): Omit<MeetingDocument, '_id'> {
     createdAt: meeting.createdAt,
     updatedAt: meeting.updatedAt,
     scheduledStart: meeting.scheduledStart,
-    recordings: meeting.recordings,
     finalTranscript: meeting.finalTranscript,
     parsedTodos: meeting.parsedTodos,
     disputedIssues: meeting.disputedIssues,
     participants: meeting.participants,
-    combinedRecording: meeting.combinedRecording
   };
 }
 

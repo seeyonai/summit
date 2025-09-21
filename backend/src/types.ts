@@ -85,8 +85,7 @@ export type MeetingUpdate = Partial<Pick<
   'status' | 
   'scheduledStart' | 
   'finalTranscript' | 
-  'participants' |
-  'combinedRecording'
+  'participants'
 >> & Pick<Meeting, '_id'>;
 
 
