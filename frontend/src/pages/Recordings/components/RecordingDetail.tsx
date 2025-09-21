@@ -10,7 +10,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import HotwordSelection from '@/components/HotwordSelection';
 import type { Recording } from '@/types';
-import { apiService } from '@/services/api';
+import { apiService, apiUrl } from '@/services/api';
 import RecordingTranscription from './RecordingTranscription';
 import RecordingAlignment from './RecordingAlignment';
 import RecordingAnalysis from './RecordingAnalysis';
@@ -157,6 +157,49 @@ function RecordingDetailRedesign() {
     generateTranscription();
   };
 
+  // Download recording
+  const handleDownloadRecording = async () => {
+    if (!recording) return;
+    
+    const fileUrl = recording.filePath || recording.filename;
+    if (!fileUrl) {
+      setError('无法获取录音文件路径');
+      return;
+    }
+    
+    try {
+      const downloadUrl = `${apiUrl(fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`)}`;
+      
+      // Fetch the file as a blob
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error('下载失败');
+      }
+      
+      const blob = await response.blob();
+      
+      // Create a blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = recording.filename || `recording-${recording._id}.${recording.format || 'wav'}`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
+      
+      setSuccess('录音文件下载完成');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '下载失败');
+    }
+  };
+
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -214,19 +257,7 @@ function RecordingDetailRedesign() {
                     <Button
                       variant="outline"
                       size="icon"
-                    >
-                      <ShareIcon className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>分享录音</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
+                      onClick={handleDownloadRecording}
                     >
                       <DownloadIcon className="w-4 h-4" />
                     </Button>
