@@ -331,7 +331,7 @@ function RecordingList() {
               />
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Select value={filterStatus} onValueChange={(value: 'all' | 'transcribed' | 'untranscribed') => setFilterStatus(value)}>
                 <SelectTrigger className="w-[180px] h-11">
                   <FilterIcon className="w-4 h-4 mr-2" />
@@ -347,7 +347,6 @@ function RecordingList() {
               <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
                   onClick={() => setViewMode('grid')}
                   className="rounded-r-none"
                 >
@@ -355,7 +354,6 @@ function RecordingList() {
                 </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
                   onClick={() => setViewMode('list')}
                   className="rounded-l-none"
                 >

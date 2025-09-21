@@ -51,10 +51,9 @@ function HotwordToolbar({
             </SelectContent>
           </Select>
 
-          <div className="flex border border-gray-200 rounded-lg">
+          <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
               onClick={() => onViewModeChange('grid')}
               className="rounded-r-none"
             >
@@ -62,7 +61,6 @@ function HotwordToolbar({
             </Button>
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
               onClick={() => onViewModeChange('list')}
               className="rounded-l-none"
             >
