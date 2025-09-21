@@ -29,7 +29,6 @@ function MeetingEdit() {
     summary: '',
     status: 'scheduled' as MeetingStatus,
     scheduledStart: '',
-    finalTranscript: '',
     participants: ''
   });
 
@@ -48,7 +47,6 @@ function MeetingEdit() {
           summary: data.summary || '',
           status: data.status || 'scheduled',
           scheduledStart: data.scheduledStart ? new Date(data.scheduledStart).toISOString().slice(0, 16) : '',
-          finalTranscript: data.finalTranscript || '',
           participants: data.participants?.toString() || ''
         });
         setError(null);
@@ -80,7 +78,6 @@ function MeetingEdit() {
         summary: formData.summary || undefined,
         status: formData.status || undefined,
         scheduledStart: formData.scheduledStart ? new Date(formData.scheduledStart) : undefined,
-        finalTranscript: formData.finalTranscript || undefined,
         participants: formData.participants ? parseInt(formData.participants) : undefined
       };
 
@@ -240,19 +237,6 @@ function MeetingEdit() {
                   value={formData.participants}
                   onChange={(e) => handleInputChange('participants', e.target.value)}
                   placeholder="输入参与人数"
-                />
-              </div>
-
-              {/* Final Transcript */}
-              <div className="space-y-2">
-                <Label htmlFor="finalTranscript">最终纪要</Label>
-                <Textarea
-                  id="finalTranscript"
-                  value={formData.finalTranscript}
-                  onChange={(e) => handleInputChange('finalTranscript', e.target.value)}
-                  placeholder="输入会议最终纪要"
-                  rows={8}
-                  className="font-mono text-sm"
                 />
               </div>
 
