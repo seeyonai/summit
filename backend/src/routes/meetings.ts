@@ -387,26 +387,41 @@ router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) 
       return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
     }
     
-    if (!meeting.finalTranscript) {
-      return res.status(400).json({ 
-        error: 'Meeting must have a final transcript before analysis can be performed' 
-      });
+    let transcript = meeting.finalTranscript;
+    
+    // If no final transcript exists, try to build one from organized speeches
+    if (!transcript) {
+      try {
+        transcript = await transcriptExtractionService.buildTranscriptFromOrganizedSpeeches(meetingId);
+        console.log('Built transcript from organized speeches for analysis');
+      } catch (error) {
+        console.log('Could not build transcript from organized speeches:', error);
+        return res.status(400).json({ 
+          error: 'Meeting must have a final transcript or organized speeches from recordings before analysis can be performed' 
+        });
+      }
     }
     
     // Extract analysis using intext
-    const extractionResult = await transcriptExtractionService.extractFromTranscript(
-      meeting.finalTranscript
-    );
+    const extractionResult = await transcriptExtractionService.extractFromTranscript(transcript);
     
     // Format the results for meeting storage
     const formattedAnalysis = transcriptExtractionService.formatExtractionForMeeting(extractionResult);
     
     // Update the meeting with extracted data
-    const updatedMeeting = await meetingService.updateMeeting(meetingId, {
+    // Also save the generated transcript if it was built from organized speeches
+    const updateData: any = {
       _id: meeting._id,
       disputedIssues: formattedAnalysis.disputedIssues,
       parsedTodos: formattedAnalysis.todos
-    } as any);
+    };
+    
+    // If we built the transcript from organized speeches, save it as finalTranscript
+    if (!meeting.finalTranscript && transcript) {
+      updateData.finalTranscript = transcript;
+    }
+    
+    const updatedMeeting = await meetingService.updateMeeting(meetingId, updateData);
     
     res.json({
       success: true,

@@ -12,7 +12,7 @@ import { useAudioRecording } from "@/hooks/useAudioRecording";
 import { useRecordingPanel } from "@/contexts/RecordingPanelContext";
 import MeetingTranscript from "./components/MeetingTranscript";
 import MeetingRecordings from "./components/MeetingRecordings";
-import MeetingTasksAndAnalysis from "./components/MeetingTasksAndAnalysis";
+import DisputedIssues from "./components/DisputedIssues";
 import TranscriptDialog from "@/components/meetings/TranscriptDialog";
 import AdviceDialog from "@/components/meetings/AdviceDialog";
 import {
@@ -350,9 +350,9 @@ function MeetingDetail() {
             <FileTextIcon className="w-4 h-4" />
             记录
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="flex items-center gap-2">
+          <TabsTrigger value="disputedIssues" className="flex items-center gap-2">
             <TargetIcon className="w-4 h-4" />
-            任务与分析
+            争论焦点
           </TabsTrigger>
         </TabsList>
 
@@ -367,14 +367,13 @@ function MeetingDetail() {
           />
         </TabsContent>
 
-        <TabsContent value="tasks">
-          <MeetingTasksAndAnalysis
-            meeting={meeting}
-            onGenerateAdvice={handleGenerateAdvice}
-            generatingAdvice={loadingById}
+        <TabsContent value="disputedIssues">
+          <DisputedIssues
+            meetingId={meeting._id}
             onAnalysisComplete={handleAnalysisComplete}
           />
         </TabsContent>
+
       </Tabs>
 
       {/* Transcript Dialog */}
@@ -383,8 +382,6 @@ function MeetingDetail() {
         onOpenChange={setShowTranscript}
         title={meeting.title}
         recordings={recordingsToShow}
-        showCombinedRecording={showCombinedRecording}
-        combinedRecording={meeting.combinedRecording}
       />
 
       {/* Advice Dialog */}

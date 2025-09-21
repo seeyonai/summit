@@ -1,4 +1,5 @@
 import { createIntext, SchemaField } from 'intext';
+import recordingService from './RecordingService';
 
 // Create OpenAI-compatible client
 function createOpenAIClient(apiKey: string, baseURL = 'https://api.openai.com/v1') {
@@ -146,6 +147,78 @@ class TranscriptExtractionService {
     });
 
     return result;
+  }
+
+  async buildTranscriptFromOrganizedSpeeches(meetingId: string): Promise<string> {
+    try {
+      // Get all recordings for this meeting
+      const recordings = await recordingService.getRecordingsByMeetingId(meetingId, false);
+      
+      if (!recordings || recordings.length === 0) {
+        throw new Error('No recordings found for this meeting');
+      }
+
+      // Collect all organized speeches from recordings
+      const allSpeeches: Array<{
+        speakerIndex: number;
+        startTime: number;
+        endTime: number;
+        polishedText: string;
+        rawText: string;
+      }> = [];
+
+      // Add speeches from individual recordings
+      recordings.forEach(recording => {
+        if (recording.organizedSpeeches && recording.organizedSpeeches.length > 0) {
+          allSpeeches.push(...recording.organizedSpeeches);
+        }
+      });
+
+      // Note: Combined recording speeches are handled separately in the meeting model
+      // They will be accessible via meeting.combinedRecording if needed
+
+      if (allSpeeches.length === 0) {
+        throw new Error('No organized speeches found in any recordings');
+      }
+
+      // Sort speeches by start time to create chronological transcript
+      allSpeeches.sort((a, b) => a.startTime - b.startTime);
+
+      // Build formatted transcript
+      const transcriptLines: string[] = [];
+      
+      // Add header
+      transcriptLines.push('# 会议记录');
+      transcriptLines.push('');
+      
+      // Format each speech segment
+      allSpeeches.forEach((speech, index) => {
+        const startTime = this.formatTime(speech.startTime);
+        const endTime = this.formatTime(speech.endTime);
+        const speakerLabel = `发言人 ${speech.speakerIndex + 1}`;
+        
+        transcriptLines.push(`## ${speakerLabel} (${startTime} - ${endTime})`);
+        transcriptLines.push('');
+        transcriptLines.push(speech.polishedText || speech.rawText);
+        transcriptLines.push('');
+      });
+
+      // Add summary section
+      transcriptLines.push('---');
+      transcriptLines.push('');
+      transcriptLines.push('*此记录由系统根据录音整理生成*');
+
+      return transcriptLines.join('\n');
+    } catch (error) {
+      console.error('Error building transcript from organized speeches:', error);
+      throw error;
+    }
+  }
+
+  private formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
   formatExtractionForMeeting(extractionResult: ExtractionResult) {
