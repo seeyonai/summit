@@ -83,7 +83,7 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>会议转录</CardTitle>
+              <CardTitle>会议记录</CardTitle>
               <CardDescription>完整的会议文字记录</CardDescription>
             </div>
             {meeting.finalTranscript && (
