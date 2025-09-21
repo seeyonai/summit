@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { apiService } from '@/services/api';
 import type { Recording } from '@/types';
-import { MicIcon, CopyIcon, DownloadIcon, SearchIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon } from 'lucide-react';
+import { MicIcon, CopyIcon, DownloadIcon, SearchIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon, EditIcon, XIcon } from 'lucide-react';
 
 interface RecordingTranscriptionProps {
   recording: Recording;
@@ -26,6 +26,7 @@ interface RecordingTranscriptionProps {
   onRefresh: () => Promise<void>;
   setSuccess: (message: string) => void;
   setError: (message: string) => void;
+  onEditToggle: () => void;
 }
 
 function RecordingTranscription({
@@ -35,7 +36,8 @@ function RecordingTranscription({
   setEditForm,
   onRefresh,
   setSuccess,
-  setError
+  setError,
+  onEditToggle
 }: RecordingTranscriptionProps) {
   const [transcribing, setTranscribing] = useState(false);
   const [exportFormat, setExportFormat] = useState<'txt' | 'docx' | 'pdf' | 'srt'>('txt');
@@ -255,22 +257,41 @@ function RecordingTranscription({
                 </p>
               </div>
             </div>
-            {isEditing && (
-              <div className="flex items-center gap-2">
-                <Badge variant={autoSaveStatus === 'saved' ? 'default' : autoSaveStatus === 'saving' ? 'secondary' : 'destructive'}>
-                  {autoSaveStatus === 'saved' ? '已保存' : autoSaveStatus === 'saving' ? '保存中...' : '未保存'}
-                </Badge>
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <>
+                  <Badge variant={autoSaveStatus === 'saved' ? 'default' : autoSaveStatus === 'saving' ? 'secondary' : 'destructive'}>
+                    {autoSaveStatus === 'saved' ? '已保存' : autoSaveStatus === 'saving' ? '保存中...' : '未保存'}
+                  </Badge>
+                  <Button
+                    onClick={handleAutoSave}
+                    variant="outline"
+                    size="sm"
+                    disabled={autoSaveStatus === 'saving'}
+                  >
+                    <SaveIcon className="w-4 h-4 mr-2" />
+                    手动保存
+                  </Button>
+                  <Button
+                    onClick={onEditToggle}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <XIcon className="w-4 h-4 mr-2" />
+                    完成
+                  </Button>
+                </>
+              ) : (
                 <Button
-                  onClick={handleAutoSave}
+                  onClick={onEditToggle}
                   variant="outline"
                   size="sm"
-                  disabled={autoSaveStatus === 'saving'}
                 >
-                  <SaveIcon className="w-4 h-4 mr-2" />
-                  手动保存
+                  <EditIcon className="w-4 h-4 mr-2" />
+                  编辑
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Action Bar */}

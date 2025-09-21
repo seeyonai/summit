@@ -330,9 +330,6 @@ function MeetingDetail() {
               <TrashIcon className="w-4 h-4 mr-2" />
               删除
             </Button>
-            <Button variant="outline" size="icon">
-              <MoreVerticalIcon className="w-4 h-4" />
-            </Button>
           </div>
         </div>
 

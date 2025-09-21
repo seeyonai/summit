@@ -84,21 +84,20 @@ function RecordingDetailRedesign() {
     }
   };
 
-  // Start editing
-  const startEditing = () => {
+  // Toggle editing
+  const toggleEditing = () => {
     if (!recording) return;
     
-    setEditForm({
-      transcription: recording.transcription,
-      verbatimTranscript: recording.verbatimTranscript,
-    });
-    setIsEditing(true);
-  };
-
-  // Cancel editing
-  const cancelEditing = () => {
-    setIsEditing(false);
-    setEditForm({});
+    if (isEditing) {
+      setIsEditing(false);
+      setEditForm({});
+    } else {
+      setEditForm({
+        transcription: recording.transcription,
+        verbatimTranscript: recording.verbatimTranscript,
+      });
+      setIsEditing(true);
+    }
   };
 
   useEffect(() => {
@@ -328,31 +327,15 @@ function RecordingDetailRedesign() {
               
                 <div className="flex gap-2">
                   {isEditing ? (
-                    <>
-                      <Button
-                        onClick={cancelEditing}
-                        variant="outline"
-                      >
-                        <XIcon className="w-4 h-4 mr-2" />
-                        取消
-                      </Button>
-                      <Button
-                        onClick={updateRecording}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <SaveIcon className="w-4 h-4 mr-2" />
-                        保存更改
-                      </Button>
-                    </>
+                    <Button
+                      onClick={updateRecording}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <SaveIcon className="w-4 h-4 mr-2" />
+                      保存更改
+                    </Button>
                   ) : (
                     <>
-                      <Button
-                        onClick={startEditing}
-                        variant="outline"
-                      >
-                        <EditIcon className="w-4 h-4 mr-2" />
-                        编辑
-                      </Button>
                       <Button
                         onClick={() => setShowInfoModal(true)}
                         variant="outline"
@@ -361,13 +344,7 @@ function RecordingDetailRedesign() {
                       >
                         <InfoIcon className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                      >
-                        <MoreVerticalIcon className="w-4 h-4" />
-                      </Button>
-                    </>
+                      </>
                   )}
                 </div>
               </div>
@@ -471,6 +448,7 @@ function RecordingDetailRedesign() {
               onRefresh={fetchRecording}
               setSuccess={setSuccess}
               setError={setError}
+              onEditToggle={toggleEditing}
             />
           </TabsContent>
 
