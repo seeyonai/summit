@@ -5,6 +5,7 @@ import audioProcessingService from '../services/AudioProcessingService';
 import transcriptExtractionService from '../services/TranscriptExtractionService';
 import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../types';
 import recordingService from '../services/RecordingService';
+import { recordingToApp } from '../types/mongodb';
 
 const router = Router();
 
@@ -117,7 +118,11 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
     }
     
-    res.json(serializeMeeting(meeting));
+    const recordings = await recordingService.getRecordingsByMeetingId(id, false);
+    res.json({
+      ...meeting,
+      recordings
+    });
   } catch (error) {
     console.error('Error getting meeting:', error);
     res.status(500).json({ error: 'Internal server error' });

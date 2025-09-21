@@ -177,13 +177,13 @@ export async function getAllRecordings(): Promise<RecordingResponse[]> {
   return responses;
 }
 
-export async function getRecordingsByMeetingId(meetingId: string): Promise<RecordingResponse[]> {
+export async function getRecordingsByMeetingId(meetingId: string, includeMeeting: boolean = true): Promise<RecordingResponse[]> {
   const collection = recordingsCollection();
   const documents = await collection
     .find({ meetingId: new ObjectId(meetingId) })
     .sort({ createdAt: -1 })
     .toArray();
-  const responses = await Promise.all(documents.map((doc) => toRecordingResponse(doc, { includeMeeting: true })));
+  const responses = await Promise.all(documents.map((doc) => toRecordingResponse(doc, { includeMeeting })));
   return responses;
 }
 
