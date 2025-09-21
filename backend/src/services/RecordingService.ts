@@ -387,7 +387,7 @@ class RecordingServiceImpl {
             status: meeting.status,
             createdAt: meeting.createdAt.toISOString(),
             updatedAt: meeting.updatedAt ? meeting.updatedAt.toISOString() : undefined,
-            scheduledStart: meeting.scheduledStart ? meeting.scheduledStart.toISOString() : undefined,
+            scheduledStart: meeting.scheduledStart instanceof Date ? meeting.scheduledStart.toISOString() : undefined,
             summary: meeting.summary,
             participants: meeting.participants,
           },

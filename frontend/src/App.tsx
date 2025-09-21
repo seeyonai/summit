@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import HotwordManagement from './pages/Hotwords/HotwordListPage';
 import Meetings from './pages/Meetings';
 import MeetingDetail from './pages/Meetings/MeetingDetail';
+import MeetingEdit from './pages/Meetings/MeetingEdit';
 import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
 import LiveRecorderTest from './pages/LiveRecorderTest';
@@ -62,6 +63,7 @@ function AppContent() {
               <Route path="/recordings/:id" element={<RecordingDetail />} />
               <Route path="/meetings" element={<Meetings />} />
               <Route path="/meetings/:id" element={<MeetingDetail />} />
+              <Route path="/meetings/:id/edit" element={<MeetingEdit />} />
               <Route path="/hotwords" element={<HotwordManagement />} />
               <Route path="/test-recorder" element={<LiveRecorderTest />} />
             </Routes>

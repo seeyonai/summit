@@ -67,7 +67,7 @@ const normalizeStringArray = (value: unknown): string[] => {
 
 const resolveAudioStatusCode = (error: unknown, fallback = 500): number => {
   if (error instanceof Error) {
-    if (error.message === 'Meeting not found') {
+    if (error.message === 'Meeting not found' || error.message.startsWith('Meeting not found (ID:')) {
       return 404;
     }
 
@@ -114,7 +114,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const meeting = await meetingService.getMeetingById(id);
     
     if (!meeting) {
-      return res.status(404).json({ error: 'Meeting not found' });
+      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
     }
     
     res.json(serializeMeeting(meeting));
@@ -151,7 +151,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const meeting = await meetingService.updateMeeting(id, request);
     
     if (!meeting) {
-      return res.status(404).json({ error: 'Meeting not found' });
+      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
     }
     
     res.json(serializeMeeting(meeting));
@@ -168,7 +168,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const deleted = await meetingService.deleteMeeting(id);
     
     if (!deleted) {
-      return res.status(404).json({ error: 'Meeting not found' });
+      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
     }
     
     res.json({ message: '会议删除成功' });
@@ -187,7 +187,7 @@ router.post('/:id/recordings', async (req: Request, res: Response) => {
     const meeting = await meetingService.addRecordingToMeeting(id, deserializeRecording(recordingPayload));
     
     if (!meeting) {
-      return res.status(404).json({ error: 'Meeting not found' });
+      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
     }
     
     res.json(serializeMeeting(meeting));
@@ -204,7 +204,7 @@ router.delete('/:id/recordings/:recordingId', async (req: Request, res: Response
     const meeting = await meetingService.removeRecordingFromMeeting(id, recordingId);
     
     if (!meeting) {
-      return res.status(404).json({ error: 'Meeting not found' });
+      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
     }
     
     res.json(serializeMeeting(meeting));
@@ -312,7 +312,7 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request,
     
     const meeting = await meetingService.getMeetingById(meetingId);
     if (!meeting) {
-      return res.status(404).json({ error: 'Meeting not found' });
+      return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
     }
     
     const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
@@ -350,7 +350,7 @@ router.post('/:meetingId/final-transcript', async (req: Request, res: Response) 
     
     const meeting = await meetingService.getMeetingById(meetingId);
     if (!meeting) {
-      return res.status(404).json({ error: 'Meeting not found' });
+      return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
     }
     
     const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
@@ -451,7 +451,7 @@ router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) 
     
     const meeting = await meetingService.getMeetingById(meetingId);
     if (!meeting) {
-      return res.status(404).json({ error: 'Meeting not found' });
+      return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
     }
     
     if (!meeting.finalTranscript) {

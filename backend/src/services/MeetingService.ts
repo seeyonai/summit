@@ -64,10 +64,11 @@ export const updateMeeting = async (id: string, request: MeetingUpdate): Promise
   const collection = getMeetingsCollection();
   const { _id, ...updateData } = request;
 
+  // Always use the id from the URL parameter, not from the request body
   const updateFields: Partial<MeetingDocument> = { ...updateData, updatedAt: new Date() };
 
   const result = await collection.findOneAndUpdate(
-    { _id: _id || new ObjectId(id) },
+    { _id: new ObjectId(id) },
     { $set: updateFields },
     { returnDocument: 'after' }
   );
@@ -76,7 +77,7 @@ export const updateMeeting = async (id: string, request: MeetingUpdate): Promise
     return null;
   }
 
-  return result.value ? meetingToApp(result.value) : null;
+  return meetingToApp(result);
 };
 
 export const deleteMeeting = async (id: string): Promise<boolean> => {

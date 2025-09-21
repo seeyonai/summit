@@ -118,7 +118,7 @@ class AudioProcessingService {
     const updatedMeeting = await meetingService.updateCombinedRecording(meetingId, combinedRecording);
 
     if (!updatedMeeting) {
-      throw new Error('Meeting not found after updating combined recording');
+      throw new Error(`Meeting not found after updating combined recording (ID: ${meetingId})`);
     }
 
     return {
@@ -167,7 +167,7 @@ class AudioProcessingService {
   private async requireMeeting(meetingId: string): Promise<Meeting> {
     const meeting = await meetingService.getMeetingById(meetingId);
     if (!meeting) {
-      throw new Error('Meeting not found');
+      throw new Error(`Meeting not found (ID: ${meetingId})`);
     }
     return meeting;
   }
