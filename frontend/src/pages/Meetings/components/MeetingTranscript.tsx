@@ -76,8 +76,76 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
     'bg-pink-100 text-pink-800'
   ];
 
+  // Combine organized speeches from all recordings
+  const combinedOrganizedSpeeches = meeting.recordings?.reduce((acc, recording) => {
+    if (recording.organizedSpeeches && recording.organizedSpeeches.length > 0) {
+      return [...acc, ...recording.organizedSpeeches];
+    }
+    return acc;
+  }, [] as typeof meeting.recordings[0]['organizedSpeeches']);
+
+  // Also check meeting's combined recording
+  const combinedRecordingSpeeches = meeting.combinedRecording?.organizedSpeeches || [];
+
+  const allOrganizedSpeeches = [...(combinedOrganizedSpeeches || []), ...combinedRecordingSpeeches];
+
   return (
     <div className="space-y-6">
+      {/* Organized Speeches */}
+      {allOrganizedSpeeches.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UsersIcon className="w-5 h-5" />
+              发言整理
+            </CardTitle>
+            <CardDescription>按发言人整理的会议发言内容</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {allOrganizedSpeeches
+                .sort((a, b) => a.startTime - b.startTime)
+                .map((speech, index) => {
+                  const speakerColorClass = speakerColors[speech.speakerIndex % speakerColors.length];
+                  const minutes = Math.floor(speech.startTime / 60);
+                  const seconds = Math.floor(speech.startTime % 60);
+                  const endMinutes = Math.floor(speech.endTime / 60);
+                  const endSeconds = Math.floor(speech.endTime % 60);
+                  
+                  return (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <Badge className={speakerColorClass}>
+                            发言人 {speech.speakerIndex + 1}
+                          </Badge>
+                          <span className="text-sm text-gray-500">
+                            {minutes}:{seconds.toString().padStart(2, '0')} - {endMinutes}:{endSeconds.toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        {speech.polishedText && (
+                          <div>
+                            <p className="text-sm text-gray-600 mb-1">整理内容：</p>
+                            <p className="text-gray-900 leading-relaxed">{speech.polishedText}</p>
+                          </div>
+                        )}
+                        {speech.rawText && (
+                          <div>
+                            <p className="text-sm text-gray-600 mb-1">原始内容：</p>
+                            <p className="text-gray-700 text-sm leading-relaxed italic">{speech.rawText}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Transcript Card */}
       <Card>
         <CardHeader>
