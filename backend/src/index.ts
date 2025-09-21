@@ -11,6 +11,7 @@ import { DataSeeder } from './utils/seedData';
 import meetingsRouter from './routes/meetings';
 import hotwordsRouter from './routes/hotwords';
 import segmentationRouter from './routes/segmentation';
+import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings';
 import { LiveRecorderService } from './services/LiveRecorderService';
 
@@ -31,6 +32,7 @@ app.use('/files', express.static(filesDir));
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/hotwords', hotwordsRouter);
 app.use('/api/segmentation', segmentationRouter);
+app.use('/api/aligner', alignerRouter);
 app.use('/api/recordings', recordingsRouter);
 
 // Health check endpoint

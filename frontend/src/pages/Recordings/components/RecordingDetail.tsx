@@ -1,21 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import HotwordSelection from '@/components/HotwordSelection';
-import type { Recording, Meeting } from '@/types';
+import type { Recording } from '@/types';
 import { apiService } from '@/services/api';
 import RecordingTranscription from './RecordingTranscription';
+import RecordingAlignment from './RecordingAlignment';
 import RecordingAnalysis from './RecordingAnalysis';
-import RecordingDetails from './RecordingDetails';
+import RecordingInfo from './RecordingInfo';
+import RecordingOrganize from './RecordingOrganize';
 import {
   ArrowLeftIcon,
   EditIcon,
@@ -33,10 +33,9 @@ import {
   ActivityIcon,
   BarChart3Icon,
   FileTextIcon,
-  SparklesIcon,
-  TrendingUpIcon,
   CheckCircleIcon,
-  UsersIcon
+  UsersIcon,
+  InfoIcon
 } from 'lucide-react';
 
 
@@ -50,10 +49,9 @@ function RecordingDetailRedesign() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<{ transcription?: string; verbatimTranscript?: string }>({});
   const [activeTab, setActiveTab] = useState('transcription');
-  const [transcribing, setTranscribing] = useState(false);
-  const [segmenting, setSegmenting] = useState(false);
-  const [polishing, setPolishing] = useState(false);
+  const [, setTranscribing] = useState(false);
   const [showHotwordSelection, setShowHotwordSelection] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   // Fetch recording details
   const fetchRecording = useCallback(async () => {
@@ -140,6 +138,7 @@ function RecordingDetailRedesign() {
   const generateTranscription = async () => {
     try {
       setTranscribing(true);
+      if (!recording) throw new Error('Missing recording');
       const { message } = await apiService.transcribeRecording(recording._id);
       await fetchRecording();
       setSuccess(message || '转录生成成功');
@@ -150,94 +149,11 @@ function RecordingDetailRedesign() {
     }
   };
 
-  const runSpeakerSegmentation = async (oracleNumSpeakers?: number) => {
-    try {
-      setSegmenting(true);
-      const hasHint = typeof oracleNumSpeakers === 'number' && !Number.isNaN(oracleNumSpeakers);
-      const { message } = await apiService.segmentRecording(
-        recording._id,
-        hasHint ? { oracleNumSpeakers } : {}
-      );
-      await fetchRecording();
-      setSuccess(message || '说话人分离完成');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setSegmenting(false);
-    }
-  };
-
-  const polishTranscription = async () => {
-    try {
-      setPolishing(true);
-      const { message } = await apiService.polishRecording(recording._id);
-      await fetchRecording();
-      setSuccess(message || '转录优化成功');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setPolishing(false);
-    }
-  };
+  // note: segmentation and polish handlers are unused in this view
 
   const handleHotwordTranscribe = () => {
     setShowHotwordSelection(false);
     generateTranscription();
-  };
-
-  const renderSpeakerTimeline = () => {
-    if (!recording?.speakerSegments || recording.speakerSegments.length === 0) {
-      return null;
-    }
-
-    const maxTime = Math.max(...recording.speakerSegments.map(s => s.endTime));
-    const speakerColors = [
-      'bg-gradient-to-r from-primary/30 to-blue-600/30',
-      'bg-gradient-to-r from-green-500/30 to-green-600/30',
-      'bg-gradient-to-r from-yellow-500/30 to-yellow-600/30',
-      'bg-gradient-to-r from-purple-500/30 to-purple-600/30',
-      'bg-gradient-to-r from-pink-500/30 to-pink-600/30'
-    ];
-    
-    return (
-      <div className="space-y-4">
-        <div className="relative h-20 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
-          {recording.speakerSegments.map((segment, index) => {
-            const left = (segment.startTime / maxTime) * 100;
-            const width = ((segment.endTime - segment.startTime) / maxTime) * 100;
-            const colorClass = speakerColors[segment.speakerIndex % speakerColors.length];
-            
-            return (
-              <div
-                key={index}
-                className={`absolute top-0 h-full ${colorClass} opacity-80 hover:opacity-100 transition-opacity cursor-pointer`}
-                style={{
-                  left: `${left}%`,
-                  width: `${width}%`,
-                }}
-                title={`说话人 ${segment.speakerIndex + 1}: ${formatTime(segment.startTime)} - ${formatTime(segment.endTime)}`}
-              />
-            );
-          })}
-          <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 px-2 py-1 rounded">0:00</span>
-            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 px-2 py-1 rounded">{formatTime(maxTime)}</span>
-          </div>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          {Array.from(new Set(recording.speakerSegments.map(s => s.speakerIndex))).map(speakerIndex => (
-            <Badge
-              key={speakerIndex}
-              className={`${speakerColors[speakerIndex % speakerColors.length]} text-white`}
-            >
-              <UsersIcon className="w-3 h-3 mr-1" />
-              说话人 {speakerIndex + 1}
-            </Badge>
-          ))}
-        </div>
-      </div>
-    );
   };
 
   if (loading) {
@@ -406,6 +322,14 @@ function RecordingDetailRedesign() {
                         编辑
                       </Button>
                       <Button
+                        onClick={() => setShowInfoModal(true)}
+                        variant="outline"
+                        size="icon"
+                        aria-label="查看录音信息"
+                      >
+                        <InfoIcon className="w-4 h-4" />
+                      </Button>
+                      <Button
                         variant="outline"
                         size="icon"
                       >
@@ -488,25 +412,15 @@ function RecordingDetailRedesign() {
         </div>
 
   
-        {/* Speaker Timeline */}
-        {recording.speakerSegments && recording.speakerSegments.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>说话人时间线</CardTitle>
-              <CardDescription>可视化展示不同说话人的发言时段</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {renderSpeakerTimeline()}
-            </CardContent>
-          </Card>
-        )}
+        {/* Speaker Timeline moved to RecordingAnalysis to avoid duplication */}
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="transcription">转录</TabsTrigger>
-            <TabsTrigger value="analysis">分析</TabsTrigger>
-            <TabsTrigger value="details">详情</TabsTrigger>
+            <TabsTrigger value="alignment">对齐</TabsTrigger>
+            <TabsTrigger value="analysis">分割</TabsTrigger>
+            <TabsTrigger value="organize">整理</TabsTrigger>
           </TabsList>
 
           <TabsContent value="transcription">
@@ -521,6 +435,16 @@ function RecordingDetailRedesign() {
             />
           </TabsContent>
 
+          <TabsContent value="alignment">
+            <RecordingAlignment
+              recording={recording}
+              isEditing={isEditing}
+              editForm={editForm}
+              setSuccess={setSuccess}
+              setError={setError}
+            />
+          </TabsContent>
+
           <TabsContent value="analysis">
             <RecordingAnalysis
               recording={recording}
@@ -530,9 +454,11 @@ function RecordingDetailRedesign() {
             />
           </TabsContent>
 
-          <TabsContent value="details">
-            <RecordingDetails
+          <TabsContent value="organize">
+            <RecordingOrganize
               recording={recording}
+              setSuccess={setSuccess}
+              setError={setError}
             />
           </TabsContent>
         </Tabs>
@@ -555,6 +481,21 @@ function RecordingDetailRedesign() {
             </Alert>
           </div>
         )}
+
+        {/* Info Modal */}
+        <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>录音详情</DialogTitle>
+              <DialogDescription>文件与元数据</DialogDescription>
+            </DialogHeader>
+            {recording && (
+              <div className="max-h-[70vh] overflow-y-auto">
+                <RecordingInfo recording={recording} />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Hotword Selection Modal */}
         {showHotwordSelection && (

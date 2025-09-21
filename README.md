@@ -76,6 +76,7 @@ Start the backend first (port 2591), then the frontend (port 2590). The UI calls
     - `SEGMENTATION_SERVICE_URL` sets the URL for the speaker segmentation service (default: `http://localhost:2593`).
   - `TRANSCRIBE_SERVICE_URL` sets the URL for the transcription service (default: `http://localhost:2594`).
   - Static URLs continue to use `/files/<filename>`; the server maps these to the configured base directory.
+  - `SUMMIT_OPENAI_API_KEY`, `SUMMIT_OPENAI_BASE_URL`, `SUMMIT_OPENAI_MODEL` are used for the OpenAI API. If not set, the backend will fall back to `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL`.
 - Frontend consumes `VITE_`-prefixed env vars via `import.meta.env`. Create `frontend/.env` to override defaults (e.g., `VITE_API_BASE_URL`).
   - Store large or generated audio under the configured base directory. By default this is the repo `files/` directory; it is served at `/files/*`.
 

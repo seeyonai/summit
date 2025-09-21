@@ -187,6 +187,19 @@ class ApiService {
     return this.post<{ message: string; polishedTranscription: string }>(`/api/recordings/${id}/polish`);
   }
 
+  async organizeRecording(id: string): Promise<{ speeches: Array<{ speakerIndex: number; startTime: number; endTime: number; rawText: string; polishedText: string }>; message: string }>{
+    return this.post(`/api/recordings/${id}/organize`);
+  }
+
+  // Alignment
+  async getAlignerModelInfo(): Promise<{ model: string; modelRevision: string; task: string; available: boolean; description: string; }> {
+    return this.get('/api/aligner/model-info');
+  }
+
+  async alignRecording(id: string, text: string): Promise<{ success: boolean; alignments: Array<{ key: string; text: string; timestamp: number[][] }>; message: string; key: string | null; }> {
+    return this.post(`/api/recordings/${id}/align`, { text });
+  }
+
   // Meetings
   async getMeetings(): Promise<Meeting[]> {
     return this.get('/api/meetings');

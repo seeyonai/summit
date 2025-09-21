@@ -107,7 +107,7 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>说话人分析</CardTitle>
+              <CardTitle>说话人分割</CardTitle>
               <CardDescription>识别和分析录音中的不同说话人</CardDescription>
             </div>
             <div className="flex gap-2">
@@ -118,7 +118,7 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                 size="sm"
               >
                 <UsersIcon className="w-4 h-4 mr-2" />
-                {segmenting ? '分析中...' : '自动分析'}
+                {segmenting ? '分割中...' : '自动分割'}
               </Button>
             </div>
           </div>

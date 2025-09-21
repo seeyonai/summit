@@ -109,17 +109,18 @@ class TranscriptExtractionService {
   async initialize() {
     if (this.isInitialized) return;
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.SUMMIT_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    const baseURL = process.env.SUMMIT_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
     if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
+      throw new Error('SUMMIT_OPENAI_API_KEY or OPENAI_API_KEY environment variable is required');
     }
 
-    const openai = createOpenAIClient(apiKey);
+    const openai = createOpenAIClient(apiKey, baseURL);
     
     this.intext = createIntext({
       openai,
       clientParams: { 
-        model: 'gpt-4o-mini', 
+        model: process.env.SUMMIT_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini', 
         temperature: 0.1,
         max_tokens: 1000
       },

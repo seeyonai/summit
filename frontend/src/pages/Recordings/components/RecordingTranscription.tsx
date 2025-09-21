@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+/* card imports removed */
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+/* tooltip and tabs imports removed */
 import {
   Dialog,
   DialogContent,
@@ -17,33 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { apiService } from '@/services/api';
 import type { Recording } from '@/types';
-import {
-  MicIcon,
-  CopyIcon,
-  DownloadIcon,
-  SearchIcon,
-  FileTextIcon,
-  SaveIcon,
-  RotateCcwIcon,
-  EyeIcon,
-  Volume2Icon,
-  SparklesIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  HashIcon,
-  TypeIcon,
-  AlignLeftIcon,
-  ZapIcon,
-  BrainIcon,
-  WandIcon,
-  HighlighterIcon,
-  MaximizeIcon,
-  MinimizeIcon,
-  LanguagesIcon,
-  MessageSquareIcon,
-  FileIcon,
-  EditIcon
-} from 'lucide-react';
+import { MicIcon, CopyIcon, DownloadIcon, SearchIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon } from 'lucide-react';
 
 interface RecordingTranscriptionProps {
   recording: Recording;
@@ -70,15 +43,9 @@ function RecordingTranscription({
   const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg'>('base');
   const [transcriptionProgress, setTranscriptionProgress] = useState(0);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
-  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimer = useRef<number | null>(null);
   const [viewMode, setViewMode] = useState<'formatted' | 'plain' | 'timeline'>('formatted');
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showRedoConfirm, setShowRedoConfirm] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('zh-CN');
-  const [showAIEnhancement, setShowAIEnhancement] = useState(false);
-  const [highlightedText, setHighlightedText] = useState<string[]>([]);
   const [hotwords, setHotwords] = useState<string[]>([]);
   const [customHotword, setCustomHotword] = useState('');
   const [showHotwordDialog, setShowHotwordDialog] = useState(false);
@@ -165,28 +132,7 @@ function RecordingTranscription({
     }
   };
 
-  // Auto-save functionality
-  useEffect(() => {
-    if (!isEditing) return;
-
-    setAutoSaveStatus('unsaved');
-    
-    if (autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current);
-    }
-
-    autoSaveTimer.current = setTimeout(() => {
-      handleAutoSave();
-    }, 2000);
-
-    return () => {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-    };
-  }, [editForm.transcription, editForm.verbatimTranscript, isEditing]);
-
-  const handleAutoSave = async () => {
+  const handleAutoSave = useCallback(async () => {
     if (!isEditing || autoSaveStatus === 'saving') return;
 
     try {
@@ -198,7 +144,30 @@ function RecordingTranscription({
       setError(err instanceof Error ? err.message : 'Unknown error');
       setAutoSaveStatus('unsaved');
     }
-  };
+  }, [isEditing, autoSaveStatus, setError]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!isEditing) return;
+
+    setAutoSaveStatus('unsaved');
+    
+    if (autoSaveTimer.current) {
+      window.clearTimeout(autoSaveTimer.current);
+    }
+
+    autoSaveTimer.current = window.setTimeout(() => {
+      handleAutoSave();
+    }, 2000);
+
+    return () => {
+      if (autoSaveTimer.current) {
+        window.clearTimeout(autoSaveTimer.current);
+      }
+    };
+  }, [editForm.transcription, editForm.verbatimTranscript, isEditing, handleAutoSave]);
+
+  // Note: Alignment UI moved to RecordingAlignment component
 
   // Search functionality
   const highlightSearchTerm = (text: string) => {
@@ -216,21 +185,7 @@ function RecordingTranscription({
     );
   };
 
-  // Audio playback functionality
-  const toggleAudioPlayback = () => {
-    if (!audioRef.current) {
-      // For now, we'll just simulate audio playback
-      setIsPlaying(!isPlaying);
-      return;
-    }
-    
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
+  // Deprecated local playback toggle - replaced by alignment-aware seek (now in RecordingAlignment)
 
   // Format text based on view mode
   const formatText = (text: string) => {
@@ -340,6 +295,7 @@ function RecordingTranscription({
               <EyeIcon className="w-4 h-4 mr-2" />
               {viewMode === 'formatted' ? '纯文本' : '格式化'}
             </Button>
+            {/* Alignment actions moved to 对齐 tab */}
             
             <select
               value={fontSize}

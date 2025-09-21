@@ -16,11 +16,11 @@ import {
   MicIcon
 } from 'lucide-react';
 
-interface RecordingDetailsProps {
+interface RecordingInfoProps {
   recording: Recording;
 }
 
-function RecordingDetails({ recording }: RecordingDetailsProps) {
+function RecordingInfo({ recording }: RecordingInfoProps) {
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '-';
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -314,4 +314,4 @@ function RecordingDetails({ recording }: RecordingDetailsProps) {
   );
 }
 
-export default RecordingDetails;
+export default RecordingInfo;
