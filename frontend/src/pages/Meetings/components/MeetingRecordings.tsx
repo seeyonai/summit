@@ -31,7 +31,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
                 <p className="text-sm text-gray-600">录音总数</p>
                 <p className="text-2xl font-bold">{recordings.length}</p>
               </div>
-              <MicIcon className="w-8 h-8 text-indigo-500" />
+              <MicIcon className="w-8 h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>

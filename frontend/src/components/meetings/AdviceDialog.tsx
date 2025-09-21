@@ -61,7 +61,7 @@ function AdviceDialog({
                 <Lightbulb className="w-4 h-4" />
                 原始任务
               </div>
-              <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50/20 to-indigo-50/20 border border-blue-200/50">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50/20 to-blue-50/20 border border-blue-200/50">
                 <p className="text-sm text-gray-700">{todoText}</p>
               </div>
             </div>
@@ -89,7 +89,7 @@ function AdviceDialog({
                     variant="ghost"
                     size="sm"
                     onClick={handleCopy}
-                    className="gap-1.5 text-xs hover:bg-purple-50 hover:text-purple-700"
+                    className="gap-1.5 text-xs hover:bg-blue-50 hover:text-purple-700"
                   >
                     {copied ? (
                       <>
@@ -108,7 +108,7 @@ function AdviceDialog({
                       variant="ghost"
                       size="sm"
                       onClick={onRegenerate}
-                      className="gap-1.5 text-xs hover:bg-purple-50 hover:text-purple-700"
+                      className="gap-1.5 text-xs hover:bg-blue-50 hover:text-purple-700"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       重新生成

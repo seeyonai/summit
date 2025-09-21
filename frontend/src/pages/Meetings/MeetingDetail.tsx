@@ -227,7 +227,7 @@ function MeetingDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50/20 via-white/20 to-gray-50/20 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -273,103 +273,69 @@ function MeetingDetail() {
           返回
         </Button>
 
-        <div className="">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                  {meeting.title}
-                </h1>
-                <Badge
-                  variant="outline"
-                  className={getStatusColor(meeting.status)}
-                >
-                  <StatusIcon className="w-3 h-3 mr-1" />
-                  {getStatusText(meeting.status)}
-                </Badge>
-              </div>
-              <p className="text-gray-600 dark:text-gray-400">{meeting.summary || "暂无概要"}</p>
-              <div className="flex items-center gap-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
-                <span className="flex items-center gap-1">
-                  <CalendarIcon className="w-4 h-4" />
-                  {formatDate(meeting.scheduledStart)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <ClockIcon className="w-4 h-4" />
-                  最近更新: {formatDate(meeting.updatedAt)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <UsersIcon className="w-4 h-4" />
-                  {meeting.participants || 0} 人参与
-                </span>
-              </div>
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {meeting.title}
+              </h1>
+              <Badge
+                variant="outline"
+                className={getStatusColor(meeting.status)}
+              >
+                <StatusIcon className="w-3 h-3 mr-1" />
+                {getStatusText(meeting.status)}
+              </Badge>
             </div>
-
-            <div className="flex gap-2">
-              {meeting.status === "in_progress" && (
-                <Button
-                  onClick={handleToggleMeetingDisplay}
-                  variant="outline"
-                  className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 border-purple-500/30"
-                >
-                  <MaximizeIcon className="w-4 h-4 mr-2" />
-                  {showMeetingDisplay ? "Exit Display" : "Meeting Room Display"}
-                </Button>
-              )}
-              <Button
-                onClick={() => navigate(`/meetings/${meeting._id}/edit`)}
-                variant="outline"
-              >
-                <EditIcon className="w-4 h-4 mr-2" />
-                编辑
-              </Button>
-              <Button
-                onClick={handleDeleteMeeting}
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
-              >
-                <TrashIcon className="w-4 h-4 mr-2" />
-                删除
-              </Button>
-              <Button variant="outline" size="icon">
-                <MoreVerticalIcon className="w-4 h-4" />
-              </Button>
+            <p className="text-gray-600 dark:text-gray-400">{meeting.summary || "暂无概要"}</p>
+            <div className="flex items-center gap-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
+              <span className="flex items-center gap-1">
+                <CalendarIcon className="w-4 h-4" />
+                {formatDate(meeting.scheduledStart)}
+              </span>
+              <span className="flex items-center gap-1">
+                <ClockIcon className="w-4 h-4" />
+                最近更新: {formatDate(meeting.updatedAt)}
+              </span>
+              <span className="flex items-center gap-1">
+                <UsersIcon className="w-4 h-4" />
+                {meeting.participants || 0} 人参与
+              </span>
             </div>
           </div>
 
-          {/* Real-time Recording for In-Progress Meetings */}
-          {canRecord && (
-            <div className="bg-gradient-to-r from-green-50/20 to-emerald-50/20 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border border-green-200/50 dark:border-green-700/50">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
-                    <MicIcon className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">实时录音</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      会议正在进行中，可以开始录音
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <Suspense
-                fallback={
-                  <div className="space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-20 w-full" />
-                  </div>
-                }
+          <div className="flex gap-2">
+            {meeting.status === "in_progress" && (
+              <Button
+                onClick={handleToggleMeetingDisplay}
+                variant="outline"
+                className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 border-purple-500/30"
               >
-                <RealTimeSpeechRecognition
-                  meetingId={meeting._id}
-                  onRecordingComplete={handleRecordingComplete}
-                  isDisabled={!canRecord}
-                />
-              </Suspense>
-            </div>
-          )}
+                <MaximizeIcon className="w-4 h-4 mr-2" />
+                {showMeetingDisplay ? "Exit Display" : "Meeting Room Display"}
+              </Button>
+            )}
+            <Button
+              onClick={() => navigate(`/meetings/${meeting._id}/edit`)}
+              variant="outline"
+            >
+              <EditIcon className="w-4 h-4 mr-2" />
+              编辑
+            </Button>
+            <Button
+              onClick={handleDeleteMeeting}
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
+            >
+              <TrashIcon className="w-4 h-4 mr-2" />
+              删除
+            </Button>
+            <Button variant="outline" size="icon">
+              <MoreVerticalIcon className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
+
       </div>
 
       {/* Main Content Tabs */}

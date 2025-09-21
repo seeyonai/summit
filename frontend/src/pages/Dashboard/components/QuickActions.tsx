@@ -32,7 +32,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ className }) => {
     <Card className={cn("card-hover border-l-4 border-l-purple-500 dark:border-l-purple-600", className)}>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-gradient-to-r from-blue-500/30 to-purple-500/30">
+          <div className="p-2.5 rounded-lg bg-gradient-to-r from-primary/30 to-purple-500/30">
             <div className="w-5 h-5 bg-white rounded"></div>
           </div>
           <div>

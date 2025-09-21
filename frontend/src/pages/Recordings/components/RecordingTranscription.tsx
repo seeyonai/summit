@@ -288,7 +288,7 @@ function RecordingTranscription({
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-start">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <FileTextIcon className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -426,7 +426,7 @@ function RecordingTranscription({
               <textarea
                 value={editForm.transcription || ''}
                 onChange={(e) => setEditForm({...editForm, transcription: e.target.value})}
-                className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 min-h-[300px] focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 
+                className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 min-h-[300px] focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
                   ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}
                 placeholder="输入转录文本"
               />
@@ -443,7 +443,7 @@ function RecordingTranscription({
                 <textarea
                   value={editForm.verbatimTranscript || ''}
                   onChange={(e) => setEditForm({...editForm, verbatimTranscript: e.target.value})}
-                  className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 
+                  className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
                     ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}
                   placeholder="输入逐字稿"
                 />
@@ -511,7 +511,7 @@ function RecordingTranscription({
                 <Button
                   onClick={generateTranscription}
                   disabled={transcribing}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {transcribing ? (
                     <>

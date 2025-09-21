@@ -15,7 +15,7 @@ const PartialTranscriptCard: React.FC<PartialTranscriptCardProps> = ({
     <div className={`transform transition-all duration-300 ${
       pulseAnimation ? 'scale-[1.01]' : 'scale-100'
     }`}>
-      <Card className="bg-gradient-to-r from-blue-900/10 to-indigo-900/10 border-blue-500/20 backdrop-blur-sm shadow-xl shadow-blue-500/5">
+      <Card className="bg-gradient-to-r from-blue-900/10 to-blue-900/10 border-blue-500/20 backdrop-blur-sm shadow-xl shadow-blue-500/5">
         <CardContent className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="relative">

@@ -53,7 +53,7 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
 
     const maxTime = Math.max(...recording.speakerSegments.map(s => s.endTime));
     const speakerColors = [
-      'bg-gradient-to-r from-blue-500/30 to-blue-600/30',
+      'bg-gradient-to-r from-primary/30 to-blue-600/30',
       'bg-gradient-to-r from-green-500/30 to-green-600/30',
       'bg-gradient-to-r from-yellow-500/30 to-yellow-600/30',
       'bg-gradient-to-r from-purple-500/30 to-purple-600/30',
@@ -137,7 +137,7 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                   const totalTime = segments.reduce((acc, s) => acc + (s.endTime - s.startTime), 0);
                   const percentage = (totalTime / (recording.duration || 1)) * 100;
                   const speakerColors = [
-                    'from-blue-500/30 to-blue-600/30',
+                    'from-primary/30 to-blue-600/30',
                     'from-green-500/30 to-green-600/30',
                     'from-yellow-500/30 to-yellow-600/30',
                     'from-purple-500/30 to-purple-600/30',
@@ -303,7 +303,7 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                 <p className="text-sm text-green-700 dark:text-green-300">每分钟切换</p>
               </div>
               
-              <div className="text-center p-4 bg-purple-50/20 dark:bg-purple-900/10 rounded-lg">
+              <div className="text-center p-4 bg-blue-50/20 dark:bg-blue-900/10 rounded-lg">
                 <ClockIcon className="w-8 h-8 text-purple-500 dark:text-purple-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                   {formatTime(

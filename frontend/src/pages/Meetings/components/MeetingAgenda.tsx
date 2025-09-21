@@ -55,7 +55,7 @@ export function MeetingAgenda({ agenda, recordingTime }: MeetingAgendaProps) {
                       ) : status === 'active' ? (
                         <div className="relative">
                           <Circle className="w-5 h-5 text-purple-400" />
-                          <div className="absolute inset-0 w-5 h-5 bg-purple-400 rounded-full animate-ping" />
+                          <div className="absolute inset-0 w-5 h-5 bg-blue-400 rounded-full animate-ping" />
                         </div>
                       ) : (
                         <Circle className="w-5 h-5 text-white/30" />

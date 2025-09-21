@@ -34,7 +34,7 @@ function HotwordToolbar({
             placeholder="搜索热词..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 pr-4 h-11 border-gray-200 focus:border-indigo-500 transition-colors"
+            className="pl-10 pr-4 h-11 border-gray-200 focus:border-blue-500 transition-colors"
           />
         </div>
 

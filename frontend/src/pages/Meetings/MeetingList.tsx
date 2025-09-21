@@ -173,7 +173,6 @@ function MeetingList() {
     const StatusIcon = getStatusIcon(meeting.status);
     const completedTodos = meeting.parsedTodos?.filter(t => t.completed).length || 0;
     const totalTodos = meeting.parsedTodos?.length || 0;
-    const todoProgress = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
 
     return (
       <Card 
@@ -207,22 +206,7 @@ function MeetingList() {
             </div>
           )}
 
-          {/* Progress Visualization */}
-          {totalTodos > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-600 dark:text-gray-400">任务进度</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{completedTodos}/{totalTodos}</span>
-              </div>
-              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-green-400/60 to-green-500/60 transition-all duration-300"
-                  style={{ width: `${todoProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-
+  
           {/* Meeting Info */}
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
@@ -233,12 +217,17 @@ function MeetingList() {
               <Mic className="w-3 h-3" />
               <span>{meeting.recordings?.length || 0} 录音</span>
             </div>
-            {meeting.agenda && meeting.agenda.length > 0 && (
+            {totalTodos > 0 ? (
+              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                <TargetIcon className="w-3 h-3" />
+                <span>{totalTodos} 任务</span>
+              </div>
+            ) : meeting.agenda && meeting.agenda.length > 0 ? (
               <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                 <FileTextIcon className="w-3 h-3" />
                 <span>{meeting.agenda.length} 议程</span>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Action Buttons */}
@@ -297,7 +286,7 @@ function MeetingList() {
           <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
             meeting.status === 'in_progress' ? 'bg-gradient-to-r from-green-500/80 to-green-600/80' :
             meeting.status === 'completed' ? 'bg-gradient-to-r from-gray-400/80 to-gray-500/80' :
-            'bg-gradient-to-r from-blue-500/80 to-indigo-500/80'
+            'bg-gradient-to-r from-primary/80 to-blue-500/80'
           } text-white`}>
             <StatusIcon className="w-5 h-5" />
           </div>
@@ -369,18 +358,18 @@ function MeetingList() {
   return (
     <div className="space-y-8">
         {/* Header Section with Stats */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/90 to-indigo-600/90 p-8 text-white shadow-xl">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/90 to-blue-600/90 p-8 text-white shadow-xl">
           <div className="absolute inset-0 bg-black/10" />
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h1 className="text-4xl font-bold mb-2">会议</h1>
-                <p className="text-indigo-100 text-lg">智能管理您的会议记录和任务进度</p>
+                <p className="text-blue-100 text-lg">智能管理您的会议记录和任务进度</p>
               </div>
               <Button
                 onClick={() => setShowCreateModal(true)}
                 size="lg"
-                className="bg-white text-indigo-600 hover:bg-indigo-50 transition-all duration-300 shadow-lg"
+                className="bg-white text-blue-600 hover:bg-blue-50 transition-all duration-300 shadow-lg"
               >
                 <PlusIcon className="w-5 h-5 mr-2" />
                 创建会议
@@ -392,17 +381,17 @@ function MeetingList() {
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-indigo-100 text-sm">总会议数</p>
+                    <p className="text-blue-100 text-sm">总会议数</p>
                     <p className="text-2xl font-bold">{stats.total}</p>
                   </div>
-                  <FolderOpenIcon className="w-8 h-8 text-indigo-200" />
+                  <FolderOpenIcon className="w-8 h-8 text-blue-200" />
                 </div>
               </div>
               
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-indigo-100 text-sm">进行中</p>
+                    <p className="text-blue-100 text-sm">进行中</p>
                     <p className="text-2xl font-bold">{stats.inProgressCount}</p>
                   </div>
                   <ActivityIcon className="w-8 h-8 text-green-300" />
@@ -412,7 +401,7 @@ function MeetingList() {
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-indigo-100 text-sm">任务完成率</p>
+                    <p className="text-blue-100 text-sm">任务完成率</p>
                     <p className="text-2xl font-bold">{stats.todoCompletionRate.toFixed(0)}%</p>
                   </div>
                   <TargetIcon className="w-8 h-8 text-purple-200" />
@@ -422,7 +411,7 @@ function MeetingList() {
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-indigo-100 text-sm">总录音数</p>
+                    <p className="text-blue-100 text-sm">总录音数</p>
                     <p className="text-2xl font-bold">{stats.totalRecordings}</p>
                   </div>
                   <Mic className="w-8 h-8 text-pink-200" />
@@ -446,12 +435,12 @@ function MeetingList() {
                 placeholder="搜索会议标题或概要..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 h-11 border-gray-200 focus:border-indigo-500 dark:border-gray-600 dark:focus:border-indigo-400 transition-colors"
+                className="pl-10 pr-4 h-11 border-gray-200 focus:border-blue-500 dark:border-gray-600 dark:focus:border-blue-400 transition-colors"
               />
             </div>
             
             <div className="flex gap-2">
-              <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+              <Select value={filterStatus} onValueChange={(value: 'all' | 'scheduled' | 'in_progress' | 'completed') => setFilterStatus(value)}>
                 <SelectTrigger className="w-[180px] h-11">
                   <FilterIcon className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="筛选状态" />

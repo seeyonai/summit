@@ -28,7 +28,7 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
         <div className="space-y-3">
           <Button
             onClick={onOpenAIDialog}
-            className="w-full bg-gradient-to-r from-blue-600/80 to-purple-600/80 hover:from-blue-500/80 hover:to-purple-500/80 text-white transition-all shadow-lg hover:shadow-purple-500/10"
+            className="w-full bg-gradient-to-r from-primary/80 to-purple-600/80 hover:from-primary/80 hover:to-purple-500/80 text-white transition-all shadow-lg hover:shadow-purple-500/10"
           >
             <Sparkles className="w-4 h-4 mr-2" />
             AI 助手

@@ -192,7 +192,7 @@ function RecordingDetailRedesign() {
 
     const maxTime = Math.max(...recording.speakerSegments.map(s => s.endTime));
     const speakerColors = [
-      'bg-gradient-to-r from-blue-500/30 to-blue-600/30',
+      'bg-gradient-to-r from-primary/30 to-blue-600/30',
       'bg-gradient-to-r from-green-500/30 to-green-600/30',
       'bg-gradient-to-r from-yellow-500/30 to-yellow-600/30',
       'bg-gradient-to-r from-purple-500/30 to-purple-600/30',
@@ -326,7 +326,7 @@ function RecordingDetailRedesign() {
               <div className="flex justify-between items-start mb-6">
                 <div className="flex-1">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                       <HeadphonesIcon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
@@ -390,7 +390,7 @@ function RecordingDetailRedesign() {
                       </Button>
                       <Button
                         onClick={updateRecording}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         <SaveIcon className="w-4 h-4 mr-2" />
                         保存更改

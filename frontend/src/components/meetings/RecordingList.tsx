@@ -58,7 +58,7 @@ function RecordingList({
                   id="recording-mode"
                   checked={showCombinedRecording}
                   onCheckedChange={setShowCombinedRecording}
-                  className="data-[state=checked]:bg-purple-600"
+                  className="data-[state=checked]:bg-blue-600"
                 />
               </div>
             )}
@@ -66,7 +66,7 @@ function RecordingList({
               onClick={onViewTranscript}
               variant="outline"
               disabled={!hasRecordings}
-              className="gap-2 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300"
+              className="gap-2 hover:bg-blue-50 hover:text-purple-700 hover:border-purple-300"
             >
               <FileAudio className="w-4 h-4" />
               查看转录

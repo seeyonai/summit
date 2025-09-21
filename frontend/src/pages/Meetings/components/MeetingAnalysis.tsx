@@ -117,7 +117,7 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <BrainIcon className="w-5 h-5 text-indigo-600" />
+                <BrainIcon className="w-5 h-5 text-blue-600" />
                 AI 转录分析
               </CardTitle>
               <CardDescription>
@@ -163,9 +163,9 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
           {analysisData && (
             <div className="mt-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-gradient-to-br from-indigo-50/20 to-purple-50/20 rounded-lg border border-indigo-200/50">
+                <div className="p-4 bg-gradient-to-br from-blue-50/20 to-purple-50/20 rounded-lg border border-blue-200/50">
                   <div className="flex items-center gap-3">
-                    <TargetIcon className="w-6 h-6 text-indigo-600" />
+                    <TargetIcon className="w-6 h-6 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-600">分析状态</p>
                       <p className="font-semibold text-gray-900">已完成</p>
@@ -288,7 +288,7 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex items-center justify-center w-6 h-6 mt-1">
-                            <TargetIcon className="w-4 h-4 text-indigo-600" />
+                            <TargetIcon className="w-4 h-4 text-blue-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">

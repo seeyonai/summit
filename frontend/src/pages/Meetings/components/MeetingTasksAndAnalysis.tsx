@@ -148,7 +148,7 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
       <div className="flex border-b">
         <Button
           variant={activeTab === 'tasks' ? 'default' : 'ghost'}
-          className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-white"
+          className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-white"
           onClick={() => setActiveTab('tasks')}
         >
           <TargetIcon className="w-4 h-4 mr-2" />
@@ -156,7 +156,7 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
         </Button>
         <Button
           variant={activeTab === 'analysis' ? 'default' : 'ghost'}
-          className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-white ml-2"
+          className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-white ml-2"
           onClick={() => setActiveTab('analysis')}
         >
           <BrainIcon className="w-4 h-4 mr-2" />
@@ -176,7 +176,7 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
                     <p className="text-sm text-gray-600">总任务数</p>
                     <p className="text-2xl font-bold">{todos.length}</p>
                   </div>
-                  <TargetIcon className="w-8 h-8 text-indigo-500" />
+                  <TargetIcon className="w-8 h-8 text-blue-500" />
                 </div>
               </CardContent>
             </Card>
@@ -305,7 +305,7 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
                         className={`group p-4 rounded-lg border-2 transition-all duration-200 ${
                           todo.completed 
                             ? 'bg-gray-50 border-gray-200' 
-                            : 'bg-white hover:shadow-md border-gray-200 hover:border-indigo-300'
+                            : 'bg-white hover:shadow-md border-gray-200 hover:border-blue-300'
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -353,7 +353,7 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
                             >
                               {generatingAdvice[todo.id] ? (
                                 <>
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-indigo-600 mr-2" />
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2" />
                                   生成中...
                                 </>
                               ) : (
@@ -395,9 +395,9 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gradient-to-br from-indigo-50/20 to-purple-50/20 rounded-lg border border-indigo-200/50">
+                  <div className="p-4 bg-gradient-to-br from-blue-50/20 to-purple-50/20 rounded-lg border border-blue-200/50">
                     <div className="flex items-center gap-3 mb-3">
-                      <LightbulbIcon className="w-6 h-6 text-indigo-600" />
+                      <LightbulbIcon className="w-6 h-6 text-blue-600" />
                       <h4 className="font-semibold text-gray-900">效率建议</h4>
                     </div>
                     <p className="text-sm text-gray-700">
@@ -434,7 +434,7 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <BrainIcon className="w-5 h-5 text-indigo-600" />
+                    <BrainIcon className="w-5 h-5 text-blue-600" />
                     AI 转录分析
                   </CardTitle>
                   <CardDescription>
@@ -480,9 +480,9 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
               {analysisData && (
                 <div className="mt-4 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-gradient-to-br from-indigo-50/20 to-purple-50/20 rounded-lg border border-indigo-200/50">
+                    <div className="p-4 bg-gradient-to-br from-blue-50/20 to-purple-50/20 rounded-lg border border-blue-200/50">
                       <div className="flex items-center gap-3">
-                        <TargetIcon className="w-6 h-6 text-indigo-600" />
+                        <TargetIcon className="w-6 h-6 text-blue-600" />
                         <div>
                           <p className="text-sm text-gray-600">分析状态</p>
                           <p className="font-semibold text-gray-900">已完成</p>
@@ -605,7 +605,7 @@ function MeetingTasksAndAnalysis({ meeting, onGenerateAdvice, generatingAdvice, 
                           >
                             <div className="flex items-start gap-3">
                               <div className="flex items-center justify-center w-6 h-6 mt-1">
-                                <TargetIcon className="w-4 h-4 text-indigo-600" />
+                                <TargetIcon className="w-4 h-4 text-blue-600" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-2">

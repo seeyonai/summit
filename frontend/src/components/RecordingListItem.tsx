@@ -72,7 +72,7 @@ function RecordingListItem({
         {/* Play Button */}
         <button
           onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recording.filename), e)}
-          className="w-12 h-12 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform"
+          className="w-12 h-12 bg-gradient-to-r from-primary/80 to-blue-500/80 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform"
         >
           {playingAudio === recordingId ? (
             <PauseIcon className="w-5 h-5" />
@@ -91,7 +91,7 @@ function RecordingListItem({
               </Badge>
             )}
             {recording.speakerSegments && recording.speakerSegments.length > 0 && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+              <Badge variant="secondary" className="bg-blue-100 text-purple-700 text-xs">
                 {recording.numSpeakers || '多'}人对话
               </Badge>
             )}

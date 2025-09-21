@@ -92,7 +92,7 @@ function RecordingCard({
     
     switch (variant) {
       case 'combined':
-        return `${baseClasses} border-purple-200 bg-gradient-to-br from-purple-50/20 to-indigo-50/20 ${className}`;
+        return `${baseClasses} border-purple-200 bg-gradient-to-br from-purple-50/20 to-blue-50/20 ${className}`;
       case 'compact':
         return `${baseClasses} border-gray-200 hover:border-blue-300 ${className}`;
       default:
@@ -103,8 +103,8 @@ function RecordingCard({
   const getWaveformBars = () => {
     const barCount = variant === 'compact' ? 25 : 40;
     const colorClasses = variant === 'combined' 
-      ? 'from-indigo-400/30 to-purple-400/30'
-      : 'from-blue-400/60 to-indigo-400/60';
+      ? 'from-blue-400/30 to-purple-400/30'
+      : 'from-blue-400/60 to-blue-400/60';
     
     return Array.from({ length: barCount }).map((_, i) => (
       <div
@@ -125,7 +125,7 @@ function RecordingCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               {variant === 'combined' && (
-                <Badge className="bg-purple-600 text-white">
+                <Badge className="bg-blue-600 text-white">
                   合并录音
                 </Badge>
               )}
@@ -169,7 +169,7 @@ function RecordingCard({
               </Badge>
             )}
             {hasSpeakers && (
-              <Badge variant="secondary" className={variant === 'combined' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}>
+              <Badge variant="secondary" className={variant === 'combined' ? 'bg-blue-100 text-blue-700' : 'bg-blue-100 text-purple-700'}>
                 <UsersIcon className="w-3 h-3 mr-1" />
                 {numSpeakers}人
               </Badge>
@@ -183,8 +183,8 @@ function RecordingCard({
           {/* Audio Waveform Visualization */}
           <div className={`relative ${variant === 'compact' ? 'h-16' : 'h-20'} bg-gradient-to-r ${
             variant === 'combined' 
-              ? 'from-indigo-50/30 to-purple-50/30' 
-              : 'from-blue-50/30 to-indigo-50/30'
+              ? 'from-blue-50/30 to-purple-50/30' 
+              : 'from-blue-50/30 to-blue-50/30'
           } rounded-lg overflow-hidden`}>
             <div className="absolute inset-0 flex items-center justify-center gap-1 px-4">
               {getWaveformBars()}
@@ -195,9 +195,9 @@ function RecordingCard({
             >
               <div className={`${variant === 'compact' ? 'w-12 h-12' : 'w-14 h-14'} bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow`}>
                 {playingAudio === recordingId ? (
-                  <PauseIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-indigo-600' : 'text-blue-600'}`} />
+                  <PauseIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-blue-600' : 'text-blue-600'}`} />
                 ) : (
-                  <PlayIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-indigo-600' : 'text-blue-600'} ml-1`} />
+                  <PlayIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-blue-600' : 'text-blue-600'} ml-1`} />
                 )}
               </div>
             </button>

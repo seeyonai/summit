@@ -72,7 +72,7 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
     'bg-blue-100 text-blue-800',
     'bg-green-100 text-green-800',
     'bg-yellow-100 text-yellow-800',
-    'bg-purple-100 text-purple-800',
+    'bg-blue-100 text-purple-800',
     'bg-pink-100 text-pink-800'
   ];
 
@@ -176,7 +176,7 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
                 return (
                   <div key={speaker.index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-full flex items-center justify-center text-indigo-700 font-semibold">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-full flex items-center justify-center text-blue-700 font-semibold">
                         {speaker.index + 1}
                       </div>
                       <div>

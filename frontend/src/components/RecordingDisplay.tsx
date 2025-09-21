@@ -104,7 +104,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
           <button
             onClick={() => onGenerateVerbatim(recording._id)}
             disabled={isGeneratingVerbatim}
-            className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isGeneratingVerbatim ? '生成中...' : '生成逐字稿'}
           </button>
@@ -181,7 +181,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
         )}
 
         {activeTab === 'verbatim' && recording.verbatimTranscript && (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-purple-200 rounded-lg p-4">
             <h4 className="text-sm font-medium text-purple-800 mb-2">逐字稿</h4>
             <p className="text-purple-900 whitespace-pre-wrap">{recording.verbatimTranscript}</p>
           </div>
