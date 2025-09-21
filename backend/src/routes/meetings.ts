@@ -182,15 +182,10 @@ router.delete('/:id', async (req: Request, res: Response) => {
 router.post('/:id/recordings', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const recordingPayload = req.body as RecordingPayload;
-    // @ts-ignore
-    const meeting = await meetingService.addRecordingToMeeting(id, deserializeRecording(recordingPayload));
-    
-    if (!meeting) {
-      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
-    }
-    
-    res.json(serializeMeeting(meeting));
+    const { recordingId } = req.body;
+    const meeting = await recordingService.addRecordingToMeeting(id, recordingId);
+
+    res.json(meeting);
   } catch (error) {
     console.error('Error adding recording to meeting:', error);
     res.status(500).json({ error: 'Internal server error' });

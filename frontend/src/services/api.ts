@@ -334,8 +334,8 @@ class ApiService {
   }
 
   // Meeting ↔ Recording association
-  async addRecordingToMeeting(meetingId: string, recording: Recording): Promise<MeetingWithRecordings> {
-    return this.post<MeetingWithRecordings>(`/api/meetings/${meetingId}/recordings`, recording);
+  async addRecordingToMeeting(meetingId: string, recordingId: string): Promise<MeetingWithRecordings> {
+    return this.post<MeetingWithRecordings>(`/api/meetings/${meetingId}/recordings`, { recordingId });
   }
 }
 

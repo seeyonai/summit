@@ -14,6 +14,8 @@ import { formatDuration, formatFileSize } from '@/utils/formatHelpers';
 import type { Recording, Meeting } from '@/types';
 import RecordingCard from '@/components/RecordingCard';
 import RecordingListItem from '@/components/RecordingListItem';
+import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
+import { useMeetings } from '@/hooks/useMeetings';
 import {
   MicIcon,
   SearchIcon,
@@ -38,8 +40,6 @@ function RecordingList() {
   const [recording, setRecording] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showAssociationModal, setShowAssociationModal] = useState(false);
-  const [availableMeetings, setAvailableMeetings] = useState<Meeting[]>([]);
-  const [selectedMeeting, setSelectedMeeting] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'transcribed' | 'untranscribed'>('all');
@@ -87,39 +87,7 @@ function RecordingList() {
     }
   };
 
-  const fetchMeetings = async () => {
-    try {
-      const data = await apiService.getMeetings();
-      setAvailableMeetings(data);
-    } catch (err) {
-      console.error('Failed to fetch meetings:', err);
-    }
-  };
-
-  const associateWithMeeting = async () => {
-    if (!selectedRecording || !selectedMeeting) return;
-
-    try {
-      await apiService.addRecordingToMeeting(selectedMeeting, {
-        _id: selectedRecording._id,
-        filePath: selectedRecording.filePath,
-        filename: selectedRecording.filename,
-        createdAt: selectedRecording.createdAt,
-        duration: selectedRecording.duration,
-        transcription: selectedRecording.transcription,
-        sampleRate: selectedRecording.sampleRate,
-        channels: selectedRecording.channels,
-        format: selectedRecording.format,
-      } as unknown as Recording);
-      
-      setShowAssociationModal(false);
-      setSelectedRecording(null);
-      setSelectedMeeting('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    }
-  };
-
+  
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -164,23 +132,36 @@ function RecordingList() {
   const openAssociationModal = (recording: Recording, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setSelectedRecording(recording);
-    fetchMeetings();
     setShowAssociationModal(true);
+  };
+
+  // Handle successful association
+  const handleAssociationSuccess = () => {
+    setShowAssociationModal(false);
+    setSelectedRecording(null);
+    fetchRecordings();
   };
 
   // Filtered recordings based on search and filter
   const filteredRecordings = useMemo(() => {
-    return recordings.filter(recording => {
-      const matchesSearch = searchQuery === '' || 
-        recording.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recording.transcription?.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesFilter = filterStatus === 'all' ||
-        (filterStatus === 'transcribed' && recording.transcription) ||
-        (filterStatus === 'untranscribed' && !recording.transcription);
-      
-      return matchesSearch && matchesFilter;
-    });
+    return recordings
+      .filter(recording => {
+        const matchesSearch = searchQuery === '' || 
+          recording.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          recording.transcription?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesFilter = filterStatus === 'all' ||
+          (filterStatus === 'transcribed' && recording.transcription) ||
+          (filterStatus === 'untranscribed' && !recording.transcription);
+        
+        return matchesSearch && matchesFilter;
+      })
+      .sort((a, b) => {
+        // Sort by most recently updated (use createdAt or updatedAt if available)
+        const dateA = a.updatedAt || a.createdAt;
+        const dateB = b.updatedAt || b.createdAt;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
   }, [recordings, searchQuery, filterStatus]);
 
   // Statistics
@@ -461,51 +442,15 @@ function RecordingList() {
         )}
 
         {/* Association Modal */}
-        <Dialog open={showAssociationModal} onOpenChange={setShowAssociationModal}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>关联录音到会议</DialogTitle>
-              <DialogDescription>
-                选择要关联的会议
-              </DialogDescription>
-            </DialogHeader>
-            {selectedRecording && (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">录音文件</p>
-                  <p className="font-medium">{selectedRecording.filename}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">选择会议</label>
-                  <Select value={selectedMeeting} onValueChange={setSelectedMeeting}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="请选择会议" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableMeetings.map((meeting) => (
-                        <SelectItem key={meeting._id} value={meeting._id}>
-                          {meeting.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAssociationModal(false)}>
-                取消
-              </Button>
-              <Button 
-                onClick={associateWithMeeting}
-                disabled={!selectedMeeting}
-              >
-                关联
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {selectedRecording && (
+          <AssociateMeetingDialog
+            isOpen={showAssociationModal}
+            onClose={() => setShowAssociationModal(false)}
+            recording={selectedRecording}
+            onSuccess={handleAssociationSuccess}
+            onError={setError}
+          />
+        )}
     </div>
   );
 }

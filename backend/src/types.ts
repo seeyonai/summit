@@ -1,4 +1,5 @@
 import * as baseTypes from "@base/types";
+import { AlignmentItem, TimeStampedNote } from "@base/types";
 import { ObjectId } from "mongodb";
 
 export type SpeakerSegment = baseTypes.SpeakerSegment;
@@ -12,10 +13,13 @@ interface Id {
   _id: ObjectId;
 }
 
-export type Recording = baseTypes.Recording & Timestamp & Id;
+export type Recording = baseTypes.Recording & Timestamp & Id & {
+  meetingId?: ObjectId;
+};
 
 export interface RecordingResponse {
   _id: string;
+  meetingId?: string;
   filePath: string;
   filename: string;
   createdAt: string;
@@ -25,6 +29,8 @@ export interface RecordingResponse {
   transcription?: string;
   verbatimTranscript?: string;
   speakerSegments?: SpeakerSegment[];
+  timeStampedNotes?: TimeStampedNote[];
+  alignmentItems?: AlignmentItem[];
   numSpeakers?: number;
   sampleRate?: number;
   channels?: number;

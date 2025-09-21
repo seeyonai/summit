@@ -199,7 +199,7 @@ function MeetingDetail() {
   const getStatusText = (status?: string) => {
     switch (status) {
       case "scheduled":
-        return "已安排";
+        return "已排期";
       case "in_progress":
         return "进行中";
       case "completed":
@@ -265,7 +265,7 @@ function MeetingDetail() {
       {/* Header */}
       <div className="mb-8">
         <Button
-          onClick={() => history.back()}
+          onClick={() => navigate("/meetings")}
           variant="ghost"
           className="mb-4"
         >
@@ -312,7 +312,7 @@ function MeetingDetail() {
                 className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 border-purple-500/30"
               >
                 <MaximizeIcon className="w-4 h-4 mr-2" />
-                {showMeetingDisplay ? "Exit Display" : "Meeting Room Display"}
+                {showMeetingDisplay ? "退出大屏" : "会议大屏"}
               </Button>
             )}
             <Button

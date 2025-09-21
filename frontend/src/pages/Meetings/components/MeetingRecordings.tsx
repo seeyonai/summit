@@ -99,7 +99,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
 
       {/* Individual Recordings */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">独立录音文件</h3>
+        <h3 className="text-lg font-semibold">录音文件</h3>
         {recordings.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {recordings.map((recording) => (

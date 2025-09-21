@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { apiService } from '@/services/api';
 import { formatDate } from '@/utils/date';
 import type { Meeting, MeetingStatus, MeetingCreate } from '@/types';
+import { useMeetings } from '@/hooks/useMeetings';
 import {
   Users,
   Mic,
@@ -40,45 +41,47 @@ import {
 
 function MeetingList() {
   const navigate = useNavigate();
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { meetings, loading, error, refetch } = useMeetings();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
+  
+  const getTomorrow9AM = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    return tomorrow;
+  };
+
+  const formatDateTimeLocal = (date: Date | string) => {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+  
   const [newMeeting, setNewMeeting] = useState<MeetingCreate>({
     title: '',
-    scheduledStart: undefined,
-    participants: undefined
+    scheduledStart: getTomorrow9AM(),
+    participants: 5
   });
-
-  // API functions
-  const fetchMeetings = async () => {
-    try {
-      setLoading(true);
-      const data = await apiService.getMeetings();
-      setMeetings(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const createMeeting = async (meetingData: MeetingCreate) => {
     try {
       await apiService.createMeeting(meetingData);
-      await fetchMeetings();
+      refetch();
       setShowCreateModal(false);
       setNewMeeting({
         title: '',
-        scheduledStart: undefined,
-        participants: undefined
+        scheduledStart: getTomorrow9AM(),
+        participants: 5
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error('Error creating meeting:', err);
     }
   };
 
@@ -90,15 +93,11 @@ function MeetingList() {
 
     try {
       await apiService.deleteMeeting(id);
-      await fetchMeetings();
+      refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error('Error deleting meeting:', err);
     }
   };
-
-  useEffect(() => {
-    fetchMeetings();
-  }, []);
 
   const handleCreateMeeting = () => {
     createMeeting(newMeeting);
@@ -106,16 +105,23 @@ function MeetingList() {
 
   // Filtered meetings based on search and filter
   const filteredMeetings = useMemo(() => {
-    return (meetings || []).filter(meeting => {
-      const matchesSearch = searchQuery === '' || 
-        meeting.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        meeting.summary?.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesFilter = filterStatus === 'all' ||
-        meeting.status === filterStatus;
-      
-      return matchesSearch && matchesFilter;
-    });
+    return (meetings || [])
+      .filter(meeting => {
+        const matchesSearch = searchQuery === '' || 
+          meeting.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          meeting.summary?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesFilter = filterStatus === 'all' ||
+          meeting.status === filterStatus;
+        
+        return matchesSearch && matchesFilter;
+      })
+      .sort((a, b) => {
+        // Sort by most recently updated (use createdAt or updatedAt if available, fallback to scheduledStart)
+        const dateA = a.updatedAt || a.createdAt || a.scheduledStart;
+        const dateB = b.updatedAt || b.createdAt || b.scheduledStart;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
   }, [meetings, searchQuery, filterStatus]);
 
   // Statistics
@@ -152,7 +158,7 @@ function MeetingList() {
 
   const getStatusText = (status: MeetingStatus) => {
     switch (status) {
-      case 'scheduled': return '已安排';
+      case 'scheduled': return '已排期';
       case 'in_progress': return '进行中';
       case 'completed': return '已完成';
       case 'failed': return '失败';
@@ -447,7 +453,7 @@ function MeetingList() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部会议</SelectItem>
-                  <SelectItem value="scheduled">已安排</SelectItem>
+                  <SelectItem value="scheduled">已排期</SelectItem>
                   <SelectItem value="in_progress">进行中</SelectItem>
                   <SelectItem value="completed">已完成</SelectItem>
                 </SelectContent>
@@ -471,7 +477,7 @@ function MeetingList() {
               </div>
               
               <Button
-                onClick={fetchMeetings}
+                onClick={refetch}
                 variant="outline"
                 size="default"
                 className="h-11"
@@ -587,7 +593,7 @@ function MeetingList() {
                 <Input
                   id="start-time"
                   type="datetime-local"
-                  value={newMeeting.scheduledStart ? new Date(newMeeting.scheduledStart).toISOString().slice(0, 16) : ''}
+                  value={newMeeting.scheduledStart ? formatDateTimeLocal(newMeeting.scheduledStart) : ''}
                   onChange={(e) => setNewMeeting({...newMeeting, scheduledStart: e.target.value ? new Date(e.target.value) : undefined})}
                 />
               </div>

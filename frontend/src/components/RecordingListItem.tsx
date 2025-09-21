@@ -108,7 +108,7 @@ function RecordingListItem({
               >
                 {recording.meeting.status === 'completed' ? '已完成' :
                  recording.meeting.status === 'in_progress' ? '进行中' :
-                 recording.meeting.status === 'scheduled' ? '已安排' : '失败'}
+                 recording.meeting.status === 'scheduled' ? '已排期' : '失败'}
               </Badge>
             )}
           </div>

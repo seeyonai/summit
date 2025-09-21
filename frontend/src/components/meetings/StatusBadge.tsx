@@ -25,7 +25,7 @@ const statusConfig = {
       dotClass: 'bg-gray-400',
     },
     scheduled: {
-      label: '已安排',
+      label: '已排期',
       className: 'bg-gradient-to-r from-blue-50/20 to-sky-50/20 text-blue-700 border-blue-200/50',
       dotClass: 'bg-blue-500',
     },

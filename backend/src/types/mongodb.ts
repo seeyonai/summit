@@ -125,6 +125,7 @@ export function recordingToDoc(recording: Omit<Recording, 'id'>): Omit<Recording
     format: recording.format,
     externalId: recording.externalId,
     source: recording.source,
-    organizedSpeeches: recording.organizedSpeeches
+    organizedSpeeches: recording.organizedSpeeches,
+    meetingId: recording.meetingId
   };
 }

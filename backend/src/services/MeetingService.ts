@@ -86,25 +86,6 @@ export const deleteMeeting = async (id: string): Promise<boolean> => {
   return result.deletedCount > 0;
 };
 
-export const addRecordingToMeeting = async (meetingId: string, recording: Recording): Promise<Meeting | null> => {
-  const collection = getMeetingsCollection();
-
-  const result = await collection.findOneAndUpdate(
-    { _id: new ObjectId(meetingId) },
-    {
-      $push: { recordings: recording } as any,
-      $set: { updatedAt: new Date() }
-    },
-    { returnDocument: 'after' }
-  );
-
-  if (!result) {
-    return null;
-  }
-
-  return result.value ? meetingToApp(result.value) : null;
-};
-
 export const removeRecordingFromMeeting = async (
   meetingId: string,
   recordingId: string
@@ -124,7 +105,7 @@ export const removeRecordingFromMeeting = async (
     return null;
   }
 
-  return result.value ? meetingToApp(result.value) : null;
+  return meetingToApp(result);
 };
 
 export const updateCombinedRecording = async (meetingId: string, recording: Recording | null): Promise<Meeting | null> => {
@@ -145,11 +126,11 @@ export const updateCombinedRecording = async (meetingId: string, recording: Reco
     { returnDocument: 'after' }
   );
 
-  if (!result?.value) {
+  if (!result) {
     return null;
   }
 
-  return meetingToApp(result.value);
+  return meetingToApp(result);
 };
 
 export const getMeetingsByStatus = async (status: string): Promise<Meeting[]> => {
@@ -175,7 +156,6 @@ export const meetingService = {
   createMeeting,
   updateMeeting,
   deleteMeeting,
-  addRecordingToMeeting,
   removeRecordingFromMeeting,
   updateCombinedRecording,
   getMeetingsByStatus,

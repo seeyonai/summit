@@ -9,13 +9,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import HotwordSelection from '@/components/HotwordSelection';
-import type { Recording } from '@/types';
+import type { Recording, Meeting } from '@/types';
 import { apiService, apiUrl } from '@/services/api';
 import RecordingTranscription from './RecordingTranscription';
 import RecordingAlignment from './RecordingAlignment';
 import RecordingAnalysis from './RecordingAnalysis';
 import RecordingInfo from './RecordingInfo';
 import RecordingOrganize from './RecordingOrganize';
+import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
 import {
   ArrowLeftIcon,
   EditIcon,
@@ -35,7 +36,8 @@ import {
   FileTextIcon,
   CheckCircleIcon,
   UsersIcon,
-  InfoIcon
+  InfoIcon,
+  Link2Icon
 } from 'lucide-react';
 
 
@@ -53,6 +55,7 @@ function RecordingDetailRedesign() {
   const [, setTranscribing] = useState(false);
   const [showHotwordSelection, setShowHotwordSelection] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showAssociateModal, setShowAssociateModal] = useState(false);
 
   // Fetch recording details
   const fetchRecording = useCallback(async () => {
@@ -154,6 +157,17 @@ function RecordingDetailRedesign() {
   const handleHotwordTranscribe = () => {
     setShowHotwordSelection(false);
     generateTranscription();
+  };
+
+  // Open associate modal
+  const openAssociateModal = () => {
+    setShowAssociateModal(true);
+  };
+
+  // Handle successful association
+  const handleAssociationSuccess = () => {
+    fetchRecording();
+    setSuccess('录音已成功关联到会议');
   };
 
   // Download recording
@@ -264,6 +278,23 @@ function RecordingDetailRedesign() {
                   <TooltipContent>下载录音</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              
+              {!recording.meeting && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={openAssociateModal}
+                      >
+                        <Link2Icon className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>关联到会议</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
           </div>
           
@@ -301,7 +332,7 @@ function RecordingDetailRedesign() {
                             >
                               {recording.meeting.status === 'completed' ? '已完成' :
                                recording.meeting.status === 'in_progress' ? '进行中' :
-                               recording.meeting.status === 'scheduled' ? '已安排' : '失败'}
+                               recording.meeting.status === 'scheduled' ? '已排期' : '失败'}
                             </Badge>
                           </div>
                         </div>
@@ -522,6 +553,17 @@ function RecordingDetailRedesign() {
             onClose={() => setShowHotwordSelection(false)}
             onApply={handleHotwordTranscribe}
             currentHotwords={recording.transcription ? [recording.transcription] : []}
+          />
+        )}
+
+        {/* Associate to Meeting Modal */}
+        {recording && (
+          <AssociateMeetingDialog
+            isOpen={showAssociateModal}
+            onClose={() => setShowAssociateModal(false)}
+            recording={recording}
+            onSuccess={handleAssociationSuccess}
+            onError={setError}
           />
         )}
       </div>

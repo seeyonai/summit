@@ -92,7 +92,7 @@ const FinalTranscript: React.FC<FinalTranscriptProps> = ({
             }`}>
               {meeting.status === 'completed' ? '已完成' :
                meeting.status === 'in_progress' ? '进行中' :
-               meeting.status === 'scheduled' ? '已安排' : '失败'}
+               meeting.status === 'scheduled' ? '已排期' : '失败'}
             </span>
           </div>
         </div>

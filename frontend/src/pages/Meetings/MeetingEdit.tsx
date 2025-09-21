@@ -208,7 +208,7 @@ function MeetingEdit() {
                     <SelectValue placeholder="选择会议状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="scheduled">已安排</SelectItem>
+                    <SelectItem value="scheduled">已排期</SelectItem>
                     <SelectItem value="in_progress">进行中</SelectItem>
                     <SelectItem value="completed">已完成</SelectItem>
                     <SelectItem value="failed">失败</SelectItem>
