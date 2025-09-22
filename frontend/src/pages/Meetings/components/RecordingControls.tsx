@@ -31,7 +31,7 @@ export function RecordingControls({
   return (
     <Card className="bg-black/40 backdrop-blur-xl border-white/10">
       <CardContent className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Recording Controls</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">录制控制</h3>
         
         {message && (
           <div className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
@@ -57,7 +57,7 @@ export function RecordingControls({
               className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
             >
               <Wifi className="w-4 h-4 mr-2" />
-              Connect Recording System
+              连接录制系统
             </Button>
           ) : !isRecording ? (
             <Button 
@@ -66,7 +66,7 @@ export function RecordingControls({
               className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white"
             >
               <Mic className="w-4 h-4 mr-2" />
-              Start Recording
+              开始录制
             </Button>
           ) : (
             <Button 
@@ -74,7 +74,7 @@ export function RecordingControls({
               className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white"
             >
               <Square className="w-4 h-4 mr-2" />
-              Stop Recording
+              停止录制
             </Button>
           )}
 
@@ -85,26 +85,26 @@ export function RecordingControls({
               disabled={!isRecording}
             >
               <Play className="w-4 h-4 mr-1" />
-              Pause
+              暂停
             </Button>
             <Button
               variant="outline"
               className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
               disabled={!isRecording}
             >
-              Mark Speaker
+              标记发言人
             </Button>
           </div>
         </div>
 
         <div className="mt-4 pt-4 border-t border-white/10">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-white/50">Audio Quality</span>
-            <span className="text-green-400">High (48kHz)</span>
+            <span className="text-white/50">音频质量</span>
+            <span className="text-green-400">高 (48kHz)</span>
           </div>
           <div className="flex items-center justify-between text-sm mt-2">
-            <span className="text-white/50">Noise Reduction</span>
-            <span className="text-green-400">Active</span>
+            <span className="text-white/50">降噪功能</span>
+            <span className="text-green-400">已启用</span>
           </div>
         </div>
       </CardContent>
