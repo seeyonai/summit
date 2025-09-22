@@ -1,39 +1,26 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { 
   Mic, 
-  Square, 
-  Play,
   Wifi,
   WifiOff,
-  Clock,
   Users,
   Calendar,
-  ChevronRight,
-  Volume2,
   X,
   Maximize2,
   Minimize2,
-  CheckCircle2,
-  Circle,
-  AlertCircle,
-  Sparkles,
   Activity,
-  MessageSquare,
-  Target,
-  TrendingUp
-} from 'lucide-react';
+  MessageSquare} from 'lucide-react';
 import { formatDate } from '@/utils/date';
-import type { MeetingWithRecordings, AgendaItem } from '@/types';
+import type { MeetingWithRecordings } from '@/types';
 import { useOngoingMeetingRecording } from './hooks/useOngoingMeetingRecording';
 import { MeetingAgenda } from './MeetingAgenda';
-import { LiveTranscript } from './LiveTranscript';
 import { RecordingControls } from './RecordingControls';
 import { MeetingStats } from './MeetingStats';
 import '@/styles/meeting-display.css';
+import LiveTranscript from './LiveTranscript';
 
 interface OngoingMeetingDisplayProps {
   meeting: MeetingWithRecordings;
@@ -92,7 +79,7 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
   return (
     <div 
       ref={containerRef}
-      className={`fixed inset-0 z-50 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 ${
+      className={`fixed overflow-y-auto inset-0 z-50 bg-gradient-to-br from-slate-900 via-primary-900/90 to-slate-900 ${
         isFullscreen ? '' : 'p-4'
       }`}
     >

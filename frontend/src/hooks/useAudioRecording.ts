@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { buildWsUrl } from '@/utils/ws';
 
 export interface AudioRecordingState {
   isRecording: boolean;
@@ -84,11 +85,11 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
 
     try {
       // Connect to WebSocket
-      const wsUrl = options.wsUrl || `ws://${window.location.hostname}:2591/ws/live-recorder`;
+      const wsUrl = options.wsUrl || buildWsUrl('/ws/live-recorder');
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('WebSocket connected to backend on port 2591');
+        console.log('WebSocket connected to backend');
         setState(prev => ({ ...prev, isConnected: true }));
       };
 
@@ -125,13 +126,13 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       };
 
       wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected from backend on port 2591');
+        console.log('WebSocket disconnected from backend');
         setState(prev => ({ ...prev, isConnected: false }));
       };
 
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
-        console.log('WebSocket connection failed to backend on port 2591');
+        console.log('WebSocket connection failed to backend');
         setState(prev => ({ 
           ...prev, 
           error: 'WebSocket connection error',

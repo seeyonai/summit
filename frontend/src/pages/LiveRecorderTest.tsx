@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { buildWsUrl } from '@/utils/ws';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -353,7 +354,7 @@ function LiveRecorderTest() {
 
   const connectWebSocket = () => {
     try {
-      const ws = new WebSocket(`ws://${window.location.hostname}:2591/ws/live-recorder`);
+      const ws = new WebSocket(buildWsUrl('/ws/live-recorder'));
       
       ws.onopen = () => {
         setIsConnected(true);
@@ -908,7 +909,7 @@ function LiveRecorderTest() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="font-medium">WebSocket URL:</span>
-                <p className="font-mono text-xs break-all">ws://localhost:2591/ws/live-recorder</p>
+                <p className="font-mono text-xs break-all">{buildWsUrl('/ws/live-recorder')}</p>
               </div>
               <div>
                 <span className="font-medium">Transcription WS:</span>

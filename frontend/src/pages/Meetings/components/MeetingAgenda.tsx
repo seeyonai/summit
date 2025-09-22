@@ -29,7 +29,7 @@ export function MeetingAgenda({ agenda, recordingTime }: MeetingAgendaProps) {
     <Card className="bg-black/40 backdrop-blur-xl border-white/10 flex-1 flex flex-col">
       <CardContent className="p-6 flex flex-col h-full">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Meeting Agenda</h2>
+          <h2 className="text-xl font-semibold text-white">议题</h2>
           <Target className="w-5 h-5 text-purple-400" />
         </div>
         
@@ -91,7 +91,7 @@ export function MeetingAgenda({ agenda, recordingTime }: MeetingAgendaProps) {
           ) : (
             <div className="text-center py-8">
               <Target className="w-12 h-12 text-white/20 mx-auto mb-3" />
-              <p className="text-white/40 text-sm">No agenda items available</p>
+              <p className="text-white/40 text-sm">议题列表为空</p>
             </div>
           )}
         </div>

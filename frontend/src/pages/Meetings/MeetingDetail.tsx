@@ -4,11 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useMeetingDetail } from "@/hooks/useMeetingDetail";
 import { useTodoAdvice } from "@/hooks/useTodoAdvice";
 import { formatDate } from "@/utils/date";
-import { useAudioRecording } from "@/hooks/useAudioRecording";
 import { useRecordingPanel } from "@/contexts/RecordingPanelContext";
 import MeetingTranscript from "./components/MeetingTranscript";
 import MeetingRecordings from "./components/MeetingRecordings";
@@ -33,17 +31,7 @@ import {
   FileTextIcon,
   HeadphonesIcon,
 } from "lucide-react";
-
-// Lazy load heavy components
-const RealTimeSpeechRecognition = lazy(() =>
-  import("@/components/Audio").then((m) => ({
-    default: m.RealTimeSpeechRecognition,
-  }))
-);
-
-const OngoingMeetingDisplay = lazy(
-  () => import("./components/OngoingMeetingDisplay")
-);
+import OngoingMeetingDisplay from "./components/OngoingMeetingDisplay";
 
 function MeetingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -54,17 +42,7 @@ function MeetingDetail() {
   const showMeetingDisplay = searchParams.get("display") === "full";
   const activeTab = searchParams.get("tab") || "recordings";
 
-  const {
-    isRecording,
-    partialText,
-    finalText,
-    recordingTime,
-    isConnected,
-    startRecording: startMicRecording,
-    stopRecording: stopMicRecording,
-  } = useAudioRecording();
-
-  const { toggleFloatingPanel, closePanel, exitFullscreen, enterFullscreen } =
+  const { exitFullscreen, enterFullscreen } =
     useRecordingPanel();
 
   // Use custom hooks
@@ -75,7 +53,6 @@ function MeetingDetail() {
     showTranscript,
     showCombinedRecording,
     setShowTranscript,
-    setShowCombinedRecording,
     deleteMeeting,
     handleRecordingComplete,
   } = useMeetingDetail(id);
@@ -89,13 +66,6 @@ function MeetingDetail() {
   } = useTodoAdvice();
 
   // Event handlers
-  const handleGenerateAdvice = useCallback(
-    (todo: any) => {
-      if (!id || !todo.id) return;
-      generateAdvice(id, todo.id, todo.text);
-    },
-    [id, generateAdvice]
-  );
 
   const handleDeleteMeeting = async () => {
     if (!confirm("确定要删除这个会议吗？此操作不可撤销。")) {
@@ -254,7 +224,6 @@ function MeetingDetail() {
   }
 
   const StatusIcon = getStatusIcon(meeting.status);
-  const canRecord = meeting.status === "in_progress";
   const recordingsToShow =
     showCombinedRecording && meeting.combinedRecording
       ? [meeting.combinedRecording]

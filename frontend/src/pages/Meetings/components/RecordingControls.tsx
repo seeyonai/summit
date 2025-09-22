@@ -97,16 +97,6 @@ export function RecordingControls({
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-white/10">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-white/50">音频质量</span>
-            <span className="text-green-400">高 (48kHz)</span>
-          </div>
-          <div className="flex items-center justify-between text-sm mt-2">
-            <span className="text-white/50">降噪功能</span>
-            <span className="text-green-400">已启用</span>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

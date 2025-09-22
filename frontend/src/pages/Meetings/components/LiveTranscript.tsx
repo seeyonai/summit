@@ -20,7 +20,7 @@ interface LiveTranscriptProps {
   isRecording: boolean;
 }
 
-export function LiveTranscript({ transcriptSegments, partialSegment, isRecording }: LiveTranscriptProps) {
+function LiveTranscript({ transcriptSegments, partialSegment, isRecording }: LiveTranscriptProps) {
   const formatSegmentTimestamp = (value?: number | null): string => {
     if (!value) {
       return '--:--:--';
@@ -48,7 +48,7 @@ export function LiveTranscript({ transcriptSegments, partialSegment, isRecording
       <CardContent className="p-6 flex flex-col h-full">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-white">Live Transcript</h2>
+            <h2 className="text-xl font-semibold text-white">实时语音识别</h2>
             {isRecording && (
               <div className="flex items-center gap-2 px-3 py-1 bg-red-500/20 rounded-full">
                 <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
@@ -99,8 +99,8 @@ export function LiveTranscript({ transcriptSegments, partialSegment, isRecording
               <MessageSquare className="w-16 h-16 text-white/10 mb-4" />
               <p className="text-white/40 text-center">
                 {isRecording 
-                  ? 'Waiting for speech...' 
-                  : 'Start recording to see live transcript'}
+                  ? '等待说话...' 
+                  : '开始录音以查看实时语音识别'}
               </p>
             </div>
           ) : (
@@ -147,3 +147,5 @@ export function LiveTranscript({ transcriptSegments, partialSegment, isRecording
     </Card>
   );
 }
+
+export default LiveTranscript;

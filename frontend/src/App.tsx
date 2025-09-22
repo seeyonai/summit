@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ThemeProvider, Header } from './layout';
-import { FloatingRecordingPanel } from './components/Audio';
 import { useAudioRecording } from '@/hooks/useAudioRecording';
 import { recordingPanelBus } from '@/services/recordingPanelBus';
 import { RecordingPanelProvider, useRecordingPanel } from '@/contexts/RecordingPanelContext';
@@ -14,6 +13,7 @@ import MeetingEdit from './pages/Meetings/MeetingEdit';
 import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
 import LiveRecorderTest from './pages/LiveRecorderTest';
+import FloatingRecordingPanel from './components/Audio/FloatingRecordingPanel';
 
 function AppContent() {
   const { isRecording } = useAudioRecording();

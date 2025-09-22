@@ -23,7 +23,10 @@ declare global {
   }
 }
 
-const DEFAULT_TRANSCRIPTION_API_BASE = 'http://localhost:2592/';
+const isDev = window.location.port === '2592';
+const PRODUCTION_TRANSCRIPTION_API_BASE = '/live/';
+const DEFAULT_TRANSCRIPTION_API_BASE = isDev ? 'http://localhost:2592/' : PRODUCTION_TRANSCRIPTION_API_BASE;
+const TRANSCRIPTION_API_BASE = import.meta.env.VITE_TRANSCRIPTION_API_BASE || DEFAULT_TRANSCRIPTION_API_BASE;
 
 const getLiveServiceUrlFromEnv = (): string | undefined => {
   const env = import.meta.env as Record<string, string | undefined>;
@@ -74,83 +77,15 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
   const componentUnmountedRef = useRef(false);
   const isRecordingRef = useRef(false);
 
-  const transcriptionApiBase = useMemo(() => {
-    const fallback = (() => {
-      if (typeof window === 'undefined') {
-        return DEFAULT_TRANSCRIPTION_API_BASE;
-      }
-
-      const { protocol, hostname } = window.location;
-      if (protocol === 'file:' || !hostname) {
-        return DEFAULT_TRANSCRIPTION_API_BASE;
-      }
-
-      return `${protocol}//${hostname}:2592/`;
-    })();
-
-    const metaBase = typeof document === 'undefined'
-      ? undefined
-      : document
-          .querySelector('meta[name="echo-stream-api-base"]')
-          ?.getAttribute('content');
-
-    const configured = getLiveServiceUrlFromEnv()
-      ?? (typeof window !== 'undefined' ? window.ECHO_STREAM_API_BASE : undefined)
-      ?? metaBase;
-
-    const hasProtocol = /^[a-zA-Z][\w+.-]*:/;
-
-    const normalize = (value?: string | null) => {
-      if (!value) {
-        return null;
-      }
-
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return null;
-      }
-
-      const attempt = (candidate: string) => {
-        try {
-          const url = new URL(candidate, fallback);
-          const trimmedPath =
-            url.pathname && url.pathname !== '/'
-              ? url.pathname.replace(/\/$/, '')
-              : '';
-          const base = trimmedPath ? `${url.origin}${trimmedPath}` : url.origin;
-          return base.endsWith('/') ? base : `${base}/`;
-        } catch (error) {
-          return null;
-        }
-      };
-
-      if (!hasProtocol.test(trimmed)) {
-        if (trimmed.startsWith('//')) {
-          return attempt(`http:${trimmed}`) ?? attempt(`https:${trimmed}`);
-        }
-
-        if (trimmed.startsWith('/')) {
-          return attempt(trimmed);
-        }
-
-        return attempt(`http://${trimmed}`);
-      }
-
-      return attempt(trimmed);
-    };
-
-    return normalize(configured) ?? fallback;
-  }, []);
-
   const transcriptionWsUrl = useMemo(() => {
     try {
-      const endpoint = new URL('api/ws', transcriptionApiBase);
+      const endpoint = new URL('api/ws', TRANSCRIPTION_API_BASE);
       const protocol = endpoint.protocol === 'https:' ? 'wss:' : 'ws:';
       return `${protocol}//${endpoint.host}${endpoint.pathname}${endpoint.search}`;
     } catch (error) {
       return 'ws://localhost:2592/api/ws';
     }
-  }, [transcriptionApiBase]);
+  }, []);
 
   const handleTranscriptionPayload = useCallback((raw: Record<string, unknown>) => {
     const type = typeof raw.type === 'string' ? raw.type : '';
