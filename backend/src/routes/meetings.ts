@@ -41,57 +41,6 @@ const serializeMeeting = (meeting: Meeting) => ({
   combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
 });
 
-const deserializeRecording = (payload: RecordingPayload): Omit<Recording, '_id' | 'createdAt' | 'updatedAt'> & { _id: ObjectId; createdAt: Date; updatedAt?: Date } => {
-  // Convert string _id to ObjectId for internal use, but maintain the original string for the return type
-  const _id = ObjectId.isValid(payload._id) ? new ObjectId(payload._id) : new ObjectId();
-  const createdAt = payload.createdAt instanceof Date ? payload.createdAt : new Date(payload.createdAt as string || Date.now());
-  const updatedAt = payload.updatedAt instanceof Date ? payload.updatedAt : payload.updatedAt ? new Date(payload.updatedAt as string) : undefined;
-  
-  return {
-    ...payload,
-    _id,
-    createdAt,
-    updatedAt,
-  } as Omit<Recording, '_id' | 'createdAt' | 'updatedAt'> & { _id: ObjectId; createdAt: Date; updatedAt?: Date };
-};
-
-const normalizeStringArray = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter((item): item is string => typeof item === 'string')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-};
-
-const resolveAudioStatusCode = (error: unknown, fallback = 500): number => {
-  if (error instanceof Error) {
-    if (error.message === 'Meeting not found' || error.message.startsWith('Meeting not found (ID:')) {
-      return 404;
-    }
-
-    if (error.message.includes('does not have a combined recording')) {
-      return 400;
-    }
-
-    if (error.message.includes('Recording') && error.message.includes('not found for meeting')) {
-      return 400;
-    }
-
-    if (error.message.includes('cannot be empty') || error.message.includes('required')) {
-      return 400;
-    }
-  }
-
-  const errorWithCode = error as NodeJS.ErrnoException;
-  if (errorWithCode?.code === 'ENOENT') {
-    return 404;
-  }
-
-  return fallback;
-};
 // Health check
 router.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy' });

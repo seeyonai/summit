@@ -1,8 +1,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ObjectId } from 'mongodb';
-import { RecordingResponse, RecordingUpdate, SpeakerSegment } from '../types';
-import { getCollection, COLLECTIONS, RecordingDocument } from '../types/mongodb';
+import { RecordingResponse, RecordingUpdate, SpeakerSegment, Meeting } from '../types';
+import { getCollection, COLLECTIONS, RecordingDocument, recordingToApp } from '../types/mongodb';
 import { SegmentationService } from './SegmentationService';
 import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
 import type { JsonRequestOptions } from '../utils/httpClient';
@@ -54,54 +54,6 @@ function getMimeType(filename: string): string {
 // Shared helpers
 function recordingsCollection() {
   return getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
-}
-
-async function toRecordingResponse(document: RecordingDocument, options: { includeMeeting?: boolean } = {}): Promise<RecordingResponse> {
-  const baseResponse: RecordingResponse = {
-    _id: document._id.toString(),
-    meetingId: document.meetingId ? document.meetingId.toHexString() : undefined,
-    filePath: document.filePath,
-    filename: document.filename,
-    createdAt: document.createdAt.toISOString(),
-    updatedAt: document.updatedAt ? document.updatedAt.toISOString() : undefined,
-    duration: document.duration,
-    fileSize: document.fileSize,
-    transcription: document.transcription,
-    verbatimTranscript: document.verbatimTranscript,
-    speakerSegments: document.speakerSegments || undefined,
-    timeStampedNotes: document.timeStampedNotes || undefined,
-    alignmentItems: document.alignmentItems,
-    numSpeakers: document.numSpeakers,
-    sampleRate: document.sampleRate,
-    channels: document.channels,
-    format: document.format,
-    externalId: document.externalId,
-    source: document.source,
-    organizedSpeeches: document.organizedSpeeches,
-  };
-
-  const { includeMeeting = false } = options;
-  if (includeMeeting && document.meetingId) {
-    const meetingId = document.meetingId.toHexString();
-    const meeting = await getMeetingByIdService(meetingId, { includeRecordings: false });
-    if (meeting) {
-      return {
-        ...baseResponse,
-        meeting: {
-          _id: meeting._id.toString(),
-          title: meeting.title,
-          status: meeting.status,
-          createdAt: meeting.createdAt.toISOString(),
-          updatedAt: meeting.updatedAt ? meeting.updatedAt.toISOString() : undefined,
-          scheduledStart: meeting.scheduledStart instanceof Date ? meeting.scheduledStart.toISOString() : undefined,
-          summary: meeting.summary,
-          participants: meeting.participants,
-        },
-      };
-    }
-  }
-
-  return baseResponse;
 }
 
 async function findRecording(recordingId: string): Promise<RecordingDocument | null> {
@@ -173,7 +125,7 @@ async function callLiveService<T>(pathname: string, options: JsonRequestOptions)
 export async function getAllRecordings(): Promise<RecordingResponse[]> {
   const collection = recordingsCollection();
   const documents = await collection.find({}).sort({ createdAt: -1 }).toArray();
-  const responses = await Promise.all(documents.map((doc) => toRecordingResponse(doc, { includeMeeting: true })));
+  const responses = await Promise.all(documents.map((doc: RecordingDocument) => recordingToApp(doc, { lookup: [{ meetingId: 'meeting', fields: ['title', 'status', 'createdAt', 'updatedAt', 'scheduledStart', 'summary', 'participants'] }] })));
   return responses;
 }
 
@@ -183,7 +135,8 @@ export async function getRecordingsByMeetingId(meetingId: string, includeMeeting
     .find({ meetingId: new ObjectId(meetingId) })
     .sort({ createdAt: -1 })
     .toArray();
-  const responses = await Promise.all(documents.map((doc) => toRecordingResponse(doc, { includeMeeting })));
+  const lookupOption = includeMeeting ? { lookup: [{ meetingId: 'meeting' as const, fields: ['title', 'status', 'createdAt', 'updatedAt', 'scheduledStart', 'summary', 'participants'] as (keyof Meeting)[] }] } : undefined;
+  const responses = await Promise.all(documents.map((doc: RecordingDocument) => recordingToApp(doc, lookupOption)));
   return responses;
 }
 
@@ -194,7 +147,7 @@ export async function getRecordingById(recordingId: string): Promise<RecordingRe
     throw new Error('Recording not found');
   }
 
-  return await toRecordingResponse(document, { includeMeeting: true });
+  return await recordingToApp(document, { lookup: [{ meetingId: 'meeting', fields: ['title', 'status', 'createdAt', 'updatedAt', 'scheduledStart', 'summary', 'participants'] }] });
 }
 
 export async function createRecording(recordingData: {
@@ -237,7 +190,7 @@ export async function createRecording(recordingData: {
     throw new Error('Failed to persist recording');
   }
 
-  return await toRecordingResponse(inserted);
+  return await recordingToApp(inserted);
 }
 
 export async function startRecording(): Promise<{ id: string; filename: string; filePath: string; message: string }> {

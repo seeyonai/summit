@@ -5,6 +5,7 @@ import {
   Hotword, 
   SpeakerSegment,
   RecordingResponse} from '../types';
+import { getCollection } from '../config/database';
 
 // MongoDB document interfaces
 export interface MeetingDocument extends Document, Omit<Meeting, '_id'> {
@@ -26,9 +27,6 @@ export const COLLECTIONS = {
   HOTWORDS: 'hotwords',
   RECORDINGS: 'recordings'
 } as const;
-
-// Re-export getCollection from database config
-export { getCollection } from '../config/database';
 
 // Helper functions to convert between MongoDB and application types
 export function meetingToApp(meetingDoc: MeetingDocument): Meeting {
@@ -57,8 +55,17 @@ export function hotwordToApp(hotwordDoc: HotwordDocument): Hotword {
   };
 }
 
-export function recordingToApp(recordingDoc: RecordingDocument): RecordingResponse {
-  return {
+// Enhanced recordingToApp with lookup option
+export async function recordingToApp(
+  recordingDoc: RecordingDocument, 
+  options?: { 
+    lookup?: Array<{
+      meetingId: 'meeting';
+      fields: (keyof Meeting)[];
+    }>;
+  }
+): Promise<RecordingResponse> {
+  const baseResponse: RecordingResponse = {
     _id: recordingDoc._id.toString(),
     filePath: recordingDoc.filePath,
     filename: recordingDoc.filename,
@@ -77,6 +84,36 @@ export function recordingToApp(recordingDoc: RecordingDocument): RecordingRespon
     source: recordingDoc.source,
     organizedSpeeches: recordingDoc.organizedSpeeches
   };
+
+  // If no lookup options provided, return base response
+  if (!options?.lookup) {
+    return baseResponse;
+  }
+
+  // Process lookup options
+  const enhancedResponse: any = { ...baseResponse };
+  
+  for (const lookup of options.lookup) {
+    if (lookup.meetingId === 'meeting' && recordingDoc.meetingId) {
+      // Import meetingService dynamically to avoid circular dependencies
+      try {
+        const meetingDoc = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: recordingDoc.meetingId });
+        if (meetingDoc) {
+          const meeting = meetingToApp(meetingDoc);
+          enhancedResponse.meeting = {};
+          
+          // Include only specified fields
+          for (const field of lookup.fields) {
+            enhancedResponse.meeting[field] = meeting[field];
+          }
+        }
+      } catch (error) {
+        console.error(`Error looking up meeting: ${error}`);
+      }
+    }
+  }
+  
+  return enhancedResponse;
 }
 
 // Convert application types to MongoDB documents
@@ -125,3 +162,6 @@ export function recordingToDoc(recording: Omit<Recording, 'id'>): Omit<Recording
     meetingId: recording.meetingId
   };
 }
+
+// Re-export getCollection from database config
+export { getCollection } from '../config/database';

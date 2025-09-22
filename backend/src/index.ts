@@ -12,7 +12,7 @@ import meetingsRouter from './routes/meetings';
 import hotwordsRouter from './routes/hotwords';
 import segmentationRouter from './routes/segmentation';
 import alignerRouter from './routes/aligner';
-import recordingsRouter from './routes/recordings';
+import recordingsRouter from './routes/recordings/index';
 import { LiveRecorderService } from './services/LiveRecorderService';
 
 const app = express();
