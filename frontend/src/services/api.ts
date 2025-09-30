@@ -91,10 +91,21 @@ export async function api<T = unknown>(endpoint: string, options: RequestInit = 
   const base = resolveBaseUrl();
   const url = `${base}${endpoint}`;
   const method = typeof options.method === 'string' ? options.method.toUpperCase() : 'GET';
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (token && !headers.Authorization) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    // ignore
+  }
   const response = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
+      ...headers,
     },
     ...options,
   });
@@ -241,6 +252,12 @@ class ApiService {
       });
 
       xhr.open('POST', url);
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+      } catch {}
       xhr.send(formData);
     });
   }
@@ -315,6 +332,14 @@ class ApiService {
 
   async deleteMeeting(id: string) {
     return this.delete(`/api/meetings/${id}`);
+  }
+
+  async addMeetingMember(meetingId: string, userId: string) {
+    return this.post(`/api/meetings/${meetingId}/members`, { userId });
+  }
+
+  async removeMeetingMember(meetingId: string, userId: string) {
+    return this.delete(`/api/meetings/${meetingId}/members/${userId}`);
   }
 
   // Hotwords

@@ -13,6 +13,7 @@ import MeetingRecordings from "./components/MeetingRecordings";
 import DisputedIssues from "./components/DisputedIssues";
 import TranscriptDialog from "@/components/meetings/TranscriptDialog";
 import AdviceDialog from "@/components/meetings/AdviceDialog";
+import MeetingMembers from "@/components/MeetingMembers";
 import {
   ArrowLeftIcon,
   EditIcon,
@@ -323,6 +324,10 @@ function MeetingDetail() {
             <TargetIcon className="w-4 h-4" />
             争论焦点
           </TabsTrigger>
+          <TabsTrigger value="members" className="flex items-center gap-2">
+            <UsersIcon className="w-4 h-4" />
+            成员
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="transcript">
@@ -340,6 +345,15 @@ function MeetingDetail() {
           <DisputedIssues
             meetingId={meeting._id}
             onAnalysisComplete={handleAnalysisComplete}
+          />
+        </TabsContent>
+
+        <TabsContent value="members">
+          <MeetingMembers
+            meetingId={meeting._id}
+            ownerId={meeting.ownerId}
+            members={meeting.members}
+            onChanged={refresh}
           />
         </TabsContent>
 

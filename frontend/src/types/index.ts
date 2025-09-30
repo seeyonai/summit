@@ -123,7 +123,11 @@ export type DiscussionPoint = baseTypes.DiscussionPoint;
 
 export type AgendaItem = baseTypes.AgendaItem;
 
-export type Meeting = baseTypes.Meeting & Id & Timestamp;
+export type Meeting = baseTypes.Meeting & Id & Timestamp & {
+  ownerId?: string;
+  members?: string[];
+  combinedRecording?: Recording | null;
+};
 
 export type MeetingWithRecordings = Meeting & { recordings: Recording[] };
 
