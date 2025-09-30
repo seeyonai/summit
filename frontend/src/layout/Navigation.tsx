@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Folder, Users, Flame, Wrench } from 'lucide-react';
+import { LayoutDashboard, Folder, Users, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavItem {
   path: string;
@@ -9,15 +10,25 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const navigationItems: NavItem[] = [
-  { path: '/', label: '开始', icon: LayoutDashboard },
+const baseItems: NavItem[] = [
+  { path: '/dashboard', label: '开始', icon: LayoutDashboard },
   { path: '/recordings', label: '录音', icon: Folder },
   { path: '/meetings', label: '会议', icon: Users },
-  { path: '/hotwords', label: '热词', icon: Flame },
 ];
 
 export const Navigation: React.FC = () => {
   const location = useLocation();
+  const { user } = useAuth();
+  const navigationItems = useMemo(() => {
+    if (!user) {
+      // Logged out: show only public home
+      return [{ path: '/', label: '首页', icon: LayoutDashboard }];
+    }
+    if (user.role === 'admin') {
+      return [...baseItems, { path: '/admin/users', label: '管理', icon: Wrench }];
+    }
+    return baseItems;
+  }, [user]);
 
   return (
     <nav className="flex gap-2">
