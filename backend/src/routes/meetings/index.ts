@@ -5,6 +5,8 @@ import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } f
 import recordingService from '../../services/RecordingService';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { badRequest, notFound, internal } from '../../utils/errors';
+import type { RequestWithUser } from '../../types/auth';
+import { requireMemberOrOwner, requireOwner } from '../../middleware/auth';
 
 const router = Router();
 
@@ -38,6 +40,8 @@ const serializeMeeting = (meeting: Meeting) => ({
   recordings: meeting.recordings?.map(serializeRecording) || [],
   // @ts-ignore
   combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
+  ownerId: meeting.ownerId ? meeting.ownerId.toString() : undefined,
+  members: Array.isArray(meeting.members) ? meeting.members.map((m: any) => m?.toString?.() || m) : [],
 });
 
 // Health check
@@ -45,14 +49,19 @@ router.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy' });
 });
 
-// Get all meetings
+// Get meetings for current user (owner or member)
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const meetings = await meetingService.getAllMeetings();
+  const r = req as RequestWithUser;
+  const userId = r.user?.userId;
+  if (!userId) {
+    throw badRequest('Unauthorized', 'auth.unauthorized');
+  }
+  const meetings = await meetingService.getMeetingsForUser(userId);
   res.json(meetings.map(serializeMeeting));
 }));
 
-// Get meeting by ID
-router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+// Get meeting by ID (owner or member only)
+router.get('/:id', requireMemberOrOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const meeting = await meetingService.getMeetingById(id);
 
@@ -67,7 +76,7 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   });
 }));
 
-// Create new meeting
+// Create new private meeting (owner = current user)
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const request: MeetingCreate = req.body;
 
@@ -75,12 +84,17 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     throw badRequest('Title is required', 'meeting.title_required');
   }
 
-  const meeting = await meetingService.createMeeting(request);
+  const r = req as RequestWithUser;
+  const userId = r.user?.userId;
+  if (!userId) {
+    throw badRequest('Unauthorized', 'auth.unauthorized');
+  }
+  const meeting = await meetingService.createMeeting(request, userId);
   res.status(201).json(serializeMeeting(meeting));
 }));
 
 // Update meeting
-router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const request: MeetingUpdate = req.body;
 
@@ -94,7 +108,7 @@ router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // Delete meeting
-router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const deleted = await meetingService.deleteMeeting(id);
 
@@ -106,7 +120,7 @@ router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // Add recording to meeting
-router.post('/:id/recordings', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/recordings', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { recordingId } = req.body as { recordingId?: string };
 
@@ -120,7 +134,7 @@ router.post('/:id/recordings', asyncHandler(async (req: Request, res: Response) 
 }));
 
 // Remove recording from meeting
-router.delete('/:id/recordings/:recordingId', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id/recordings/:recordingId', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { id, recordingId } = req.params;
   const meeting = await meetingService.removeRecordingFromMeeting(id, recordingId);
 
@@ -134,18 +148,31 @@ router.delete('/:id/recordings/:recordingId', asyncHandler(async (req: Request, 
 // Get meetings by status
 router.get('/status/:status', asyncHandler(async (req: Request, res: Response) => {
   const { status } = req.params;
-  const meetings = await meetingService.getMeetingsByStatus(status);
+  // NOTE: Filter by status then by access is done on service side currently for all; here we reuse list for user and filter.
+  const r = req as RequestWithUser;
+  const userId = r.user?.userId;
+  if (!userId) {
+    throw badRequest('Unauthorized', 'auth.unauthorized');
+  }
+  const meetings = (await meetingService.getMeetingsForUser(userId)).filter((m) => m.status === status as any);
   res.json(meetings.map(serializeMeeting));
 }));
 
 // Get upcoming meetings
 router.get('/upcoming', asyncHandler(async (req: Request, res: Response) => {
+  const r = req as RequestWithUser;
+  const userId = r.user?.userId;
+  if (!userId) {
+    throw badRequest('Unauthorized', 'auth.unauthorized');
+  }
   const meetings = await meetingService.getUpcomingMeetings();
-  res.json(meetings.map(serializeMeeting));
+  const accessible = new Set((await meetingService.getMeetingsForUser(userId)).map((m) => m._id.toString()));
+  const filtered = meetings.filter((m) => accessible.has(m._id.toString()));
+  res.json(filtered.map(serializeMeeting));
 }));
 
 // Generate verbatim transcript for a recording
-router.post('/:meetingId/recordings/:recordingId/verbatim', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:meetingId/recordings/:recordingId/verbatim', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { meetingId, recordingId } = req.params;
 
   const meeting = await meetingService.getMeetingById(meetingId);
@@ -176,7 +203,7 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', asyncHandler(async (
 }));
 
 // Generate final polished transcript for meeting
-router.post('/:meetingId/final-transcript', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:meetingId/final-transcript', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { meetingId } = req.params;
 
   const meeting = await meetingService.getMeetingById(meetingId);
@@ -225,7 +252,7 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
 }));
 
 // Generate AI advice for a todo item
-router.post('/:meetingId/todo-advice', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:meetingId/todo-advice', requireMemberOrOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { meetingId } = req.params;
   const { todoText } = req.body as { todoText?: string };
 
@@ -268,7 +295,7 @@ router.post('/:meetingId/todo-advice', asyncHandler(async (req: Request, res: Re
 }));
 
 // Extract disputed issues and todos from meeting transcript
-router.post('/:meetingId/extract-analysis', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:meetingId/extract-analysis', requireMemberOrOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { meetingId } = req.params;
 
   const meeting = await meetingService.getMeetingById(meetingId);
@@ -339,3 +366,26 @@ router.post('/:meetingId/extract-analysis', asyncHandler(async (req: Request, re
 }));
 
 export default router;
+
+// Member management (owner only)
+router.post('/:id/members', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+  const { userId } = req.body as { userId?: string };
+  if (!userId) {
+    throw badRequest('userId is required', 'meeting.member_required');
+  }
+  const updated = await meetingService.addMember(id, userId);
+  if (!updated) {
+    throw notFound('Meeting not found', 'meeting.not_found');
+  }
+  res.json(serializeMeeting(updated));
+}));
+
+router.delete('/:id/members/:userId', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
+  const { id, userId } = req.params as { id: string; userId: string };
+  const updated = await meetingService.removeMember(id, userId);
+  if (!updated) {
+    throw notFound('Meeting not found', 'meeting.not_found');
+  }
+  res.json(serializeMeeting(updated));
+}));

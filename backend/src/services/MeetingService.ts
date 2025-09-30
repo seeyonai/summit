@@ -8,9 +8,13 @@ import { internal } from '../utils/errors';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
 
-export const getAllMeetings = async (): Promise<Meeting[]> => {
+export const getMeetingsForUser = async (userId: string): Promise<Meeting[]> => {
   const collection = getMeetingsCollection();
-  const meetings = await collection.find({}).toArray();
+  const uid = new ObjectId(userId);
+  const meetings = await collection.find({ $or: [
+    { ownerId: uid },
+    { members: { $elemMatch: { $eq: uid } } },
+  ] }).toArray();
   return meetings.map(meetingDocumentToMeeting);
 };
 
@@ -37,7 +41,7 @@ export const getMeetingById = async (id: string, options: { includeRecordings?: 
   return meetingDocumentToMeeting({ ...meeting, recordings: recordingDocs as any });
 };
 
-export const createMeeting = async (request: MeetingCreate): Promise<Meeting> => {
+export const createMeeting = async (request: MeetingCreate, ownerId: string): Promise<Meeting> => {
   const collection = getMeetingsCollection();
   const now = new Date();
 
@@ -50,7 +54,9 @@ export const createMeeting = async (request: MeetingCreate): Promise<Meeting> =>
     scheduledStart: request.scheduledStart,
     recordings: [],
     finalTranscript: undefined,
-    participants: request.participants
+    participants: request.participants,
+    ownerId: new ObjectId(ownerId),
+    members: [],
   };
 
   const result = await collection.insertOne(meetingDoc as any);
@@ -153,8 +159,47 @@ export const getUpcomingMeetings = async (): Promise<Meeting[]> => {
   return meetings.map(meetingDocumentToMeeting);
 };
 
+export async function addMember(meetingId: string, userId: string): Promise<Meeting | null> {
+  const collection = getMeetingsCollection();
+  const result = await collection.findOneAndUpdate(
+    { _id: new ObjectId(meetingId) },
+    {
+      $addToSet: { members: new ObjectId(userId) },
+      $set: { updatedAt: new Date() },
+    },
+    { returnDocument: 'after' }
+  );
+  return result ? meetingDocumentToMeeting(result) : null;
+}
+
+export async function removeMember(meetingId: string, userId: string): Promise<Meeting | null> {
+  const collection = getMeetingsCollection();
+  const result = await collection.findOneAndUpdate(
+    { _id: new ObjectId(meetingId) },
+    {
+      $pull: { members: new ObjectId(userId) },
+      $set: { updatedAt: new Date() },
+    },
+    { returnDocument: 'after' }
+  );
+  return result ? meetingDocumentToMeeting(result) : null;
+}
+
+export async function isOwner(meetingId: string, userId: string): Promise<boolean> {
+  const collection = getMeetingsCollection();
+  const doc = await collection.findOne({ _id: new ObjectId(meetingId) }, { projection: { ownerId: 1 } as any });
+  return !!doc && !!doc.ownerId && doc.ownerId.toString() === userId;
+}
+
+export async function isMember(meetingId: string, userId: string): Promise<boolean> {
+  const collection = getMeetingsCollection();
+  const uid = new ObjectId(userId);
+  const doc = await collection.findOne({ _id: new ObjectId(meetingId), members: { $elemMatch: { $eq: uid } } }, { projection: { _id: 1 } as any });
+  return !!doc;
+}
+
 export const meetingService = {
-  getAllMeetings,
+  getMeetingsForUser,
   getMeetingById,
   createMeeting,
   updateMeeting,
@@ -162,7 +207,11 @@ export const meetingService = {
   removeRecordingFromMeeting,
   updateCombinedRecording,
   getMeetingsByStatus,
-  getUpcomingMeetings
+  getUpcomingMeetings,
+  addMember,
+  removeMember,
+  isOwner,
+  isMember,
 };
 
 export default meetingService;
