@@ -13,6 +13,7 @@
 - Stick to TypeScript, two-space indentation, trailing semicolons, and single quotes; the ESLint configs enforce these defaults.
 - Name React components and layout wrappers in PascalCase (`MeetingDetail`), hooks with a `use` prefix, and utilities in camelCase.
 - Mirror REST resources in backend route filenames (e.g. `src/routes/recordings.ts`) and colocate helpers near their consumers to avoid long relatives; prefer the `@/` alias in the frontend.
+- Prefer functions for pure logic, utilities, and stateless operations. Use classes only when you actually need object instances with state/behavior. Default to functions.
 
 ## Testing Guidelines
 - Backend specs belong in `src/__tests__/` or alongside code as `*.test.ts`; stub MongoDB (e.g. via MongoMemoryServer) so `npm test` runs offline and covers routes, services, and serializers.

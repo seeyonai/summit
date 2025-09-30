@@ -118,11 +118,12 @@ files/             # Audio file storage (served at /files/*)
 - Backend audio file paths resolved via `getFilesBaseDir()` utility
 - Static file serving prevents path traversal attacks
 
-#### Component Patterns
+#### Component Patterns and coding styling
 - Follow named function export pattern for React components
 - Use default export only at the bottom of component files
 - Prefer composition over inheritance
 - Implement proper TypeScript types (avoid `any`)
+- Prefer functions for pure logic, utilities, and stateless operations. Use classes only when you actually need object instances with state/behavior. Default to functions.
 
 #### Environment Variables
 - Backend: `MONGODB_URI`, `DB_NAME`, `FILE_BASE_PATH`, `SEED_DATA`, OpenAI keys, external service URLs
@@ -131,8 +132,3 @@ files/             # Audio file storage (served at /files/*)
   - `ALIGNER_SERVICE_URL`: Echo Aligner service URL (default: `http://localhost:2595`)
 - Frontend: `VITE_API_BASE_URL` (prefix with `VITE_` for client-side access)
 - Use `SEED_DATA=1 npm run dev` to populate mock data during development
-
-#### Code Quality
-- ESLint configured for both frontend and backend with TypeScript rules
-- Strict TypeScript configuration (`noImplicitAny`, `strictNullChecks`)
-- Consistent code formatting enforced through linting rules
