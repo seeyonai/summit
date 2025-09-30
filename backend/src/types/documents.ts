@@ -23,6 +23,8 @@ export interface MeetingDocument extends Document {
   updatedAt?: Date;
   recordings?: Recording[];
   combinedRecording?: Recording | null;
+  ownerId?: ObjectId;
+  members?: ObjectId[];
 }
 
 export interface HotwordDocument extends Document {
@@ -41,4 +43,16 @@ export const COLLECTIONS = {
   MEETINGS: 'meetings',
   HOTWORDS: 'hotwords',
   RECORDINGS: 'recordings',
+  USERS: 'users',
 } as const;
+
+export interface UserDocument extends Document {
+  _id: ObjectId;
+  email: string;
+  name?: string;
+  role: 'admin' | 'user';
+  passwordHash: string;
+  salt: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}

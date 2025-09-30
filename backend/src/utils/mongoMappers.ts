@@ -26,6 +26,9 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     disputedIssues: meetingDoc.disputedIssues,
     summary: meetingDoc.summary,
     participants: meetingDoc.participants,
+    ownerId: meetingDoc.ownerId,
+    members: meetingDoc.members,
+    combinedRecording: meetingDoc.combinedRecording || undefined,
   };
 }
 

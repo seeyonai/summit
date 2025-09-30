@@ -73,7 +73,11 @@ export type TodoItem = baseTypes.TodoItem;
 
 export type AgendaItem = baseTypes.AgendaItem;
 
-export type Meeting = baseTypes.Meeting & Timestamp & Id;
+export type Meeting = baseTypes.Meeting & Timestamp & Id & {
+  ownerId?: ObjectId;
+  members?: ObjectId[];
+  combinedRecording?: Recording | null;
+};
 
 export type MeetingCreate = baseTypes.Meeting;
 
