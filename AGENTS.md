@@ -29,14 +29,23 @@
 
 ## Extra Rules
 
-- Do not wrapping function parameters unless neccessary.
-- Use named function for react component.
+- Do not wrapping function parameters unless necessary.
 - Prefer airbnb javascript coding style.
-- React components should be default exported at the very last line.
-- Do not wrap React element props unless more than 200 characters in a line.
-- Prefer PascalCase for React component files (jsx, tsx).
-- Create cutom React components in `src/components`, not `src/components/ui`.
-- When implement new features, carefully search and reuse existing code.
+- When implementing new features, carefully search and reuse existing code.
 - Try your best to avoid producing duplicate code.
 - Never auto start dev server to test code.
-- When creating a new React page, plan the page composition—list top-level sections, then create the page-level component and split MAJOR sections into separate files.
+
+## Frontend — React rules
+
+### Component structure
+- Plan pages by listing top-level sections; implement page-level component and split major sections into separate files.
+- Break large components into smaller subcomponents and colocate related files in the same folder.
+- Put custom components in `src/components` (not `src/components/ui`).
+- Keep data-fetching separate from UI/presentational components.
+- Use named function components and default-export them on the last line.
+- File names: PascalCase (`.jsx`/`.tsx`).
+- Avoid wrapping JSX props across lines unless a single line would exceed ~200 characters.
+
+### useEffect guidance
+- **Don't use `useEffect`** for: data transforms for render (use variables/`useMemo`), event handling (use handlers), resetting state on prop change (use `key` or compute during render), or deriving state from props/state (compute during render).
+- **Use `useEffect` only** to sync with external systems (APIs, DOM, third-party libs) or for required cleanup on unmount.
