@@ -6,7 +6,7 @@ import { connectToDatabase } from './config/database';
 import { getFilesBaseDir } from './utils/filePaths';
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config({ quiet: true });
 import { DataSeeder } from './utils/seedData';
 import meetingsRouter from './routes/meetings';
 import hotwordsRouter from './routes/hotwords';
