@@ -9,6 +9,8 @@ import { getFilesBaseDir } from './utils/filePaths';
 dotenv.config({ quiet: true });
 import { DataSeeder } from './utils/seedData';
 import meetingsRouter from './routes/meetings';
+import authRouter from './routes/auth';
+import usersRouter from './routes/users';
 import hotwordsRouter from './routes/hotwords';
 import segmentationRouter from './routes/segmentation';
 import alignerRouter from './routes/aligner';
@@ -16,6 +18,7 @@ import recordingsRouter from './routes/recordings/index';
 import { LiveRecorderService } from './services/LiveRecorderService';
 import { checkAllServices, generateHealthTable } from './utils/healthChecker';
 import { errorHandler } from './middleware/errorHandler';
+import { authenticate } from './middleware/auth';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 2591;
@@ -31,11 +34,13 @@ const filesDir = getFilesBaseDir();
 app.use('/files', express.static(filesDir));
 
 // Routes
-app.use('/api/meetings', meetingsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/users', authenticate, usersRouter);
+app.use('/api/meetings', authenticate, meetingsRouter);
 app.use('/api/hotwords', hotwordsRouter);
 app.use('/api/segmentation', segmentationRouter);
 app.use('/api/aligner', alignerRouter);
-app.use('/api/recordings', recordingsRouter);
+app.use('/api/recordings', authenticate, recordingsRouter);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
