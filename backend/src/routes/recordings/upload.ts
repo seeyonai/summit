@@ -4,6 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import recordingService from '../../services/RecordingService';
 import { parseFile } from 'music-metadata';
+import { asyncHandler } from '../../middleware/errorHandler';
+import { badRequest, internal } from '../../utils/errors';
 
 // Ensure files directory exists (storage for uploaded audio)
 // Note: __dirname here is backend/src/routes/recordings; we need repo-root /files
@@ -43,7 +45,7 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only audio files are allowed.'));
+    cb(badRequest('Invalid file type. Only audio files are allowed.', 'upload.invalid_type'));
   }
 };
 
@@ -58,103 +60,95 @@ const upload = multer({
 const router = Router();
 
 // Upload audio file
-router.post('/', upload.single('audio'), async (req: Request, res: Response) => {
+router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) {
+    throw badRequest('No audio file provided', 'upload.file_required');
+  }
+
+  const { filename, originalname, size, mimetype, path: tempPath } = req.file;
+  const absolutePath = path.join(filesDir, filename);
+
+  let duration = 0;
+  let sampleRate = 0;
+  let channels = 0;
+  let detectedFormat: string | undefined;
+
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No audio file provided' });
-    }
+    const metadata = await parseFile(absolutePath);
+    duration = typeof metadata.format.duration === 'number' && Number.isFinite(metadata.format.duration)
+      ? metadata.format.duration
+      : 0;
+    sampleRate = typeof metadata.format.sampleRate === 'number' && Number.isFinite(metadata.format.sampleRate)
+      ? metadata.format.sampleRate
+      : 0;
+    channels = typeof metadata.format.numberOfChannels === 'number' && Number.isFinite(metadata.format.numberOfChannels)
+      ? metadata.format.numberOfChannels
+      : 0;
 
-    // Get file information
-    const { filename, originalname, size, mimetype } = req.file;
+    const container = metadata.format.container || '';
+    const codec = metadata.format.codec || '';
+    const ext = path.extname(filename).replace(/^\./, '').toLowerCase();
 
-    // Build absolute path to the saved file (multer -> DiskStorage)
-    const absolutePath = path.join(filesDir, filename);
+    const mapContainerToFormat = (c: string, co: string, fallbackExt: string): string => {
+      const cUp = c.toUpperCase();
+      const coUp = co.toUpperCase();
+      if (cUp.includes('WAVE') || cUp === 'WAV') return 'wav';
+      if (cUp.includes('FLAC')) return 'flac';
+      if (cUp.includes('AIFF') || cUp.includes('AIF')) return 'aiff';
+      if (cUp.includes('WEBM')) return 'webm';
+      if (cUp.includes('OGG') || cUp.includes('OGA')) return 'ogg';
+      if (cUp.includes('MPEG-4') || cUp.includes('MP4')) return fallbackExt === 'm4a' ? 'm4a' : (fallbackExt || 'm4a');
+      if (cUp.includes('MPEG')) {
+        if (coUp.includes('MP3') || coUp.includes('MPEG LAYER 3')) return 'mp3';
+        return fallbackExt || 'mpeg';
+      }
+      return fallbackExt || c || 'unknown';
+    };
 
-    // Extract audio metadata using music-metadata
-    let duration = 0;
-    let sampleRate = 0;
-    let channels = 0;
-    let detectedFormat: string | undefined;
+    detectedFormat = mapContainerToFormat(container, codec, ext);
+  } catch (mmError) {
+    const ext = path.extname(filename).replace(/^\./, '').toLowerCase();
+    detectedFormat = ext || 'unknown';
+  }
 
-    try {
-      const metadata = await parseFile(absolutePath);
-      duration = typeof metadata.format.duration === 'number' && Number.isFinite(metadata.format.duration)
-        ? metadata.format.duration
-        : 0;
-      sampleRate = typeof metadata.format.sampleRate === 'number' && Number.isFinite(metadata.format.sampleRate)
-        ? metadata.format.sampleRate
-        : 0;
-      channels = typeof metadata.format.numberOfChannels === 'number' && Number.isFinite(metadata.format.numberOfChannels)
-        ? metadata.format.numberOfChannels
-        : 0;
-
-      const container = metadata.format.container || '';
-      const codec = metadata.format.codec || '';
-      const ext = path.extname(filename).replace(/^\./, '').toLowerCase();
-
-      // Best-effort mapping to a concise format label
-      const mapContainerToFormat = (c: string, co: string, fallbackExt: string): string => {
-        const cUp = c.toUpperCase();
-        const coUp = co.toUpperCase();
-        if (cUp.includes('WAVE') || cUp === 'WAV') return 'wav';
-        if (cUp.includes('FLAC')) return 'flac';
-        if (cUp.includes('AIFF') || cUp.includes('AIF')) return 'aiff';
-        if (cUp.includes('WEBM')) return 'webm';
-        if (cUp.includes('OGG') || cUp.includes('OGA')) return 'ogg';
-        if (cUp.includes('MPEG-4') || cUp.includes('MP4')) return fallbackExt === 'm4a' ? 'm4a' : (fallbackExt || 'm4a');
-        if (cUp.includes('MPEG')) {
-          if (coUp.includes('MP3') || coUp.includes('MPEG LAYER 3')) return 'mp3';
-          return fallbackExt || 'mpeg';
-        }
-        return fallbackExt || c || 'unknown';
-      };
-
-      detectedFormat = mapContainerToFormat(container, codec, ext);
-    } catch (mmError) {
-      // If metadata parsing fails, proceed with fallbacks
-      const ext = path.extname(filename).replace(/^\./, '').toLowerCase();
-      detectedFormat = ext || 'unknown';
-    }
-    
-    // Create recording record in database
+  try {
     const recordingData = {
       filename,
       originalFilename: originalname,
-      // Persist a web-accessible relative path rather than an absolute FS path
       filePath: `/files/${filename}`,
       fileSize: size,
       format: (detectedFormat || '').toLowerCase(),
       mimeType: mimetype,
       createdAt: new Date(),
-      // Store parsed audio metadata
       duration,
       sampleRate,
       channels
     };
 
     const result = await recordingService.createRecording(recordingData);
-    
+
     res.status(201).json({
       message: '文件上传成功',
       recording: result
     });
   } catch (error) {
-    // Clean up uploaded file if database operation fails
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    if (tempPath && fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
     }
-    
+
     if (error instanceof multer.MulterError) {
       if (error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'File too large. Maximum size is 50MB.' });
+        throw badRequest('File too large. Maximum size is 50MB.', 'upload.file_too_large');
       }
-      return res.status(400).json({ error: error.message });
+      throw badRequest(error.message, 'upload.failed');
     }
-    
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Failed to upload file' 
-    });
+
+    if (error instanceof Error) {
+      throw internal(error.message, 'upload.failed');
+    }
+
+    throw internal('Failed to upload file', 'upload.failed');
   }
-});
+}));
 
 export default router;

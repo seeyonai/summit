@@ -15,6 +15,7 @@ import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings/index';
 import { LiveRecorderService } from './services/LiveRecorderService';
 import { checkAllServices, generateHealthTable } from './utils/healthChecker';
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 2591;
@@ -94,10 +95,7 @@ app.get('/', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+app.use(errorHandler);
 
 // 404 handler
 app.use('*', (req, res) => {

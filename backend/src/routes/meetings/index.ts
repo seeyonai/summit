@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import meetingService from '../../services/MeetingService';
-import audioProcessingService from '../../services/AudioProcessingService';
 import transcriptExtractionService from '../../services/TranscriptExtractionService';
 import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../../types';
 import recordingService from '../../services/RecordingService';
+import { asyncHandler } from '../../middleware/errorHandler';
+import { badRequest, notFound, internal } from '../../utils/errors';
 
 const router = Router();
 
@@ -45,209 +46,157 @@ router.get('/health', (req: Request, res: Response) => {
 });
 
 // Get all meetings
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    const meetings = await meetingService.getAllMeetings();
-    res.json(meetings.map(serializeMeeting));
-  } catch (error) {
-    console.error('Error getting meetings:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const meetings = await meetingService.getAllMeetings();
+  res.json(meetings.map(serializeMeeting));
+}));
 
 // Get meeting by ID
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const meeting = await meetingService.getMeetingById(id);
-    
-    if (!meeting) {
-      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
-    }
-    
-    const recordings = await recordingService.getRecordingsByMeetingId(id, false);
-    res.json({
-      ...meeting,
-      recordings
-    });
-  } catch (error) {
-    console.error('Error getting meeting:', error);
-    res.status(500).json({ error: 'Internal server error' });
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const meeting = await meetingService.getMeetingById(id);
+
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${id})`, 'meeting.not_found');
   }
-});
+
+  const recordings = await recordingService.getRecordingsByMeetingId(id, false);
+  res.json({
+    ...meeting,
+    recordings
+  });
+}));
 
 // Create new meeting
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const request: MeetingCreate = req.body;
-    
-    // Validate required fields
-    if (!request.title) {
-      return res.status(400).json({ error: 'Title is required' });
-    }
-    
-    const meeting = await meetingService.createMeeting(request);
-    res.status(201).json(serializeMeeting(meeting));
-  } catch (error) {
-    console.error('Error creating meeting:', error);
-    res.status(500).json({ error: 'Internal server error' });
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
+  const request: MeetingCreate = req.body;
+
+  if (!request?.title) {
+    throw badRequest('Title is required', 'meeting.title_required');
   }
-});
+
+  const meeting = await meetingService.createMeeting(request);
+  res.status(201).json(serializeMeeting(meeting));
+}));
 
 // Update meeting
-router.put('/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const request: MeetingUpdate = req.body;
-    
-    const meeting = await meetingService.updateMeeting(id, request);
-    
-    if (!meeting) {
-      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
-    }
-    
-    res.json(serializeMeeting(meeting));
-  } catch (error) {
-    console.error('Error updating meeting:', error);
-    res.status(500).json({ error: 'Internal server error' });
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const request: MeetingUpdate = req.body;
+
+  const meeting = await meetingService.updateMeeting(id, request);
+
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${id})`, 'meeting.not_found');
   }
-});
+
+  res.json(serializeMeeting(meeting));
+}));
 
 // Delete meeting
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const deleted = await meetingService.deleteMeeting(id);
-    
-    if (!deleted) {
-      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
-    }
-    
-    res.json({ message: '会议删除成功' });
-  } catch (error) {
-    console.error('Error deleting meeting:', error);
-    res.status(500).json({ error: 'Internal server error' });
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const deleted = await meetingService.deleteMeeting(id);
+
+  if (!deleted) {
+    throw notFound(`Meeting not found (ID: ${id})`, 'meeting.not_found');
   }
-});
+
+  res.json({ message: '会议删除成功' });
+}));
 
 // Add recording to meeting
-router.post('/:id/recordings', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { recordingId } = req.body;
-    const meeting = await recordingService.addRecordingToMeeting(id, recordingId);
+router.post('/:id/recordings', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { recordingId } = req.body as { recordingId?: string };
 
-    res.json(meeting);
-  } catch (error) {
-    console.error('Error adding recording to meeting:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  if (!recordingId) {
+    throw badRequest('recordingId is required', 'recording.id_required');
   }
-});
+
+  const meeting = await recordingService.addRecordingToMeeting(id, recordingId);
+
+  res.json(meeting);
+}));
 
 // Remove recording from meeting
-router.delete('/:id/recordings/:recordingId', async (req: Request, res: Response) => {
-  try {
-    const { id, recordingId } = req.params;
-    const meeting = await meetingService.removeRecordingFromMeeting(id, recordingId);
-    
-    if (!meeting) {
-      return res.status(404).json({ error: `Meeting not found (ID: ${id})` });
-    }
-    
-    res.json(serializeMeeting(meeting));
-  } catch (error) {
-    console.error('Error removing recording from meeting:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.delete('/:id/recordings/:recordingId', asyncHandler(async (req: Request, res: Response) => {
+  const { id, recordingId } = req.params;
+  const meeting = await meetingService.removeRecordingFromMeeting(id, recordingId);
 
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${id})`, 'meeting.not_found');
+  }
+
+  res.json(serializeMeeting(meeting));
+}));
 
 // Get meetings by status
-router.get('/status/:status', async (req: Request, res: Response) => {
-  try {
-    const { status } = req.params;
-    const meetings = await meetingService.getMeetingsByStatus(status);
-    res.json(meetings.map(serializeMeeting));
-  } catch (error) {
-    console.error('Error getting meetings by status:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.get('/status/:status', asyncHandler(async (req: Request, res: Response) => {
+  const { status } = req.params;
+  const meetings = await meetingService.getMeetingsByStatus(status);
+  res.json(meetings.map(serializeMeeting));
+}));
 
 // Get upcoming meetings
-router.get('/upcoming', async (req: Request, res: Response) => {
-  try {
-    const meetings = await meetingService.getUpcomingMeetings();
-    res.json(meetings.map(serializeMeeting));
-  } catch (error) {
-    console.error('Error getting upcoming meetings:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.get('/upcoming', asyncHandler(async (req: Request, res: Response) => {
+  const meetings = await meetingService.getUpcomingMeetings();
+  res.json(meetings.map(serializeMeeting));
+}));
 
 // Generate verbatim transcript for a recording
-router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request, res: Response) => {
-  try {
-    const { meetingId, recordingId } = req.params;
-    
-    const meeting = await meetingService.getMeetingById(meetingId);
-    if (!meeting) {
-      return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
-    }
-    
-    const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
-    const recording = recordings.find((r) => r._id.toString() === recordingId);
-    if (!recording) {
-      return res.status(404).json({ error: 'Recording not found' });
-    }
-    
-    if (!recording.transcription) {
-      return res.status(400).json({ error: 'Recording must have transcription first' });
-    }
-    
-    // TODO: Implement actual verbatim transcript generation
-    // For now, just add some placeholder text
-    recording.verbatimTranscript = `[逐字稿 - 待实现]\n原始转录: ${recording.transcription}\n\n这里将会生成包含语气词、停顿、重复等原始语音特征的逐字稿。`;
-    
-    const updatedMeeting = await meetingService.updateMeeting(meetingId, { _id: meeting._id } as any);
-    
-    res.json({
-      success: true,
-      verbatimTranscript: recording.verbatimTranscript,
-      message: '逐字稿生成成功',
-      meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null
-    });
-  } catch (error) {
-    console.error('Error generating verbatim transcript:', error);
-    res.status(500).json({ error: 'Internal server error' });
+router.post('/:meetingId/recordings/:recordingId/verbatim', asyncHandler(async (req: Request, res: Response) => {
+  const { meetingId, recordingId } = req.params;
+
+  const meeting = await meetingService.getMeetingById(meetingId);
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${meetingId})`, 'meeting.not_found');
   }
-});
+
+  const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
+  const recording = recordings.find((r) => r._id.toString() === recordingId);
+  if (!recording) {
+    throw notFound('Recording not found', 'recording.not_found');
+  }
+
+  if (!recording.transcription) {
+    throw badRequest('Recording must have transcription first', 'recording.transcription_required');
+  }
+
+  recording.verbatimTranscript = `[逐字稿 - 待实现]\n原始转录: ${recording.transcription}\n\n这里将会生成包含语气词、停顿、重复等原始语音特征的逐字稿。`;
+
+  const updatedMeeting = await meetingService.updateMeeting(meetingId, { _id: meeting._id } as any);
+
+  res.json({
+    success: true,
+    verbatimTranscript: recording.verbatimTranscript,
+    message: '逐字稿生成成功',
+    meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null
+  });
+}));
 
 // Generate final polished transcript for meeting
-router.post('/:meetingId/final-transcript', async (req: Request, res: Response) => {
-  try {
-    const { meetingId } = req.params;
-    
-    const meeting = await meetingService.getMeetingById(meetingId);
-    if (!meeting) {
-      return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
-    }
-    
-    const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
+router.post('/:meetingId/final-transcript', asyncHandler(async (req: Request, res: Response) => {
+  const { meetingId } = req.params;
 
-    const transcripts = recordings
-      .filter((r: RecordingResponse) => r.transcription)
-      .map((r: RecordingResponse) => r.transcription)
-      .filter(Boolean);
-    
-    if (transcripts.length === 0) {
-      return res.status(400).json({ error: 'No transcriptions available for this meeting' });
-    }
-    
-    // TODO: Implement actual AI polishing with OpenAI
-    // For now, generate a placeholder summary
-    const allTranscripts = transcripts.join('\n\n');
-    meeting.finalTranscript = `# 会议纪要 - ${meeting.title}
+  const meeting = await meetingService.getMeetingById(meetingId);
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${meetingId})`, 'meeting.not_found');
+  }
+
+  const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
+
+  const transcripts = recordings
+    .filter((r: RecordingResponse) => r.transcription)
+    .map((r: RecordingResponse) => r.transcription)
+    .filter(Boolean);
+
+  if (transcripts.length === 0) {
+    throw badRequest('No transcriptions available for this meeting', 'meeting.no_transcriptions');
+  }
+
+  const allTranscripts = transcripts.join('\n\n');
+  meeting.finalTranscript = `# 会议纪要 - ${meeting.title}
 
 ## 会议概要
 本次会议主要讨论了相关议题，参会人员进行了深入的交流和讨论。
@@ -262,36 +211,34 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
 
 ---
 *此纪要由AI自动生成，仅供参考。*`;
-    
-    const updatedMeeting = await meetingService.updateMeeting(meetingId, { 
-      _id: meeting._id,
-      finalTranscript: meeting.finalTranscript 
-    } as any);
-    
-    res.json({
-      success: true,
-      finalTranscript: meeting.finalTranscript,
-      message: '最终纪要生成成功',
-    });
-  } catch (error) {
-    console.error('Error generating final transcript:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+
+  await meetingService.updateMeeting(meetingId, {
+    _id: meeting._id,
+    finalTranscript: meeting.finalTranscript
+  } as any);
+
+  res.json({
+    success: true,
+    finalTranscript: meeting.finalTranscript,
+    message: '最终纪要生成成功',
+  });
+}));
 
 // Generate AI advice for a todo item
-router.post('/:meetingId/todo-advice', async (req: Request, res: Response) => {
-  try {
-    const { meetingId } = req.params;
-    const { todoText } = req.body;
-    
-    if (!todoText) {
-      return res.status(400).json({ error: 'Todo text is required' });
-    }
-    
-    // TODO: Implement actual AI advice generation with OpenAI
-    // For now, generate a placeholder advice
-    const advice = `针对任务 "${todoText}" 的AI建议：
+router.post('/:meetingId/todo-advice', asyncHandler(async (req: Request, res: Response) => {
+  const { meetingId } = req.params;
+  const { todoText } = req.body as { todoText?: string };
+
+  if (!todoText) {
+    throw badRequest('Todo text is required', 'todo.text_required');
+  }
+
+  const meeting = await meetingService.getMeetingById(meetingId);
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${meetingId})`, 'meeting.not_found');
+  }
+
+  const advice = `针对任务 "${todoText}" 的AI建议：
     
 1. 建议的具体步骤
    - 首先，明确任务的目标和预期结果
@@ -313,63 +260,53 @@ router.post('/:meetingId/todo-advice', async (req: Request, res: Response) => {
    - 每天分配1-2小时专门处理此任务
    - 预留时间用于意外情况处理`;
 
-    res.json({
-      success: true,
-      advice: advice,
-      message: 'AI建议生成成功'
-    });
-  } catch (error) {
-    console.error('Error generating AI advice:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  res.json({
+    success: true,
+    advice,
+    message: 'AI建议生成成功'
+  });
+}));
 
 // Extract disputed issues and todos from meeting transcript
-router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) => {
+router.post('/:meetingId/extract-analysis', asyncHandler(async (req: Request, res: Response) => {
+  const { meetingId } = req.params;
+
+  const meeting = await meetingService.getMeetingById(meetingId);
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${meetingId})`, 'meeting.not_found');
+  }
+
+  let transcript = meeting.finalTranscript;
+
+  if (!transcript) {
+    try {
+      transcript = await transcriptExtractionService.buildTranscriptFromOrganizedSpeeches(meetingId);
+      console.log('Built transcript from organized speeches for analysis');
+    } catch (error) {
+      console.log('Could not build transcript from organized speeches:', error);
+      throw badRequest(
+        'Meeting must have a final transcript or organized speeches from recordings before analysis can be performed',
+        'meeting.transcript_required'
+      );
+    }
+  }
+
   try {
-    const { meetingId } = req.params;
-    
-    const meeting = await meetingService.getMeetingById(meetingId);
-    if (!meeting) {
-      return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
-    }
-    
-    let transcript = meeting.finalTranscript;
-    
-    // If no final transcript exists, try to build one from organized speeches
-    if (!transcript) {
-      try {
-        transcript = await transcriptExtractionService.buildTranscriptFromOrganizedSpeeches(meetingId);
-        console.log('Built transcript from organized speeches for analysis');
-      } catch (error) {
-        console.log('Could not build transcript from organized speeches:', error);
-        return res.status(400).json({ 
-          error: 'Meeting must have a final transcript or organized speeches from recordings before analysis can be performed' 
-        });
-      }
-    }
-    
-    // Extract analysis using intext
     const extractionResult = await transcriptExtractionService.extractFromTranscript(transcript);
-    
-    // Format the results for meeting storage
     const formattedAnalysis = transcriptExtractionService.formatExtractionForMeeting(extractionResult);
-    
-    // Update the meeting with extracted data
-    // Also save the generated transcript if it was built from organized speeches
+
     const updateData: any = {
       _id: meeting._id,
       disputedIssues: formattedAnalysis.disputedIssues,
       parsedTodos: formattedAnalysis.todos
     };
-    
-    // If we built the transcript from organized speeches, save it as finalTranscript
+
     if (!meeting.finalTranscript && transcript) {
       updateData.finalTranscript = transcript;
     }
-    
+
     const updatedMeeting = await meetingService.updateMeeting(meetingId, updateData);
-    
+
     res.json({
       success: true,
       data: {
@@ -381,24 +318,24 @@ router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) 
       meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null
     });
   } catch (error) {
-    console.error('Error extracting analysis from transcript:', error);
-    
     if (error instanceof Error) {
       if (error.message.includes('OPENAI_API_KEY')) {
-        return res.status(500).json({ 
-          error: 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.' 
-        });
+        throw internal(
+          'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.',
+          'analysis.missing_api_key'
+        );
       }
       if (error.message.includes('Transcript text is required')) {
-        return res.status(400).json({ error: error.message });
+        throw badRequest(error.message, 'analysis.transcript_required');
       }
     }
-    
-    res.status(500).json({ 
-      error: 'Failed to extract analysis from transcript',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
+
+    throw internal(
+      'Failed to extract analysis from transcript',
+      'analysis.failed',
+      error instanceof Error ? error.message : error
+    );
   }
-});
+}));
 
 export default router;

@@ -10,6 +10,7 @@ import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '..
 import type { JsonRequestOptions } from '../utils/httpClient';
 import { getMeetingById as getMeetingByIdService } from './MeetingService';
 import { getFilesBaseDir, makeRelativeToBase, resolveWithinBase } from '../utils/filePaths';
+import { badRequest, internal, notFound } from '../utils/errors';
 
 interface LiveRecordingStartResponse {
   id: string;
@@ -127,10 +128,14 @@ async function findRecording(recordingId: string): Promise<RecordingDocument | n
 }
 
 async function findRecordingOrThrow(recordingId: string): Promise<RecordingDocument> {
+  if (!ObjectId.isValid(recordingId)) {
+    throw badRequest('Invalid recording ID', 'recording.invalid_id');
+  }
+
   const document = await findRecording(recordingId);
 
   if (!document) {
-    throw new Error('Recording not found');
+    throw notFound('Recording not found', 'recording.not_found');
   }
 
   return document;
@@ -199,7 +204,7 @@ export async function getRecordingById(recordingId: string): Promise<RecordingRe
   const document = await findRecording(recordingId);
 
   if (!document) {
-    throw new Error('Recording not found');
+    throw notFound('Recording not found', 'recording.not_found');
   }
 
   return buildRecordingResponse(document, MEETING_LOOKUP_FIELDS);
@@ -242,7 +247,7 @@ export async function createRecording(recordingData: {
   const inserted = await collection.findOne({ _id: insertResult.insertedId });
 
   if (!inserted) {
-    throw new Error('Failed to persist recording');
+    throw internal('Failed to persist recording', 'recording.persist_failed');
   }
 
   return recordingDocumentToResponse(inserted);
@@ -282,7 +287,7 @@ export async function startRecording(): Promise<{ id: string; filename: string; 
   const inserted = await collection.findOne({ _id: insertResult.insertedId });
 
   if (!inserted) {
-    throw new Error('Failed to persist recording');
+    throw internal('Failed to persist recording', 'recording.persist_failed');
   }
 
   return {
@@ -430,6 +435,7 @@ export async function transcribeRecording(recordingId: string, hotword?: string)
 
 export async function segmentRecording(recordingId: string, oracleNumSpeakers?: number): Promise<{ message: string; segments: SpeakerSegment[] }> {
   const document = await findRecordingOrThrow(recordingId);
+  console.log('Segmenting recording:', document);
   const relativePath = getRelativeFilePath(document);
 
   const segmentationResult = await segmentationService.analyzeSegmentation({
@@ -462,7 +468,7 @@ export async function polishTranscription(recordingId: string): Promise<{ messag
   const sourceText = document.transcription || document.verbatimTranscript;
 
   if (!sourceText) {
-    throw new Error('No transcription available to polish');
+    throw badRequest('No transcription available to polish', 'recording.transcription_missing');
   }
 
   const polished = polishText(sourceText);

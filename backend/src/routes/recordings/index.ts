@@ -18,9 +18,4 @@ router.use('/:recordingId/polish', polishRouter);
 router.use('/:recordingId/align', alignRouter);
 router.use('/:recordingId/organize', organizeRouter);
 
-// Health check endpoint
-router.get('/health', (req, res) => {
-  res.json({ status: 'healthy', service: 'Recording Management Service' });
-});
-
 export default router;

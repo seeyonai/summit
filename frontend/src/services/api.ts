@@ -1,8 +1,78 @@
 import type { Meeting, MeetingWithRecordings, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment } from '@/types';
+import { toast } from 'sonner';
+
+type ErrorPayload = {
+  message: string;
+  code?: string;
+  details?: unknown;
+};
+
+interface ApiError extends Error {
+  status: number;
+  code?: string;
+  details?: unknown;
+}
+
+const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeErrorPayload(raw: unknown, status: number): ErrorPayload {
+  if (isRecord(raw)) {
+    if (isRecord(raw.error)) {
+      const message = typeof raw.error.message === 'string' && raw.error.message.trim().length > 0
+        ? raw.error.message.trim()
+        : undefined;
+      const code = typeof raw.error.code === 'string' && raw.error.code.trim().length > 0
+        ? raw.error.code.trim()
+        : undefined;
+      const details = Object.prototype.hasOwnProperty.call(raw.error, 'details')
+        ? raw.error.details
+        : undefined;
+      if (message) {
+        return { message, code, details };
+      }
+    }
+
+    if (typeof raw.error === 'string' && raw.error.trim().length > 0) {
+      return { message: raw.error.trim() };
+    }
+
+    if (typeof raw.detail === 'string' && raw.detail.trim().length > 0) {
+      return { message: raw.detail.trim() };
+    }
+
+    if (typeof raw.message === 'string' && raw.message.trim().length > 0) {
+      return { message: raw.message.trim() };
+    }
+  }
+
+  if (typeof raw === 'string' && raw.trim().length > 0) {
+    return { message: raw.trim() };
+  }
+
+  return { message: `Request failed with status ${status}` };
+}
+
+function createApiError(payload: ErrorPayload, status: number): ApiError {
+  const error = new Error(payload.message) as ApiError;
+  error.status = status;
+  if (payload.code) {
+    error.code = payload.code;
+  }
+  if (typeof payload.details !== 'undefined') {
+    error.details = payload.details;
+  }
+  return error;
+}
 
 // Resolve backend base URL internally (not exported)
 function resolveBaseUrl(): string {
-  const envBase = (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
+  const envBase = typeof import.meta !== 'undefined'
+    ? (import.meta.env?.VITE_API_BASE_URL as string | undefined)
+    : undefined;
   if (envBase && typeof envBase === 'string' && envBase.trim().length > 0) {
     return envBase.replace(/\/$/, '');
   }
@@ -20,6 +90,7 @@ function resolveBaseUrl(): string {
 export async function api<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const base = resolveBaseUrl();
   const url = `${base}${endpoint}`;
+  const method = typeof options.method === 'string' ? options.method.toUpperCase() : 'GET';
   const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
@@ -27,13 +98,19 @@ export async function api<T = unknown>(endpoint: string, options: RequestInit = 
     },
     ...options,
   });
-  const isJson = (response.headers.get('content-type') || '').includes('application/json');
+  const contentType = response.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+  const body = isJson ? await response.json().catch(() => undefined) : undefined;
+
   if (!response.ok) {
-    const detail = isJson ? await response.json().catch(() => undefined) : undefined;
-    const message = typeof (detail as any)?.detail === 'string' ? (detail as any).detail : `HTTP error! status: ${response.status}`;
-    throw new Error(message);
+    const payload = normalizeErrorPayload(body, response.status);
+    if (MUTATION_METHODS.has(method)) {
+      toast.error(payload.message);
+    }
+    throw createApiError(payload, response.status);
   }
-  return (isJson ? await response.json() : (undefined as unknown)) as T;
+
+  return (isJson ? body : (undefined as unknown)) as T;
 }
 
 export function apiUrl(endpoint: string): string {
@@ -128,13 +205,15 @@ class ApiService {
       xhr.addEventListener('load', () => {
         const ok = xhr.status >= 200 && xhr.status < 300;
         if (!ok) {
+          let parsed: unknown;
           try {
-            const parsed = JSON.parse(xhr.responseText || '{}');
-            const msg = typeof parsed?.error === 'string' ? parsed.error : `HTTP error! status: ${xhr.status}`;
-            reject(new Error(msg));
+            parsed = JSON.parse(xhr.responseText || '{}');
           } catch {
-            reject(new Error(`HTTP error! status: ${xhr.status}`));
+            parsed = xhr.responseText;
           }
+          const payload = normalizeErrorPayload(parsed, xhr.status);
+          toast.error(payload.message);
+          reject(createApiError(payload, xhr.status));
           return;
         }
         try {
@@ -146,13 +225,19 @@ class ApiService {
       });
 
       xhr.addEventListener('error', () => {
-        reject(new Error('Network error'));
+        const payload = { message: 'Network error' };
+        toast.error(payload.message);
+        reject(createApiError(payload, xhr.status || 0));
       });
       xhr.addEventListener('abort', () => {
-        reject(new Error('Upload aborted'));
+        const payload = { message: 'Upload aborted' };
+        toast.error(payload.message);
+        reject(createApiError(payload, xhr.status || 0));
       });
       xhr.addEventListener('timeout', () => {
-        reject(new Error('Upload timed out'));
+        const payload = { message: 'Upload timed out' };
+        toast.error(payload.message);
+        reject(createApiError(payload, xhr.status || 0));
       });
 
       xhr.open('POST', url);
@@ -289,11 +374,23 @@ class ApiService {
       body: formData
     });
 
-    const data = await response.json();
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      data = undefined;
+    }
 
     if (!response.ok) {
-      const detail = typeof data?.detail === 'string' ? data.detail : undefined;
-      throw new Error(detail || `HTTP error! status: ${response.status}`);
+      const payload = normalizeErrorPayload(data, response.status);
+      toast.error(payload.message);
+      throw createApiError(payload, response.status);
+    }
+
+    if (typeof data === 'undefined') {
+      const payload = { message: 'Invalid server response' };
+      toast.error(payload.message);
+      throw createApiError(payload, response.status);
     }
 
     return data as SegmentationResponse;

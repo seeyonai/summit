@@ -1,99 +1,64 @@
 import express from 'express';
 import { HotwordService } from '../../services/HotwordService';
+import { asyncHandler } from '../../middleware/errorHandler';
+import { badRequest } from '../../utils/errors';
 
 const router = express.Router();
 const hotwordService = new HotwordService();
 
 // Get all hotwords
-router.get('/', async (req, res) => {
-  try {
-    const hotwords = await hotwordService.getAllHotwords();
-    res.json(hotwords);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch hotwords' });
-  }
-});
+router.get('/', asyncHandler(async (req, res) => {
+  const hotwords = await hotwordService.getAllHotwords();
+  res.json(hotwords);
+}));
 
 // Create a new hotword
-router.post('/', async (req, res) => {
-  try {
-    const { word } = req.body;
-    
-    if (!word || typeof word !== 'string') {
-      return res.status(400).json({ error: 'Word is required and must be a string' });
-    }
-    
-    const hotword = await hotwordService.createHotword(word);
-    res.status(201).json(hotword);
-  } catch (error) {
-    if (error instanceof Error && error.message === 'Hotword already exists') {
-      res.status(400).json({ error: 'Hotword already exists' });
-    } else {
-      res.status(500).json({ error: 'Failed to create hotword' });
-    }
+router.post('/', asyncHandler(async (req, res) => {
+  const { word } = req.body as { word?: unknown };
+
+  if (!word || typeof word !== 'string') {
+    throw badRequest('Word is required and must be a string', 'hotword.word_required');
   }
-});
+
+  const hotword = await hotwordService.createHotword(word);
+  res.status(201).json(hotword);
+}));
 
 // Update a hotword
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { word, isActive } = req.body;
-    
-    const update: {word?: string, isActive?: boolean} = {};
-    if (word && typeof word === 'string') {
-      update.word = word;
-    }
-    if (isActive !== undefined && typeof isActive === 'boolean') {
-      update.isActive = isActive;
-    }
-    
-    const hotword = await hotwordService.updateHotword(id, update);
-    res.json(hotword);
-  } catch (error) {
-    console.error('Error updating hotword:', error);
-    if (error instanceof Error && error.message === 'Hotword not found') {
-      res.status(404).json({ error: 'Hotword not found' });
-    } else if (error instanceof Error && error.message === 'Hotword already exists') {
-      res.status(400).json({ error: 'Hotword already exists' });
-    } else {
-      res.status(500).json({ error: 'Failed to update hotword' });
-    }
+router.put('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { word, isActive } = req.body as { word?: unknown; isActive?: unknown };
+
+  const update: { word?: string; isActive?: boolean } = {};
+  if (typeof word === 'string' && word.trim().length > 0) {
+    update.word = word;
   }
-});
+  if (typeof isActive === 'boolean') {
+    update.isActive = isActive;
+  }
+
+  const hotword = await hotwordService.updateHotword(id, update);
+  res.json(hotword);
+}));
 
 // Delete a hotword
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await hotwordService.deleteHotword(id);
-    res.json({ message: '热词删除成功' });
-  } catch (error) {
-    console.error('Error deleting hotword:', error);
-    if (error instanceof Error && error.message === 'Hotword not found') {
-      res.status(404).json({ error: 'Hotword not found' });
-    } else {
-      res.status(500).json({ error: 'Failed to delete hotword' });
-    }
-  }
-});
+router.delete('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await hotwordService.deleteHotword(id);
+  res.json({ message: '热词删除成功' });
+}));
 
 // Get multiple hotwords by IDs (comma-separated)
-router.get('/batch', async (req, res) => {
-  try {
-    const { ids } = req.query;
-    
-    if (!ids || typeof ids !== 'string') {
-      return res.status(400).json({ error: 'IDs parameter is required' });
-    }
-    
-    const idList = ids.split(',').map(id => id.trim()).filter(id => id);
-    const hotwords = await hotwordService.getHotwordsByIds(idList);
-    res.json(hotwords);
-  } catch (error) {
-    console.error('Error fetching hotwords by IDs:', error);
-    res.status(500).json({ error: 'Failed to fetch hotwords' });
+router.get('/batch', asyncHandler(async (req, res) => {
+  const { ids } = req.query;
+
+  if (!ids || typeof ids !== 'string') {
+    throw badRequest('IDs parameter is required', 'hotword.ids_required');
   }
-});
+
+  const idList = ids.split(',').map((id) => id.trim()).filter((id) => id);
+  const hotwords = await hotwordService.getHotwordsByIds(idList);
+  res.json(hotwords);
+}));
 
 export default router;

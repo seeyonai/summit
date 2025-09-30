@@ -5,6 +5,7 @@ import os from 'os';
 import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../utils/httpClient';
 import { SegmentationRequest, SegmentationResponse, SegmentationModelInfo, SpeakerSegment } from '../types';
 import { getFilesBaseDir, normalizePublicOrRelative, resolveWithinBase } from '../utils/filePaths';
+import { badRequest, internal, notFound } from '../utils/errors';
 
 interface ApiModelInfo {
   model: string;
@@ -99,11 +100,12 @@ export class SegmentationService {
 
   async analyzeSegmentation(request: SegmentationRequest): Promise<SegmentationResponse> {
     if (!request.audioFilePath) {
-      throw new Error('audioFilePath is required');
+      throw badRequest('audioFilePath is required', 'segmentation.audio_required');
     }
 
     const normalizedPath = normalizePublicOrRelative(request.audioFilePath);
     const absolutePath = this.resolveAudioFilePath(normalizedPath);
+    console.log('Analyzing segmentation for:', absolutePath);
 
     let audioBuffer: Buffer;
     let contentType: string;
@@ -160,7 +162,7 @@ export class SegmentationService {
   private resolveAudioFilePath(relativePath: string): string {
     const absolutePath = resolveWithinBase(this.recordingsDir, relativePath);
     if (!fs.existsSync(absolutePath)) {
-      throw new Error(`Audio file not found: ${relativePath}`);
+      throw notFound(`Audio file not found: ${relativePath}`, 'segmentation.audio_not_found');
     }
     return absolutePath;
   }
@@ -248,21 +250,24 @@ export class SegmentationService {
       const detail = this.extractErrorDetail(error.body);
 
       if (error.status === 404) {
-        throw new Error(detail || (context?.audioFilePath ? `Audio file not found: ${context.audioFilePath}` : 'Resource not found'));
+        throw notFound(
+          detail || (context?.audioFilePath ? `Audio file not found: ${context.audioFilePath}` : 'Resource not found'),
+          'segmentation.audio_not_found'
+        );
       }
 
       if (error.status === 400) {
-        throw new Error(detail || 'Invalid segmentation request');
+        throw badRequest(detail || 'Invalid segmentation request', 'segmentation.invalid_request');
       }
 
-      throw new Error(detail || 'Segmentation service error');
+      throw internal(detail || 'Segmentation service error', 'segmentation.service_error');
     }
 
     if (error instanceof Error) {
       throw error;
     }
 
-    throw new Error('Unknown segmentation service error');
+    throw internal('Unknown segmentation service error', 'segmentation.unknown_error');
   }
 
   private determineContentType(filePath: string): string {
@@ -297,13 +302,13 @@ export class SegmentationService {
     });
 
     if (response.data.length === 0) {
-      throw new Error('Segmentation service returned empty response');
+      throw internal('Segmentation service returned empty response', 'segmentation.empty_response');
     }
 
     try {
       return JSON.parse(response.data.toString('utf8')) as ApiSegmentationResponse;
     } catch (error) {
-      throw new Error(`Failed to parse segmentation response: ${(error as Error).message}`);
+      throw internal(`Failed to parse segmentation response: ${(error as Error).message}`, 'segmentation.parse_failed');
     }
   }
 }

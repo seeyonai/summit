@@ -7,6 +7,7 @@ import meetingService from './MeetingService';
 import recordingService from './RecordingService';
 import { Meeting, Recording } from '../types';
 import { getFilesBaseDir, resolveWithinBase, makeRelativeToBase } from '../utils/filePaths';
+import { badRequest, internal, notFound } from '../utils/errors';
 
 interface CombineResult {
   meeting: Meeting;
@@ -41,7 +42,7 @@ class AudioProcessingService {
   private async requireMeeting(meetingId: string): Promise<Meeting> {
     const meeting = await meetingService.getMeetingById(meetingId);
     if (!meeting) {
-      throw new Error(`Meeting not found (ID: ${meetingId})`);
+      throw notFound(`Meeting not found (ID: ${meetingId})`, 'audio_processing.meeting_not_found');
     }
     return meeting;
   }
@@ -107,7 +108,7 @@ class AudioProcessingService {
     const base = path.basename(candidate);
     const normalized = base.replace(/[^a-zA-Z0-9._-]/g, '_');
     if (!normalized) {
-      throw new Error('Invalid output filename');
+      throw badRequest('Invalid output filename', 'audio_processing.invalid_filename');
     }
     return normalized;
   }
@@ -202,7 +203,7 @@ class AudioProcessingService {
   private async resolveRecordingPath(recording: RecordingLike): Promise<string> {
     const candidate = recording.filePath || recording.filename;
     if (!candidate) {
-      throw new Error('Recording does not define a filename');
+      throw badRequest('Recording does not define a filename', 'audio_processing.filename_missing');
     }
 
     const relative = makeRelativeToBase(this.recordingsDir, candidate);
@@ -235,7 +236,7 @@ class AudioProcessingService {
 
       child.on('close', (code) => {
         if (code !== 0) {
-          reject(new Error(`${command} exited with code ${code}: ${stderr.trim()}`));
+          reject(internal(`${command} exited with code ${code}: ${stderr.trim()}`, 'audio_processing.process_failed'));
         } else {
           resolve({ stdout, stderr });
         }

@@ -1,29 +1,28 @@
 import { Router, Request, Response } from 'express';
 import recordingService from '../../services/RecordingService';
+import { asyncHandler } from '../../middleware/errorHandler';
+import { badRequest } from '../../utils/errors';
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
 // Run speaker diarization on a recording
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const { recordingId } = req.params;
-    const { oracleNumSpeakers: camelCaseOracle, oracle_num_speakers: snakeCaseOracle } = req.body as Record<string, unknown>;
-    const oracleNumSpeakersValue = camelCaseOracle ?? snakeCaseOracle;
-    const oracleNumSpeakers = typeof oracleNumSpeakersValue !== 'undefined'
-      ? parseInt(String(oracleNumSpeakersValue), 10)
-      : undefined;
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
+  const { recordingId } = req.params; // recordingId is undefined?
+  const { oracleNumSpeakers: camelCaseOracle, oracle_num_speakers: snakeCaseOracle } = req.body as Record<string, unknown>;
+  const oracleNumSpeakersValue = camelCaseOracle ?? snakeCaseOracle;
+  const parsedValue = typeof oracleNumSpeakersValue !== 'undefined'
+    ? parseInt(String(oracleNumSpeakersValue), 10)
+    : undefined;
 
-    const result = await recordingService.segmentRecording(
-      recordingId,
-      Number.isNaN(oracleNumSpeakers) ? undefined : oracleNumSpeakers
-    );
-    res.json(result);
-  } catch (error) {
-    const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 500;
-    res.status(statusCode).json({ 
-      error: error instanceof Error ? error.message : 'Failed to segment recording' 
-    });
+  if (typeof parsedValue !== 'undefined' && Number.isNaN(parsedValue)) {
+    throw badRequest('oracleNumSpeakers must be a number', 'segmentation.invalid_oracle');
   }
-});
+
+  const result = await recordingService.segmentRecording(
+    recordingId,
+    typeof parsedValue === 'number' ? parsedValue : undefined
+  );
+  res.json(result);
+}));
 
 export default router;

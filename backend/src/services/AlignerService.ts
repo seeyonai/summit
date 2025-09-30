@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../utils/httpClient';
 import { getFilesBaseDir, normalizePublicOrRelative, resolveWithinBase } from '../utils/filePaths';
+import { badRequest, internal, notFound } from '../utils/errors';
 
 interface ApiModelInfo {
   model: string;
@@ -70,15 +71,16 @@ export class AlignerService {
     const { audioFilePath, text } = options;
 
     if (!audioFilePath || typeof audioFilePath !== 'string') {
-      throw new Error('audioFilePath is required');
+      throw badRequest('audioFilePath is required', 'alignment.audio_required');
     }
 
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      throw new Error('text is required');
+      throw badRequest('text is required', 'alignment.text_required');
     }
 
     const normalizedPath = normalizePublicOrRelative(audioFilePath);
     const absolutePath = this.resolveAudioFilePath(normalizedPath);
+    console.log('Aligning audio with text:', absolutePath);
     const audioBuffer = await fs.promises.readFile(absolutePath);
     const contentType = this.determineContentType(absolutePath);
 
@@ -105,7 +107,7 @@ export class AlignerService {
   private resolveAudioFilePath(relativePath: string): string {
     const absolutePath = resolveWithinBase(this.recordingsDir, relativePath);
     if (!fs.existsSync(absolutePath)) {
-      throw new Error(`Audio file not found: ${relativePath}`);
+      throw notFound(`Audio file not found: ${relativePath}`, 'alignment.audio_not_found');
     }
     return absolutePath;
   }
@@ -176,13 +178,13 @@ export class AlignerService {
     });
 
     if (response.data.length === 0) {
-      throw new Error('Aligner service returned empty response');
+      throw internal('Aligner service returned empty response', 'alignment.empty_response');
     }
 
     try {
       return JSON.parse(response.data.toString('utf8')) as ApiAlignmentResponse;
     } catch (error) {
-      throw new Error(`Failed to parse alignment response: ${(error as Error).message}`);
+      throw internal(`Failed to parse alignment response: ${(error as Error).message}`, 'alignment.parse_failed');
     }
   }
 
@@ -203,17 +205,20 @@ export class AlignerService {
     if (error instanceof HttpError) {
       const detail = this.extractErrorDetail(error.body);
       if (error.status === 404) {
-        throw new Error(detail || (context?.audioFilePath ? `Audio file not found: ${context.audioFilePath}` : 'Resource not found'));
+        throw notFound(
+          detail || (context?.audioFilePath ? `Audio file not found: ${context.audioFilePath}` : 'Resource not found'),
+          'alignment.audio_not_found'
+        );
       }
       if (error.status === 400) {
-        throw new Error(detail || 'Invalid alignment request');
+        throw badRequest(detail || 'Invalid alignment request', 'alignment.invalid_request');
       }
-      throw new Error(detail || 'Aligner service error');
+      throw internal(detail || 'Aligner service error', 'alignment.service_error');
     }
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('Unknown aligner service error');
+    throw internal('Unknown aligner service error', 'alignment.unknown_error');
   }
 }
 
@@ -228,5 +233,4 @@ export async function alignAudioWithText(audioFilePath: string, text: string): P
 }
 
 export default alignerService;
-
 

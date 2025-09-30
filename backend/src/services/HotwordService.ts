@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, HotwordDocument } from '../types/documents';
 import { hotwordDocumentToHotword } from '../utils/mongoMappers';
+import { conflict, internal, notFound } from '../utils/errors';
 
 export class HotwordService {
   async getAllHotwords(): Promise<Hotword[]> {
@@ -22,7 +23,7 @@ export class HotwordService {
     });
     
     if (existing) {
-      throw new Error('Hotword already exists');
+      throw conflict('Hotword already exists', 'hotword.exists');
     }
 
     const hotwordDoc: Omit<HotwordDocument, '_id'> = {
@@ -35,7 +36,7 @@ export class HotwordService {
     const insertedHotword = await collection.findOne({ _id: result.insertedId });
     
     if (!insertedHotword) {
-      throw new Error('Failed to create hotword');
+      throw internal('Failed to create hotword', 'hotword.create_failed');
     }
     
     return hotwordDocumentToHotword(insertedHotword);
@@ -47,7 +48,7 @@ export class HotwordService {
     // Check if hotword exists
     const hotword = await collection.findOne({ _id: new ObjectId(id) });
     if (!hotword) {
-      throw new Error('Hotword not found');
+      throw notFound('Hotword not found', 'hotword.not_found');
     }
 
     // Check if new word already exists (excluding current hotword)
@@ -57,7 +58,7 @@ export class HotwordService {
     });
 
     if (existing && existing._id.toString() !== id) {
-      throw new Error('Hotword already exists');
+      throw conflict('Hotword already exists', 'hotword.exists');
     }
 
     const result = await collection.findOneAndUpdate(
@@ -67,7 +68,7 @@ export class HotwordService {
     );
 
     if (!result) {
-      throw new Error('Failed to update hotword');
+      throw internal('Failed to update hotword', 'hotword.update_failed');
     }
 
     return hotwordDocumentToHotword(result);
@@ -82,7 +83,7 @@ export class HotwordService {
     );
 
     if (!result) {
-      throw new Error('Hotword not found');
+      throw notFound('Hotword not found', 'hotword.not_found');
     }
   }
 
@@ -114,7 +115,7 @@ export class HotwordService {
     );
 
     if (!result) {
-      throw new Error('Hotword not found');
+      throw notFound('Hotword not found', 'hotword.not_found');
     }
 
     return hotwordDocumentToHotword(result);

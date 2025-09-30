@@ -1,5 +1,6 @@
 import { createIntext, SchemaField } from 'intext';
 import recordingService from './RecordingService';
+import { badRequest, internal } from '../utils/errors';
 
 // Create OpenAI-compatible client
 function createOpenAIClient(apiKey: string, baseURL = 'https://api.openai.com/v1') {
@@ -17,7 +18,7 @@ function createOpenAIClient(apiKey: string, baseURL = 'https://api.openai.com/v1
           });
           if (!res.ok) {
             const errorText = await res.text();
-            throw new Error(`LLM error ${res.status}: ${errorText}`);
+            throw internal(`LLM error ${res.status}: ${errorText}`, 'analysis.llm_error');
           }
           return res.json();
         },
@@ -113,7 +114,7 @@ class TranscriptExtractionService {
     const apiKey = process.env.SUMMIT_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     const baseURL = process.env.SUMMIT_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
     if (!apiKey) {
-      throw new Error('SUMMIT_OPENAI_API_KEY or OPENAI_API_KEY environment variable is required');
+      throw internal('SUMMIT_OPENAI_API_KEY or OPENAI_API_KEY environment variable is required', 'analysis.api_key_missing');
     }
 
     const openai = createOpenAIClient(apiKey, baseURL);
@@ -136,7 +137,7 @@ class TranscriptExtractionService {
     }
 
     if (!transcript || transcript.trim().length === 0) {
-      throw new Error('Transcript text is required');
+      throw badRequest('Transcript text is required', 'analysis.transcript_required');
     }
 
     const result = await this.intext.extract(transcript, {
@@ -155,7 +156,7 @@ class TranscriptExtractionService {
       const recordings = await recordingService.getRecordingsByMeetingId(meetingId, false);
       
       if (!recordings || recordings.length === 0) {
-        throw new Error('No recordings found for this meeting');
+        throw badRequest('No recordings found for this meeting', 'analysis.no_recordings');
       }
 
       // Collect all organized speeches from recordings
@@ -178,7 +179,7 @@ class TranscriptExtractionService {
       // They will be accessible via meeting.combinedRecording if needed
 
       if (allSpeeches.length === 0) {
-        throw new Error('No organized speeches found in any recordings');
+        throw badRequest('No organized speeches found in any recordings', 'analysis.no_speeches');
       }
 
       // Sort speeches by start time to create chronological transcript

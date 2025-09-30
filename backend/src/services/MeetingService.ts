@@ -4,6 +4,7 @@ import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument } from '../types/documents';
 import { meetingDocumentToMeeting } from '../utils/mongoMappers';
 import { getRecordingsByMeetingId } from './RecordingService';
+import { internal } from '../utils/errors';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
 
@@ -56,7 +57,7 @@ export const createMeeting = async (request: MeetingCreate): Promise<Meeting> =>
   const insertedMeeting = await collection.findOne({ _id: result.insertedId });
 
   if (!insertedMeeting) {
-    throw new Error('Failed to create meeting');
+    throw internal('Failed to create meeting', 'meeting.create_failed');
   }
 
   return meetingDocumentToMeeting(insertedMeeting);
