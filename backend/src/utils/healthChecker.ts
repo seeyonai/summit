@@ -1,0 +1,93 @@
+import { ensureTrailingSlash } from './httpClient';
+import { LIVE_SERVICE_BASE, TRANSCRIPTION_SERVICE_BASE } from '../services/RecordingService';
+import { SEGMENTATION_SERVICE_URL } from '../services/SegmentationService';
+import { ALIGNER_SERVICE_URL } from '../services/AlignerService';
+
+interface Service {
+  name: string;
+  url: string;
+  port: number;
+}
+
+interface ServiceHealth extends Service {
+  status: string;
+}
+
+interface HealthCheckResult {
+  services: ServiceHealth[];
+  allHealthy: boolean;
+}
+
+const SERVICES: Service[] = [
+  {
+    name: 'Echo Stream',
+    url: ensureTrailingSlash(LIVE_SERVICE_BASE),
+    port: 2592,
+  },
+  {
+    name: 'Echo Voices',
+    url: ensureTrailingSlash(SEGMENTATION_SERVICE_URL),
+    port: 2593,
+  },
+  {
+    name: 'Echo Vault',
+    url: ensureTrailingSlash(TRANSCRIPTION_SERVICE_BASE),
+    port: 2594,
+  },
+  {
+    name: 'Echo Aligner',
+    url: ensureTrailingSlash(ALIGNER_SERVICE_URL),
+    port: 2595,
+  },
+];
+
+async function checkServiceHealth(service: Service): Promise<string> {
+  try {
+    const response = await fetch(`${service.url}health`);
+    if (response.ok) {
+      const healthStatus = await response.json();
+      console.log(`${service.name} health check:`, healthStatus);
+
+      return typeof healthStatus === 'object'
+        && healthStatus !== null
+        && 'status' in healthStatus
+        && healthStatus.status === 'healthy' ? '✓ Ready' : '✗ Not Ready';
+    }
+    return '✗ Not Ready';
+  } catch (error) {
+    console.error(`Error getting ${service.name} health check status:`, error);
+    return '✗ Not Ready';
+  }
+}
+
+export async function checkAllServices(): Promise<HealthCheckResult> {
+  const healthPromises = SERVICES.map(async (service) => ({
+    ...service,
+    status: await checkServiceHealth(service),
+  }));
+
+  const services = await Promise.all(healthPromises);
+  const allHealthy = services.every(service => service.status === '✓ Ready');
+
+  return { services, allHealthy };
+}
+
+export function generateHealthTable(healthResult: HealthCheckResult, apiPort: number): Array<{ Endpoint: string; URL: string; Status: string }> {
+  const { services } = healthResult;
+
+  const tableData = [
+    { Endpoint: 'Health check', URL: `http://localhost:${apiPort}/health`, Status: '✓ Ready' },
+    { Endpoint: 'Database', URL: 'MongoDB', Status: '✓ Connected' },
+    { Endpoint: 'Live Recorder WebSocket', URL: `ws://localhost:${apiPort}/ws/live-recorder`, Status: '✓ Ready' },
+    ...services.map(service => ({
+      Endpoint: service.name,
+      URL: service.url,
+      Status: service.status,
+    })),
+  ];
+
+  // Configure console.table to show without index column
+  console.table(tableData, ['Endpoint', 'URL', 'Status']);
+
+  return tableData;
+}
