@@ -1,6 +1,8 @@
 import { ObjectId } from 'mongodb';
 import { Meeting, MeetingCreate, MeetingUpdate, Recording } from '../types';
-import { getCollection, COLLECTIONS, MeetingDocument, meetingToApp } from '../types/mongodb';
+import { getCollection } from '../config/database';
+import { COLLECTIONS, MeetingDocument } from '../types/documents';
+import { meetingDocumentToMeeting } from '../utils/mongoMappers';
 import { getRecordingsByMeetingId } from './RecordingService';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
@@ -8,7 +10,7 @@ const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.M
 export const getAllMeetings = async (): Promise<Meeting[]> => {
   const collection = getMeetingsCollection();
   const meetings = await collection.find({}).toArray();
-  return meetings.map(meetingToApp);
+  return meetings.map(meetingDocumentToMeeting);
 };
 
 export const getMeetingById = async (id: string, options: { includeRecordings?: boolean } = {}): Promise<Meeting | null> => {
@@ -19,7 +21,7 @@ export const getMeetingById = async (id: string, options: { includeRecordings?: 
   }
   const { includeRecordings = true } = options;
   if (!includeRecordings) {
-    return meetingToApp(meeting);
+    return meetingDocumentToMeeting(meeting);
   }
   const recordings = await getRecordingsByMeetingId(id);
   // Convert RecordingResponse[] to Recording[]
@@ -31,7 +33,7 @@ export const getMeetingById = async (id: string, options: { includeRecordings?: 
       updatedAt: recording.updatedAt ? new Date(recording.updatedAt) : undefined
     };
   });
-  return meetingToApp({ ...meeting, recordings: recordingDocs as any });
+  return meetingDocumentToMeeting({ ...meeting, recordings: recordingDocs as any });
 };
 
 export const createMeeting = async (request: MeetingCreate): Promise<Meeting> => {
@@ -57,7 +59,7 @@ export const createMeeting = async (request: MeetingCreate): Promise<Meeting> =>
     throw new Error('Failed to create meeting');
   }
 
-  return meetingToApp(insertedMeeting);
+  return meetingDocumentToMeeting(insertedMeeting);
 };
 
 export const updateMeeting = async (id: string, request: MeetingUpdate): Promise<Meeting | null> => {
@@ -77,7 +79,7 @@ export const updateMeeting = async (id: string, request: MeetingUpdate): Promise
     return null;
   }
 
-  return meetingToApp(result);
+  return meetingDocumentToMeeting(result);
 };
 
 export const deleteMeeting = async (id: string): Promise<boolean> => {
@@ -105,7 +107,7 @@ export const removeRecordingFromMeeting = async (
     return null;
   }
 
-  return meetingToApp(result);
+  return meetingDocumentToMeeting(result);
 };
 
 export const updateCombinedRecording = async (meetingId: string, recording: Recording | null): Promise<Meeting | null> => {
@@ -130,13 +132,13 @@ export const updateCombinedRecording = async (meetingId: string, recording: Reco
     return null;
   }
 
-  return meetingToApp(result);
+  return meetingDocumentToMeeting(result);
 };
 
 export const getMeetingsByStatus = async (status: string): Promise<Meeting[]> => {
   const collection = getMeetingsCollection();
   const meetings = await collection.find({ status: status as any }).toArray();
-  return meetings.map(meetingToApp);
+  return meetings.map(meetingDocumentToMeeting);
 };
 
 export const getUpcomingMeetings = async (): Promise<Meeting[]> => {
@@ -147,7 +149,7 @@ export const getUpcomingMeetings = async (): Promise<Meeting[]> => {
       scheduledStart: { $gt: now }
     })
     .toArray();
-  return meetings.map(meetingToApp);
+  return meetings.map(meetingDocumentToMeeting);
 };
 
 export const meetingService = {

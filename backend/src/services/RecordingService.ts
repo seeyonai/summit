@@ -2,7 +2,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { ObjectId } from 'mongodb';
 import { RecordingResponse, RecordingUpdate, SpeakerSegment, Meeting } from '../types';
-import { getCollection, COLLECTIONS, RecordingDocument, recordingToApp } from '../types/mongodb';
+import { getCollection } from '../config/database';
+import { COLLECTIONS, RecordingDocument, MeetingDocument } from '../types/documents';
+import { recordingDocumentToResponse, meetingDocumentToMeeting } from '../utils/mongoMappers';
 import { SegmentationService } from './SegmentationService';
 import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
 import type { JsonRequestOptions } from '../utils/httpClient';
@@ -34,6 +36,16 @@ export const LIVE_SERVICE_BASE = ensureTrailingSlash(LIVE_SERVICE_URL);
 export const TRANSCRIPTION_SERVICE_BASE = ensureTrailingSlash(TRANSCRIPTION_SERVICE_URL);
 const segmentationService = new SegmentationService();
 
+const MEETING_LOOKUP_FIELDS: Array<keyof Meeting> = [
+  'title',
+  'status',
+  'createdAt',
+  'updatedAt',
+  'scheduledStart',
+  'summary',
+  'participants',
+];
+
 function getMimeType(filename: string): string {
   const extension = path.extname(filename).toLowerCase();
 
@@ -54,6 +66,51 @@ function getMimeType(filename: string): string {
 // Shared helpers
 function recordingsCollection() {
   return getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
+}
+
+async function buildRecordingResponse(
+  document: RecordingDocument,
+  meetingFields?: Array<keyof Meeting>,
+): Promise<RecordingResponse> {
+  const response = recordingDocumentToResponse(document);
+
+  if (!meetingFields?.length || !document.meetingId) {
+    return response;
+  }
+
+  try {
+    const meetingDoc = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS)
+      .findOne({ _id: document.meetingId });
+
+    if (!meetingDoc) {
+      return response;
+    }
+
+    const meeting = meetingDocumentToMeeting(meetingDoc);
+    const meetingPayload: Record<string, unknown> = {
+      _id: meeting._id.toString(),
+    };
+
+    meetingFields.forEach((field) => {
+      const value = meeting[field];
+      if (value === undefined) {
+        return;
+      }
+
+      if (field === 'createdAt' || field === 'updatedAt' || field === 'scheduledStart') {
+        meetingPayload[field] = (value as Date).toISOString();
+        return;
+      }
+
+      meetingPayload[field] = value;
+    });
+
+    response.meeting = meetingPayload as RecordingResponse['meeting'];
+  } catch (error) {
+    console.error(`Error looking up meeting for recording ${document._id.toString()}:`, error);
+  }
+
+  return response;
 }
 
 async function findRecording(recordingId: string): Promise<RecordingDocument | null> {
@@ -125,8 +182,7 @@ async function callLiveService<T>(pathname: string, options: JsonRequestOptions)
 export async function getAllRecordings(): Promise<RecordingResponse[]> {
   const collection = recordingsCollection();
   const documents = await collection.find({}).sort({ createdAt: -1 }).toArray();
-  const responses = await Promise.all(documents.map((doc: RecordingDocument) => recordingToApp(doc, { lookup: [{ meetingId: 'meeting', fields: ['title', 'status', 'createdAt', 'updatedAt', 'scheduledStart', 'summary', 'participants'] }] })));
-  return responses;
+  return Promise.all(documents.map((doc) => buildRecordingResponse(doc, MEETING_LOOKUP_FIELDS)));
 }
 
 export async function getRecordingsByMeetingId(meetingId: string, includeMeeting: boolean = true): Promise<RecordingResponse[]> {
@@ -135,9 +191,8 @@ export async function getRecordingsByMeetingId(meetingId: string, includeMeeting
     .find({ meetingId: new ObjectId(meetingId) })
     .sort({ createdAt: -1 })
     .toArray();
-  const lookupOption = includeMeeting ? { lookup: [{ meetingId: 'meeting' as const, fields: ['title', 'status', 'createdAt', 'updatedAt', 'scheduledStart', 'summary', 'participants'] as (keyof Meeting)[] }] } : undefined;
-  const responses = await Promise.all(documents.map((doc: RecordingDocument) => recordingToApp(doc, lookupOption)));
-  return responses;
+  const meetingFields = includeMeeting ? MEETING_LOOKUP_FIELDS : undefined;
+  return Promise.all(documents.map((doc) => buildRecordingResponse(doc, meetingFields)));
 }
 
 export async function getRecordingById(recordingId: string): Promise<RecordingResponse> {
@@ -147,7 +202,7 @@ export async function getRecordingById(recordingId: string): Promise<RecordingRe
     throw new Error('Recording not found');
   }
 
-  return await recordingToApp(document, { lookup: [{ meetingId: 'meeting', fields: ['title', 'status', 'createdAt', 'updatedAt', 'scheduledStart', 'summary', 'participants'] }] });
+  return buildRecordingResponse(document, MEETING_LOOKUP_FIELDS);
 }
 
 export async function createRecording(recordingData: {
@@ -190,7 +245,7 @@ export async function createRecording(recordingData: {
     throw new Error('Failed to persist recording');
   }
 
-  return await recordingToApp(inserted);
+  return recordingDocumentToResponse(inserted);
 }
 
 export async function startRecording(): Promise<{ id: string; filename: string; filePath: string; message: string }> {

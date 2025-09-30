@@ -5,7 +5,6 @@ import audioProcessingService from '../services/AudioProcessingService';
 import transcriptExtractionService from '../services/TranscriptExtractionService';
 import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../types';
 import recordingService from '../services/RecordingService';
-import { recordingToApp } from '../types/mongodb';
 
 const router = Router();
 

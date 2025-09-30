@@ -1,6 +1,7 @@
 // @ts-nocheck
-import { getCollection, COLLECTIONS, MeetingDocument, HotwordDocument, RecordingDocument } from '../types/mongodb';
 import { ObjectId } from 'mongodb';
+import { getCollection } from '../config/database';
+import { COLLECTIONS, MeetingDocument, HotwordDocument, RecordingDocument } from '../types/documents';
 import { RecordingCreate, MeetingCreate, HotwordCreate } from '../types';
 
 export interface SeedData {

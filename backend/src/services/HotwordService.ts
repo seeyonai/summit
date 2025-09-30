@@ -1,12 +1,14 @@
 import { Hotword } from '../types';
-import { getCollection, COLLECTIONS, HotwordDocument, hotwordToApp } from '../types/mongodb';
 import { ObjectId } from 'mongodb';
+import { getCollection } from '../config/database';
+import { COLLECTIONS, HotwordDocument } from '../types/documents';
+import { hotwordDocumentToHotword } from '../utils/mongoMappers';
 
 export class HotwordService {
   async getAllHotwords(): Promise<Hotword[]> {
     const collection = getCollection<HotwordDocument>(COLLECTIONS.HOTWORDS);
     const hotwords = await collection.find({ isActive: true }).toArray();
-    return hotwords.map(hotwordToApp);
+    return hotwords.map(hotwordDocumentToHotword);
   }
 
   async createHotword(word: string): Promise<Hotword> {
@@ -36,7 +38,7 @@ export class HotwordService {
       throw new Error('Failed to create hotword');
     }
     
-    return hotwordToApp(insertedHotword);
+    return hotwordDocumentToHotword(insertedHotword);
   }
 
   async updateHotword(id: string, update: {word?: string, isActive?: boolean}): Promise<Hotword> {
@@ -68,7 +70,7 @@ export class HotwordService {
       throw new Error('Failed to update hotword');
     }
 
-    return hotwordToApp(result);
+    return hotwordDocumentToHotword(result);
   }
 
   async deleteHotword(id: string): Promise<void> {
@@ -91,14 +93,14 @@ export class HotwordService {
       _id: { $in: objectIds },
       isActive: true
     }).toArray();
-    return hotwords.map(hotwordToApp);
+    return hotwords.map(hotwordDocumentToHotword);
   }
 
   // Get all hotwords including inactive ones (for admin purposes)
   async getAllHotwordsWithInactive(): Promise<Hotword[]> {
     const collection = getCollection<HotwordDocument>(COLLECTIONS.HOTWORDS);
     const hotwords = await collection.find({}).toArray();
-    return hotwords.map(hotwordToApp);
+    return hotwords.map(hotwordDocumentToHotword);
   }
 
   // Restore a deleted hotword
@@ -115,6 +117,6 @@ export class HotwordService {
       throw new Error('Hotword not found');
     }
 
-    return hotwordToApp(result);
+    return hotwordDocumentToHotword(result);
   }
 }
