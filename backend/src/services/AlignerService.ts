@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../utils/httpClient';
-import { getFilesBaseDir, normalizePublicOrRelative, resolveWithinBase } from '../utils/filePaths';
+import { getFilesBaseDir, normalizePublicOrRelative, resolvePathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
 
 interface ApiModelInfo {
@@ -104,10 +104,10 @@ export class AlignerService {
     return url.toString();
   }
 
-  private resolveAudioFilePath(relativePath: string): string {
-    const absolutePath = resolveWithinBase(this.recordingsDir, relativePath);
+  private resolveAudioFilePath(candidate: string): string {
+    const absolutePath = resolvePathFromCandidate(this.recordingsDir, candidate);
     if (!fs.existsSync(absolutePath)) {
-      throw notFound(`Audio file not found: ${relativePath}`, 'alignment.audio_not_found');
+      throw notFound(`Audio file not found: ${candidate}`, 'alignment.audio_not_found');
     }
     return absolutePath;
   }
@@ -233,4 +233,3 @@ export async function alignAudioWithText(audioFilePath: string, text: string): P
 }
 
 export default alignerService;
-

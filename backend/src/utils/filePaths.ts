@@ -1,3 +1,4 @@
+import { promises as fs } from 'fs';
 import path from 'path';
 
 export function getFilesBaseDir(): string {
@@ -39,3 +40,18 @@ export function makeRelativeToBase(base: string, absoluteOrRelative: string): st
   return normalizePublicOrRelative(input);
 }
 
+function normalizeCandidate(base: string, candidate: string): string {
+  const relative = makeRelativeToBase(base, candidate);
+  return path.normalize(relative).replace(/^[/\\]+/, '');
+}
+
+export function resolvePathFromCandidate(base: string, candidate: string): string {
+  const normalizedRelative = normalizeCandidate(base, candidate);
+  return resolveWithinBase(base, normalizedRelative);
+}
+
+export async function resolveExistingPathFromCandidate(base: string, candidate: string): Promise<string> {
+  const absolutePath = resolvePathFromCandidate(base, candidate);
+  await fs.access(absolutePath);
+  return absolutePath;
+}

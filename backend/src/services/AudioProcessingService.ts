@@ -6,7 +6,7 @@ import { ObjectId } from 'mongodb';
 import meetingService from './MeetingService';
 import recordingService from './RecordingService';
 import { Meeting, Recording } from '../types';
-import { getFilesBaseDir, resolveWithinBase, makeRelativeToBase } from '../utils/filePaths';
+import { getFilesBaseDir, resolvePathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
 
 interface CombineResult {
@@ -113,10 +113,6 @@ class AudioProcessingService {
     return normalized;
   }
 
-  private resolveWithinRecordingsDir(filename: string): string {
-    return resolveWithinBase(this.recordingsDir, filename);
-  }
-
   private async buildRecordingMetadata(filename: string, absolutePath: string): Promise<Recording> {
     const now = new Date();
     const stats = await fs.stat(absolutePath);
@@ -206,10 +202,7 @@ class AudioProcessingService {
       throw badRequest('Recording does not define a filename', 'audio_processing.filename_missing');
     }
 
-    const relative = makeRelativeToBase(this.recordingsDir, candidate);
-    const normalizedRelative = path.normalize(relative).replace(/^[/\\]+/, '');
-    const absolute = this.resolveWithinRecordingsDir(normalizedRelative);
-    return absolute;
+    return resolvePathFromCandidate(this.recordingsDir, candidate);
   }
 
   private async runFfmpeg(args: string[]): Promise<void> {

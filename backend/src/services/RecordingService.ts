@@ -9,8 +9,9 @@ import { SegmentationService } from './SegmentationService';
 import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
 import type { JsonRequestOptions } from '../utils/httpClient';
 import { getMeetingById as getMeetingByIdService } from './MeetingService';
-import { getFilesBaseDir, makeRelativeToBase, resolveWithinBase } from '../utils/filePaths';
+import { getFilesBaseDir, makeRelativeToBase, resolveExistingPathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
+import { getMimeType, normalizeTranscriptText } from '../utils/recordingHelpers';
 
 interface LiveRecordingStartResponse {
   id: string;
@@ -46,23 +47,6 @@ const MEETING_LOOKUP_FIELDS: Array<keyof Meeting> = [
   'summary',
   'participants',
 ];
-
-function getMimeType(filename: string): string {
-  const extension = path.extname(filename).toLowerCase();
-
-  switch (extension) {
-    case '.wav':
-      return 'audio/wav';
-    case '.mp3':
-      return 'audio/mpeg';
-    case '.flac':
-      return 'audio/flac';
-    case '.m4a':
-      return 'audio/m4a';
-    default:
-      return 'application/octet-stream';
-  }
-}
 
 // Shared helpers
 function recordingsCollection() {
@@ -128,10 +112,6 @@ async function findRecording(recordingId: string): Promise<RecordingDocument | n
 }
 
 async function findRecordingOrThrow(recordingId: string): Promise<RecordingDocument> {
-  if (!ObjectId.isValid(recordingId)) {
-    throw badRequest('Invalid recording ID', 'recording.invalid_id');
-  }
-
   const document = await findRecording(recordingId);
 
   if (!document) {
@@ -143,11 +123,7 @@ async function findRecordingOrThrow(recordingId: string): Promise<RecordingDocum
 
 async function resolveAbsoluteFilePath(document: RecordingDocument): Promise<string> {
   const candidate = document.filePath || document.filename;
-  const relative = makeRelativeToBase(RECORDINGS_DIR, candidate);
-  const normalized = path.normalize(relative).replace(/^(\.\/*)+/, '').replace(/^[\\/]+/, '');
-  const absolutePath = resolveWithinBase(RECORDINGS_DIR, normalized);
-  await fs.access(absolutePath);
-  return absolutePath;
+  return resolveExistingPathFromCandidate(RECORDINGS_DIR, candidate);
 }
 
 function getRelativeFilePath(document: RecordingDocument): string {
@@ -163,12 +139,6 @@ async function deleteRecordingFile(document: RecordingDocument): Promise<void> {
       throw error;
     }
   }
-}
-
-function polishText(text: string): string {
-  const trimmed = text.trim();
-  const singleSpaced = trimmed.replace(/\s+/g, ' ');
-  return singleSpaced.charAt(0).toUpperCase() + singleSpaced.slice(1);
 }
 
 function buildLiveServiceUrl(pathname: string): string {
@@ -191,6 +161,10 @@ export async function getAllRecordings(): Promise<RecordingResponse[]> {
 }
 
 export async function getRecordingsByMeetingId(meetingId: string, includeMeeting: boolean = true): Promise<RecordingResponse[]> {
+  if (!ObjectId.isValid(meetingId)) {
+    throw badRequest('Invalid meeting ID', 'meeting.invalid_id');
+  }
+
   const collection = recordingsCollection();
   const documents = await collection
     .find({ meetingId: new ObjectId(meetingId) })
@@ -373,9 +347,17 @@ export async function deleteRecording(recordingId: string): Promise<{ message: s
 }
 
 export async function addRecordingToMeeting(meetingId: string, recordingId: string): Promise<{ message: string }> {
-  await findRecordingOrThrow(recordingId);
+  const recording = await findRecordingOrThrow(recordingId);
+
+  if (!ObjectId.isValid(meetingId)) {
+    throw badRequest('Invalid meeting ID', 'meeting.invalid_id');
+  }
+
   const collection = recordingsCollection();
-  await collection.updateOne({ _id: new ObjectId(recordingId) }, { $set: { meetingId: new ObjectId(meetingId) } });
+  await collection.updateOne(
+    { _id: recording._id },
+    { $set: { meetingId: new ObjectId(meetingId) } },
+  );
   return { message: '录音绑定成功' };
 }
 
@@ -471,7 +453,7 @@ export async function polishTranscription(recordingId: string): Promise<{ messag
     throw badRequest('No transcription available to polish', 'recording.transcription_missing');
   }
 
-  const polished = polishText(sourceText);
+  const polished = normalizeTranscriptText(sourceText);
 
   const collection = recordingsCollection();
   await collection.updateOne(
