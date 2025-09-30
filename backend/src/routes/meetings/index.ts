@@ -56,7 +56,9 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   if (!userId) {
     throw badRequest('Unauthorized', 'auth.unauthorized');
   }
-  const meetings = await meetingService.getMeetingsForUser(userId);
+  const meetings = r.user?.role === 'admin'
+    ? await meetingService.getAllMeetings()
+    : await meetingService.getMeetingsForUser(userId);
   res.json(meetings.map(serializeMeeting));
 }));
 
@@ -154,7 +156,10 @@ router.get('/status/:status', asyncHandler(async (req: Request, res: Response) =
   if (!userId) {
     throw badRequest('Unauthorized', 'auth.unauthorized');
   }
-  const meetings = (await meetingService.getMeetingsForUser(userId)).filter((m) => m.status === status as any);
+  const base = r.user?.role === 'admin'
+    ? await meetingService.getAllMeetings()
+    : await meetingService.getMeetingsForUser(userId);
+  const meetings = base.filter((m) => m.status === status as any);
   res.json(meetings.map(serializeMeeting));
 }));
 
@@ -166,9 +171,12 @@ router.get('/upcoming', asyncHandler(async (req: Request, res: Response) => {
     throw badRequest('Unauthorized', 'auth.unauthorized');
   }
   const meetings = await meetingService.getUpcomingMeetings();
+  if (r.user?.role === 'admin') {
+    res.json(meetings.map(serializeMeeting));
+    return;
+  }
   const accessible = new Set((await meetingService.getMeetingsForUser(userId)).map((m) => m._id.toString()));
-  const filtered = meetings.filter((m) => accessible.has(m._id.toString()));
-  res.json(filtered.map(serializeMeeting));
+  res.json(meetings.filter((m) => accessible.has(m._id.toString())).map(serializeMeeting));
 }));
 
 // Generate verbatim transcript for a recording

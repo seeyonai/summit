@@ -92,7 +92,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           <audio controls className="w-48">
-            <source src={apiUrl(recording.filePath)} type="audio/wav" />
+            <source src={fileUrlFor(recording.filePath)} type="audio/wav" />
             您的浏览器不支持音频播放
           </audio>
         </div>

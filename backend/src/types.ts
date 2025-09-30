@@ -15,11 +15,13 @@ interface Id {
 
 export type Recording = baseTypes.Recording & Timestamp & Id & {
   meetingId?: ObjectId;
+  ownerId?: ObjectId;
 };
 
 export interface RecordingResponse {
   _id: string;
   meetingId?: string;
+  ownerId?: string;
   filePath: string;
   filename: string;
   createdAt: string;

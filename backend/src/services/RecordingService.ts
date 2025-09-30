@@ -167,10 +167,13 @@ export async function getRecordingsForUser(userId: string, includeMeeting: boole
     .find({ $or: [ { ownerId: uid }, { members: { $elemMatch: { $eq: uid } } } ] }, { projection: { _id: 1 } as any })
     .toArray();
   const ids = accessibleMeetingIds.map((m) => m._id);
-  if (ids.length === 0) return [];
   const collection = recordingsCollection();
+  const query: any = { $or: [ { ownerId: uid } ] };
+  if (ids.length > 0) {
+    query.$or.push({ meetingId: { $in: ids } });
+  }
   const documents = await collection
-    .find({ meetingId: { $in: ids } })
+    .find(query)
     .sort({ createdAt: -1 })
     .toArray();
   const meetingFields = includeMeeting ? MEETING_LOOKUP_FIELDS : undefined;
@@ -212,6 +215,8 @@ export async function createRecording(recordingData: {
   duration: number;
   sampleRate: number;
   channels: number;
+  ownerId: string;
+  meetingId?: string;
 }): Promise<RecordingResponse> {
   const now = new Date();
 
@@ -231,6 +236,8 @@ export async function createRecording(recordingData: {
     format: recordingData.format || undefined,
     externalId: undefined,
     source: 'upload',
+    ownerId: new ObjectId(recordingData.ownerId),
+    meetingId: recordingData.meetingId && ObjectId.isValid(recordingData.meetingId) ? new ObjectId(recordingData.meetingId) : undefined,
   };
 
   const collection = recordingsCollection();
@@ -244,7 +251,7 @@ export async function createRecording(recordingData: {
   return recordingDocumentToResponse(inserted);
 }
 
-export async function startRecording(): Promise<{ id: string; filename: string; filePath: string; message: string }> {
+export async function startRecording(ownerId: string, meetingId?: string): Promise<{ id: string; filename: string; filePath: string; message: string }> {
   const remoteResponse = await callLiveService<LiveRecordingStartResponse>('/api/recordings/start', {
     method: 'POST',
     body: {},
@@ -271,6 +278,8 @@ export async function startRecording(): Promise<{ id: string; filename: string; 
     format: undefined,
     externalId: remoteResponse.id,
     source: 'live',
+    ownerId: new ObjectId(ownerId),
+    meetingId: meetingId && ObjectId.isValid(meetingId) ? new ObjectId(meetingId) : undefined,
   };
 
   const collection = recordingsCollection();

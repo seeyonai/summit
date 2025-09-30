@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { DownloadIcon } from 'lucide-react';
 import type { Recording as BaseRecording } from '@base/types';
-import { apiUrl } from '@/services/api';
+import { fileUrlFor } from '@/services/api';
 
 interface AudioPlayerProps {
   recording: BaseRecording;
@@ -45,7 +45,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ recording, onTimestampClick }
           controls 
           className="w-full"
         >
-          <source src={apiUrl(`/files/${recording.filename}`)} type="audio/wav" />
+          <source src={fileUrlFor(recording.filename)} type="audio/wav" />
           您的浏览器不支持音频播放
         </audio>
         

@@ -4,6 +4,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { connectToDatabase } from './config/database';
 import { getFilesBaseDir } from './utils/filePaths';
+import filesRouter from './routes/files';
 
 // Load environment variables from .env file
 dotenv.config({ quiet: true });
@@ -28,10 +29,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static file serving for audio files
-// Resolve base directory for serving static recordings
-const filesDir = getFilesBaseDir();
-app.use('/files', express.static(filesDir));
+// Protected file streaming for audio files (router handles token via header or query)
+app.use('/files', filesRouter);
 
 // Routes
 app.use('/api/auth', authRouter);

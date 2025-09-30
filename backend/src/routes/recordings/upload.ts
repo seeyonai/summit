@@ -5,7 +5,9 @@ import fs from 'fs';
 import recordingService from '../../services/RecordingService';
 import { parseFile } from 'music-metadata';
 import { asyncHandler } from '../../middleware/errorHandler';
-import { badRequest, internal } from '../../utils/errors';
+import { badRequest, internal, forbidden } from '../../utils/errors';
+import type { RequestWithUser } from '../../types/auth';
+import { isOwner as isMeetingOwner } from '../../services/MeetingService';
 
 // Ensure files directory exists (storage for uploaded audio)
 // Note: __dirname here is backend/src/routes/recordings; we need repo-root /files
@@ -61,6 +63,10 @@ const router = Router();
 
 // Upload audio file
 router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: Response) => {
+  const r = req as RequestWithUser;
+  if (!r.user?.userId) {
+    throw badRequest('Unauthorized', 'auth.unauthorized');
+  }
   if (!req.file) {
     throw badRequest('No audio file provided', 'upload.file_required');
   }
@@ -112,6 +118,15 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
   }
 
   try {
+    const meetingIdParam = typeof req.query.meetingId === 'string' ? req.query.meetingId : undefined;
+    let meetingIdToAssign: string | undefined = undefined;
+    if (meetingIdParam) {
+      const owns = await isMeetingOwner(meetingIdParam, r.user.userId);
+      if (!owns) {
+        throw forbidden('Only meeting owner can attach recordings on upload', 'recording.attach_forbidden');
+      }
+      meetingIdToAssign = meetingIdParam;
+    }
     const recordingData = {
       filename,
       originalFilename: originalname,
@@ -122,7 +137,9 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
       createdAt: new Date(),
       duration,
       sampleRate,
-      channels
+      channels,
+      ownerId: r.user.userId,
+      meetingId: meetingIdToAssign,
     };
 
     const result = await recordingService.createRecording(recordingData);

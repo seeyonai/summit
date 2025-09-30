@@ -34,6 +34,10 @@ export function requireOwner() {
       next(unauthorized('Unauthorized', 'auth.unauthorized'));
       return;
     }
+    if (req.user.role === 'admin') {
+      next();
+      return;
+    }
     const collection = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
     const meeting = await collection.findOne({ _id: new ObjectId(meetingId) });
     if (!meeting || !meeting.ownerId) {
@@ -53,6 +57,10 @@ export function requireMemberOrOwner() {
     const meetingId = (req.params as any).id || (req.params as any).meetingId;
     if (!req.user || !meetingId) {
       next(unauthorized('Unauthorized', 'auth.unauthorized'));
+      return;
+    }
+    if (req.user.role === 'admin') {
+      next();
       return;
     }
     const collection = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
@@ -112,10 +120,19 @@ export function requireRecordingReadAccess() {
         next(unauthorized('Unauthorized', 'auth.unauthorized'));
         return;
       }
+      if (req.user.role === 'admin') {
+        next();
+        return;
+      }
       const { recordingId } = req.params as any;
       const rec = await findRecordingByIdentifier(recordingId);
       if (!rec) {
         next(notFound('Recording not found', 'recording.not_found'));
+        return;
+      }
+      // Recording owner can always read
+      if (rec.ownerId && rec.ownerId.toString() === req.user.userId) {
+        next();
         return;
       }
       if (!rec.meetingId) {
@@ -141,10 +158,19 @@ export function requireRecordingWriteAccess() {
         next(unauthorized('Unauthorized', 'auth.unauthorized'));
         return;
       }
+      if (req.user.role === 'admin') {
+        next();
+        return;
+      }
       const { recordingId } = req.params as any;
       const rec = await findRecordingByIdentifier(recordingId);
       if (!rec) {
         next(notFound('Recording not found', 'recording.not_found'));
+        return;
+      }
+      // Recording owner can always write
+      if (rec.ownerId && rec.ownerId.toString() === req.user.userId) {
+        next();
         return;
       }
       if (!rec.meetingId) {

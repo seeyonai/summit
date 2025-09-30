@@ -37,6 +37,7 @@ export interface HotwordDocument extends Document {
 export interface RecordingDocument extends Document, Omit<Recording, '_id'> {
   _id: ObjectId;
   meetingId?: ObjectId;
+  ownerId?: ObjectId;
 }
 
 export const COLLECTIONS = {

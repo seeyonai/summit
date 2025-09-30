@@ -18,6 +18,12 @@ export const getMeetingsForUser = async (userId: string): Promise<Meeting[]> => 
   return meetings.map(meetingDocumentToMeeting);
 };
 
+export const getAllMeetings = async (): Promise<Meeting[]> => {
+  const collection = getMeetingsCollection();
+  const meetings = await collection.find({}).toArray();
+  return meetings.map(meetingDocumentToMeeting);
+};
+
 export const getMeetingById = async (id: string, options: { includeRecordings?: boolean } = {}): Promise<Meeting | null> => {
   const collection = getMeetingsCollection();
   const meeting = await collection.findOne({ _id: new ObjectId(id) });
@@ -200,6 +206,7 @@ export async function isMember(meetingId: string, userId: string): Promise<boole
 
 export const meetingService = {
   getMeetingsForUser,
+  getAllMeetings,
   getMeetingById,
   createMeeting,
   updateMeeting,

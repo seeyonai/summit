@@ -17,7 +17,9 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   if (!r.user) {
     throw badRequest('Unauthorized', 'auth.unauthorized');
   }
-  const recordings = await recordingService.getRecordingsForUser(r.user.userId);
+  const recordings = r.user.role === 'admin'
+    ? await recordingService.getAllRecordings()
+    : await recordingService.getRecordingsForUser(r.user.userId);
   res.json(recordings);
 }));
 
@@ -78,7 +80,12 @@ router.get('/:recordingId', requireRecordingReadAccess(), asyncHandler(async (re
 
 // Start a new recording session
 router.post('/start', asyncHandler(async (req: Request, res: Response) => {
-  const result = await recordingService.startRecording();
+  const r = req as unknown as Request & { user?: { userId: string } };
+  if (!r.user?.userId) {
+    throw badRequest('Unauthorized', 'auth.unauthorized');
+  }
+  const meetingId = typeof req.query.meetingId === 'string' ? req.query.meetingId : undefined;
+  const result = await recordingService.startRecording(r.user.userId, meetingId);
   res.status(201).json(result);
 }));
 

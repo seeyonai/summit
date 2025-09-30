@@ -49,6 +49,7 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
   return {
     _id: recordingDoc._id.toString(),
     meetingId: recordingDoc.meetingId?.toString(),
+    ownerId: recordingDoc.ownerId?.toString(),
     filePath: recordingDoc.filePath,
     filename: recordingDoc.filename,
     createdAt: recordingDoc.createdAt.toISOString(),
