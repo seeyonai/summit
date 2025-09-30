@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Hotword } from '@/types';
-import type { HotwordService } from '@/pages/Hotwords/services/hotwordService';
+import type { HotwordService } from '@/services/hotwordService';
 
 export const useHotwords = (hotwordService: HotwordService) => {
   const [hotwords, setHotwords] = useState<Hotword[]>([]);
@@ -10,7 +10,7 @@ export const useHotwords = (hotwordService: HotwordService) => {
   const fetchHotwords = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await hotwordService.getHotwords();
       setHotwords(data);
@@ -24,7 +24,7 @@ export const useHotwords = (hotwordService: HotwordService) => {
   const createHotword = async (hotwordData: { word: string }) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const newHotword = await hotwordService.createHotword(hotwordData);
       setHotwords(prev => [...prev, newHotword]);
@@ -40,14 +40,14 @@ export const useHotwords = (hotwordService: HotwordService) => {
   const updateHotword = async (hotwordId: string, updates: Partial<Hotword>) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const updatedHotword = await hotwordService.updateHotword({
         _id: hotwordId,
-        ...updates
+        ...updates,
       });
-      setHotwords(prev => 
-        prev.map(h => h._id === hotwordId ? updatedHotword : h)
+      setHotwords(prev =>
+        prev.map(h => (h._id === hotwordId ? updatedHotword : h))
       );
       return updatedHotword;
     } catch (err) {
@@ -61,7 +61,7 @@ export const useHotwords = (hotwordService: HotwordService) => {
   const deleteHotword = async (hotwordId: string) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       await hotwordService.deleteHotword(hotwordId);
       setHotwords(prev => prev.filter(h => h._id !== hotwordId));
@@ -76,11 +76,11 @@ export const useHotwords = (hotwordService: HotwordService) => {
   const toggleHotwordStatus = async (hotwordId: string, isActive: boolean) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const updatedHotword = await hotwordService.toggleHotwordStatus(hotwordId, isActive);
-      setHotwords(prev => 
-        prev.map(h => h._id === hotwordId ? updatedHotword : h)
+      setHotwords(prev =>
+        prev.map(h => (h._id === hotwordId ? updatedHotword : h))
       );
       return updatedHotword;
     } catch (err) {

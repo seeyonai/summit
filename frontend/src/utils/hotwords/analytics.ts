@@ -1,3 +1,5 @@
+import type { Hotword } from '@/types';
+
 export interface HotwordAnalytics {
   totalHotwords: number;
   activeHotwords: number;
@@ -14,13 +16,11 @@ export const getHotwordAnalytics = (hotwords: Hotword[]): HotwordAnalytics => {
   const total = hotwords.length;
   const active = hotwords.filter(h => h.isActive).length;
   const inactive = total - active;
-  const recentlyAdded = hotwords.filter(h => 
-    new Date(h.createdAt) > lastWeek
-  ).length;
+  const recentlyAdded = hotwords.filter(h => new Date(h.createdAt) > lastWeek).length;
 
   const lengths = hotwords.map(h => h.word.length);
-  const averageLength = lengths.length > 0 
-    ? lengths.reduce((sum, len) => sum + len, 0) / lengths.length 
+  const averageLength = lengths.length > 0
+    ? lengths.reduce((sum, len) => sum + len, 0) / lengths.length
     : 0;
 
   const lengthCounts = lengths.reduce((acc, len) => {
@@ -35,9 +35,11 @@ export const getHotwordAnalytics = (hotwords: Hotword[]): HotwordAnalytics => {
     totalHotwords: total,
     activeHotwords: active,
     inactiveHotwords: inactive,
-    recentlyAdded: recentlyAdded,
+    recentlyAdded,
     averageLength: Math.round(averageLength * 10) / 10,
-    mostCommonLength: parseInt(mostCommonLength.toString()),
+    mostCommonLength: typeof mostCommonLength === 'number'
+      ? mostCommonLength
+      : parseInt(mostCommonLength.toString(), 10),
   };
 };
 

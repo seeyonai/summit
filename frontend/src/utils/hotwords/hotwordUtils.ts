@@ -24,7 +24,7 @@ export const validateHotword = (word: string): HotwordValidationResult => {
     errors.push('热词长度不能少于1个字符');
   }
 
-  if (!/^[\u4e00-\u9fa5a-zA-Z0-9\s\-_]+$/.test(word.trim())) {
+  if (!(/^[\u4e00-\u9fa5a-zA-Z0-9\s\-_]+$/).test(word.trim())) {
     errors.push('热词只能包含中文、英文、数字、空格、连字符和下划线');
   }
 
@@ -48,37 +48,35 @@ export const formatHotwordForDisplay = (hotword: Hotword): {
     word: hotword.word,
     status: hotword.isActive ? 'active' : 'inactive',
     createdAt: new Date(hotword.createdAt).toLocaleDateString('zh-CN'),
-    lastModified: hotword.updatedAt 
+    lastModified: hotword.updatedAt
       ? new Date(hotword.updatedAt).toLocaleDateString('zh-CN')
       : new Date(hotword.createdAt).toLocaleDateString('zh-CN'),
   };
 };
 
 export const filterHotwords = (
-  hotwords: Hotword[], 
-  searchTerm: string, 
+  hotwords: Hotword[],
+  searchTerm: string,
   statusFilter?: 'all' | 'active' | 'inactive'
 ): Hotword[] => {
   let filtered = hotwords;
 
   if (statusFilter && statusFilter !== 'all') {
-    filtered = filtered.filter(h => 
+    filtered = filtered.filter(h =>
       statusFilter === 'active' ? h.isActive : !h.isActive
     );
   }
 
   if (searchTerm.trim()) {
     const term = searchTerm.toLowerCase();
-    filtered = filtered.filter(h => 
-      h.word.toLowerCase().includes(term)
-    );
+    filtered = filtered.filter(h => h.word.toLowerCase().includes(term));
   }
 
   return filtered;
 };
 
 export const sortHotwords = (
-  hotwords: Hotword[], 
+  hotwords: Hotword[],
   sortBy: 'word' | 'createdAt' | 'status' = 'createdAt',
   sortOrder: 'asc' | 'desc' = 'desc'
 ): Hotword[] => {
@@ -93,7 +91,10 @@ export const sortHotwords = (
         comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         break;
       case 'status':
-        comparison = (a.isActive === b.isActive) ? 0 : (a.isActive ? -1 : 1);
+        comparison = a.isActive === b.isActive ? 0 : (a.isActive ? -1 : 1);
+        break;
+      default:
+        comparison = 0;
         break;
     }
 
@@ -106,7 +107,7 @@ export const exportHotwords = (hotwords: Hotword[]): string => {
     word: h.word,
     isActive: h.isActive ? '是' : '否',
     createdAt: new Date(h.createdAt).toLocaleString('zh-CN'),
-    updatedAt: h.updatedAt 
+    updatedAt: h.updatedAt
       ? new Date(h.updatedAt).toLocaleString('zh-CN')
       : '-',
   }));
@@ -114,11 +115,11 @@ export const exportHotwords = (hotwords: Hotword[]): string => {
   const headers = ['热词', '启用状态', '创建时间', '最后修改'];
   const csvContent = [
     headers.join(','),
-    ...data.map(row => 
+    ...data.map(row =>
       headers.map(header => {
         const value = row[header as keyof typeof row];
-        return typeof value === 'string' && value.includes(',') 
-          ? `"${value}"` 
+        return typeof value === 'string' && value.includes(',')
+          ? `"${value}"`
           : value;
       }).join(',')
     ),
@@ -126,3 +127,5 @@ export const exportHotwords = (hotwords: Hotword[]): string => {
 
   return csvContent;
 };
+
+export type { Hotword, HotwordCreate, HotwordUpdate };

@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Target, TrendingUp, Clock, Users, PlusIcon, FolderOpenIcon } from 'lucide-react';
-import type { HotwordAnalytics } from '@/pages/Hotwords/utils/hotwordAnalytics';
+import type { HotwordAnalytics } from '@/utils/hotwords';
 
 interface HotwordHeaderProps {
   stats: HotwordAnalytics;

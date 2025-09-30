@@ -5,11 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle as AlertCircleIcon, PlusIcon } from 'lucide-react';
 import type { Hotword, HotwordUpdate, HotwordCreate } from '@/types';
-import { api } from '@/services/api';
-import createHotwordService from '@/pages/Hotwords/services/hotwordService';
-import { useHotwords } from '@/pages/Hotwords/hooks/useHotwords';
-import { getHotwordAnalytics } from '@/pages/Hotwords/utils/hotwordAnalytics';
-import { filterHotwords, exportHotwords } from '@/pages/Hotwords/utils/hotwordUtils';
+import createHotwordService from '@/services/hotwordService';
+import { useHotwords } from '@/hooks/useHotwords';
+import { getHotwordAnalytics, filterHotwords, exportHotwords } from '@/utils/hotwords';
 import HotwordHeader from '@/pages/Hotwords/components/HotwordHeader';
 import HotwordToolbar from '@/pages/Hotwords/components/HotwordToolbar';
 import HotwordCreateModal from '@/pages/Hotwords/components/HotwordCreateModal';
@@ -20,7 +18,7 @@ import HotwordStats from '@/pages/Hotwords/components/HotwordStats';
 import HotwordCards from '@/pages/Hotwords/components/HotwordList';
 
 function HotwordListPage() {
-  const service = useMemo(() => createHotwordService(api), []);
+  const service = useMemo(() => createHotwordService(), []);
   const { hotwords, loading, error, actions } = useHotwords(service);
 
   const [searchTerm, setSearchTerm] = useState('');
