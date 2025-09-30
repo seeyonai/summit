@@ -6,17 +6,23 @@ import { parseFile } from 'music-metadata';
 import { RecordingUpdate } from '../../types';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { badRequest } from '../../utils/errors';
+import type { RequestWithUser } from '../../types/auth';
+import { requireRecordingReadAccess, requireRecordingWriteAccess } from '../../middleware/auth';
 
 const router = Router();
 
 // Get all recordings
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const recordings = await recordingService.getAllRecordings();
+  const r = req as RequestWithUser;
+  if (!r.user) {
+    throw badRequest('Unauthorized', 'auth.unauthorized');
+  }
+  const recordings = await recordingService.getRecordingsForUser(r.user.userId);
   res.json(recordings);
 }));
 
 // Get a specific recording by ID
-router.get('/:recordingId', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:recordingId', requireRecordingReadAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { recordingId } = req.params;
   const recording = await recordingService.getRecordingById(recordingId);
 
@@ -77,7 +83,7 @@ router.post('/start', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // Update recording metadata and transcription
-router.put('/:recordingId', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:recordingId', requireRecordingWriteAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { recordingId } = req.params;
   const updateData: RecordingUpdate = req.body;
 
@@ -90,7 +96,7 @@ router.put('/:recordingId', asyncHandler(async (req: Request, res: Response) => 
 }));
 
 // Delete a recording
-router.delete('/:recordingId', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:recordingId', requireRecordingWriteAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { recordingId } = req.params;
   const result = await recordingService.deleteRecording(recordingId);
   res.json(result);

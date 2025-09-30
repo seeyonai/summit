@@ -4,12 +4,13 @@ import { alignerService } from '../../services/AlignerService';
 import { RecordingUpdate } from '../../types';
 import { sanitizeTranscript } from '../../utils/textUtils';
 import { asyncHandler } from '../../middleware/errorHandler';
+import { requireRecordingWriteAccess } from '../../middleware/auth';
 import { badRequest } from '../../utils/errors';
 
 const router = Router({ mergeParams: true });
 
 // Align transcript with audio for a recording
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { recordingId } = req.params;
   const { text } = req.body as { text?: string };
 

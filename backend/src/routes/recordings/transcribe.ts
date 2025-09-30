@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import recordingService from '../../services/RecordingService';
 import { asyncHandler } from '../../middleware/errorHandler';
+import { requireRecordingWriteAccess } from '../../middleware/auth';
 import { badRequest } from '../../utils/errors';
 
 const router = Router({ mergeParams: true });
 
 // Generate transcription for a recording
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { recordingId } = req.params;
   const { hotword } = req.body as { hotword?: unknown };
 

@@ -160,6 +160,23 @@ export async function getAllRecordings(): Promise<RecordingResponse[]> {
   return Promise.all(documents.map((doc) => buildRecordingResponse(doc, MEETING_LOOKUP_FIELDS)));
 }
 
+export async function getRecordingsForUser(userId: string, includeMeeting: boolean = true): Promise<RecordingResponse[]> {
+  const meetingsCol = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
+  const uid = new ObjectId(userId);
+  const accessibleMeetingIds = await meetingsCol
+    .find({ $or: [ { ownerId: uid }, { members: { $elemMatch: { $eq: uid } } } ] }, { projection: { _id: 1 } as any })
+    .toArray();
+  const ids = accessibleMeetingIds.map((m) => m._id);
+  if (ids.length === 0) return [];
+  const collection = recordingsCollection();
+  const documents = await collection
+    .find({ meetingId: { $in: ids } })
+    .sort({ createdAt: -1 })
+    .toArray();
+  const meetingFields = includeMeeting ? MEETING_LOOKUP_FIELDS : undefined;
+  return Promise.all(documents.map((doc) => buildRecordingResponse(doc, meetingFields)));
+}
+
 export async function getRecordingsByMeetingId(meetingId: string, includeMeeting: boolean = true): Promise<RecordingResponse[]> {
   if (!ObjectId.isValid(meetingId)) {
     throw badRequest('Invalid meeting ID', 'meeting.invalid_id');
@@ -474,6 +491,7 @@ export async function polishTranscription(recordingId: string): Promise<{ messag
 
 export const recordingService = {
   getAllRecordings,
+  getRecordingsForUser,
   getRecordingById,
   getRecordingsByMeetingId,
   createRecording,

@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import recordingService from '../../services/RecordingService';
 import { asyncHandler } from '../../middleware/errorHandler';
+import { requireRecordingWriteAccess } from '../../middleware/auth';
 import { badRequest } from '../../utils/errors';
 
 const router = Router({ mergeParams: true });
 
 // Run speaker diarization on a recording
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request, res: Response) => {
   const { recordingId } = req.params; // recordingId is undefined?
   const { oracleNumSpeakers: camelCaseOracle, oracle_num_speakers: snakeCaseOracle } = req.body as Record<string, unknown>;
   const oracleNumSpeakersValue = camelCaseOracle ?? snakeCaseOracle;
