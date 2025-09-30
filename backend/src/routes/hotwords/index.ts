@@ -1,5 +1,5 @@
 import express from 'express';
-import { HotwordService } from '../services/HotwordService';
+import { HotwordService } from '../../services/HotwordService';
 
 const router = express.Router();
 const hotwordService = new HotwordService();

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { SegmentationService } from '../services/SegmentationService';
-import { SegmentationRequest } from '../types';
+import { SegmentationService } from '../../services/SegmentationService';
+import { SegmentationRequest } from '../../types';
 
 const router = Router();
 const segmentationService = new SegmentationService();

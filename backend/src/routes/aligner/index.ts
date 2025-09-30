@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { alignerService } from '../services/AlignerService';
+import { alignerService } from '../../services/AlignerService';
 
 const router = Router();
 
@@ -13,5 +13,4 @@ router.get('/model-info', async (req: Request, res: Response) => {
 });
 
 export default router;
-
 

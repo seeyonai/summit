@@ -1,10 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { ObjectId } from 'mongodb';
-import meetingService from '../services/MeetingService';
-import audioProcessingService from '../services/AudioProcessingService';
-import transcriptExtractionService from '../services/TranscriptExtractionService';
-import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../types';
-import recordingService from '../services/RecordingService';
+import meetingService from '../../services/MeetingService';
+import audioProcessingService from '../../services/AudioProcessingService';
+import transcriptExtractionService from '../../services/TranscriptExtractionService';
+import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../../types';
+import recordingService from '../../services/RecordingService';
 
 const router = Router();
 
