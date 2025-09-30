@@ -3,15 +3,7 @@ import recordingService from '../../services/RecordingService';
 import { alignerService } from '../../services/AlignerService';
 import OpenAI from 'openai';
 import { RecordingUpdate } from '../../types';
-
-function sanitizeTranscript(text: string): string {
-  // Remove punctuation and non-audible symbols; keep letters, numbers, and whitespace
-  return text
-    .replace(/[\p{P}]+/gu, ' ')
-    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+import { sanitizeTranscript } from '../../utils/textUtils';
 
 const router = Router();
 
