@@ -117,11 +117,12 @@ async function startServer() {
     
     // Start the HTTP API server
     const server = app.listen(PORT, () => {
-      console.log(`🚀 Summit API server running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      console.log(`📝 Meetings API: http://localhost:${PORT}/api/meetings`);
-      console.log(`🗄️  Database: MongoDB connected`);
-      console.log(`🎙️  Live Recorder WebSocket: ws://localhost:${PORT}/ws/live-recorder`);
+      console.table([
+        { Endpoint: 'Health check', URL: `http://localhost:${PORT}/health`, Status: '✓ Ready' },
+        { Endpoint: 'Meetings API', URL: `http://localhost:${PORT}/api/meetings` },
+        { Endpoint: 'Database', URL: 'MongoDB', Status: 'connected' },
+        { Endpoint: 'Live Recorder WebSocket', URL: `ws://localhost:${PORT}/ws/live-recorder` },
+      ]);
     });
 
     // Initialize WebSocket service for live recording
