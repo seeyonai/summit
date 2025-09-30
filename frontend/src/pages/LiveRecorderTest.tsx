@@ -40,7 +40,7 @@ declare global {
 
 const DEFAULT_TRANSCRIPTION_API_BASE = 'http://localhost:2592/';
 
-const getLiveServiceUrlFromEnv = (): string | undefined => {
+export const getLiveServiceUrlFromEnv = (): string | undefined => {
   const env = import.meta.env as Record<string, string | undefined>;
   const unprefixed = env?.LIVE_SERVICE_URL?.trim();
   if (unprefixed) {

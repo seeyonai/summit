@@ -23,15 +23,15 @@ interface TranscriptionServiceResponse {
   fileSize?: number;
 }
 
-const LIVE_SERVICE_URL = process.env.LIVE_SERVICE_URL || '';
+const LIVE_SERVICE_URL = process.env.LIVE_SERVICE_URL || 'http://localhost:2592';
 const TRANSCRIPTION_SERVICE_URL = process.env.TRANSCRIPTION_SERVICE_URL
   || process.env.TRANSCRIBE_SERVICE_URL
   || 'http://localhost:2594';
 
 // Module-level singletons and constants
 const RECORDINGS_DIR = getFilesBaseDir();
-const LIVE_SERVICE_BASE = ensureTrailingSlash(LIVE_SERVICE_URL);
-const TRANSCRIPTION_SERVICE_BASE = ensureTrailingSlash(TRANSCRIPTION_SERVICE_URL);
+export const LIVE_SERVICE_BASE = ensureTrailingSlash(LIVE_SERVICE_URL);
+export const TRANSCRIPTION_SERVICE_BASE = ensureTrailingSlash(TRANSCRIPTION_SERVICE_URL);
 const segmentationService = new SegmentationService();
 
 function getMimeType(filename: string): string {

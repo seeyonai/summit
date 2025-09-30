@@ -14,6 +14,9 @@ import segmentationRouter from './routes/segmentation';
 import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings/index';
 import { LiveRecorderService } from './services/LiveRecorderService';
+import { SEGMENTATION_SERVICE_URL } from './services/SegmentationService';
+import { LIVE_SERVICE_BASE, TRANSCRIPTION_SERVICE_BASE } from './services/RecordingService';
+import { ALIGNER_SERVICE_URL } from './services/AlignerService';
 
 const app = express();
 const PORT = process.env.PORT || 2591;
@@ -115,13 +118,79 @@ async function startServer() {
       await seeder.seedData();
     }
     
+    // Check Echo Stream health
+    let statusPort2592 = '✗ Not Ready';
+    try {
+      const response = await fetch(`${LIVE_SERVICE_BASE}health`);
+      if (response.ok) {
+        const healthStatus = await response.json();
+        console.log('Echo Stream health check:', healthStatus);
+        statusPort2592 = typeof healthStatus === 'object'
+          && healthStatus !== null
+          && 'status' in healthStatus
+          && healthStatus.status === 'healthy' ? '✓ Ready' : '✗ Not Ready';
+      }
+    } catch (error) {
+      console.error('Error getting health check status:', error);
+    }
+
+    // Check Echo Voices health
+    let statusPort2593 = '✗ Not Ready';
+    try {
+      const response = await fetch(`${SEGMENTATION_SERVICE_URL}/health`);
+      if (response.ok) {
+        const healthStatus = await response.json();
+        statusPort2593 = typeof healthStatus === 'object'
+          && healthStatus !== null
+          && 'status' in healthStatus
+          && healthStatus.status === 'healthy' ? '✓ Ready' : '✗ Not Ready';
+      }
+    } catch (error) {
+      console.error('Error getting health check status:', error);
+    }
+
+    // Check Echo Vault health
+    let statusPort2594 = '✗ Not Ready';
+    try {
+      const response = await fetch(`${TRANSCRIPTION_SERVICE_BASE}health`);
+      if (response.ok) {
+        const healthStatus = await response.json();
+        console.log('Echo Vault health check:', healthStatus);
+        statusPort2594 = typeof healthStatus === 'object'
+          && healthStatus !== null
+          && 'status' in healthStatus
+          && healthStatus.status === 'healthy' ? '✓ Ready' : '✗ Not Ready';
+      }
+    } catch (error) {
+      console.error('Error getting health check status:', error);
+    }
+
+    // Check Echo Aligner health
+    let statusPort2595 = '✗ Not Ready';
+    try {
+      const response = await fetch(`${ALIGNER_SERVICE_URL}/health`);
+      if (response.ok) {
+        const healthStatus = await response.json();
+        console.log('Echo Aligner health check:', healthStatus);
+        statusPort2595 = typeof healthStatus === 'object'
+          && healthStatus !== null
+          && 'status' in healthStatus
+          && healthStatus.status === 'healthy' ? '✓ Ready' : '✗ Not Ready';
+      }
+    } catch (error) {
+      console.error('Error getting health check status:', error);
+    }
+
     // Start the HTTP API server
     const server = app.listen(PORT, () => {
       console.table([
         { Endpoint: 'Health check', URL: `http://localhost:${PORT}/health`, Status: '✓ Ready' },
-        { Endpoint: 'Meetings API', URL: `http://localhost:${PORT}/api/meetings` },
-        { Endpoint: 'Database', URL: 'MongoDB', Status: 'connected' },
+        { Endpoint: 'Database', URL: 'MongoDB', Status: '✓ Connected' },
         { Endpoint: 'Live Recorder WebSocket', URL: `ws://localhost:${PORT}/ws/live-recorder` },
+        { Endpoint: 'Echo Stream', URL: LIVE_SERVICE_BASE, Status: statusPort2592 },
+        { Endpoint: 'Echo Voices', URL: SEGMENTATION_SERVICE_URL, Status: statusPort2593 },
+        { Endpoint: 'Echo Vault', URL: TRANSCRIPTION_SERVICE_BASE, Status: statusPort2594 },
+        { Endpoint: 'Echo Aligner', URL: ALIGNER_SERVICE_URL, Status: statusPort2595 },
       ]);
     });
 

@@ -22,7 +22,7 @@ interface ApiSegmentationResponse {
   file_processed?: string | null;
 }
 
-const SEGMENTATION_SERVICE_URL = process.env.SEGMENTATION_SERVICE_URL || 'http://localhost:2593';
+export const SEGMENTATION_SERVICE_URL = process.env.SEGMENTATION_SERVICE_URL || 'http://localhost:2593';
 export class SegmentationService {
   private recordingsDir: string;
   private serviceBase: string;

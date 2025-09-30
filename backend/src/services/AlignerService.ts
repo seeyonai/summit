@@ -45,7 +45,7 @@ export interface AlignmentResponse {
   key: string | null;
 }
 
-const ALIGNER_SERVICE_URL = process.env.ALIGNER_SERVICE_URL || 'http://localhost:2595';
+export const ALIGNER_SERVICE_URL = process.env.ALIGNER_SERVICE_URL || 'http://localhost:2595';
 
 export class AlignerService {
   private recordingsDir: string;
