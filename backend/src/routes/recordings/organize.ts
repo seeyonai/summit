@@ -7,6 +7,7 @@ import { sanitizeTranscript } from '../../utils/textUtils';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { requireRecordingWriteAccess } from '../../middleware/auth';
 import { badRequest } from '../../utils/errors';
+import { getPreferredLang } from '../../utils/lang';
 
 const router = Router({ mergeParams: true });
 
@@ -117,7 +118,8 @@ router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request
     polishedText: polishedById[String(idx)] || fallbackPolish(s.rawText),
   }));
 
-  res.json({ speeches: organized, message: '整理完成' });
+  const lang = getPreferredLang(req);
+  res.json({ speeches: organized, message: lang === 'en' ? 'Organization completed' : '整理完成' });
 }));
 
 export default router;
