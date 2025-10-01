@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
     MEETING_EXTRACT_ANALYSIS: (id: string) => `/api/meetings/${id}/extract-analysis`,
     MEETING_TODO_ADVICE: (id: string) => `/api/meetings/${id}/todo-advice`,
     HOTWORDS: '/api/hotwords',
+    HOTWORDS_BULK: '/api/hotwords/bulk',
     HOTWORD_DETAIL: (id: string) => `/api/hotwords/${id}`,
     SEGMENTATION: {
       MODEL_INFO: '/api/segmentation/model-info',
