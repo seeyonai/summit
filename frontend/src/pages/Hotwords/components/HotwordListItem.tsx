@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Edit, Trash2 } from 'lucide-react';
 import type { Hotword } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HotwordListItemProps {
   hotword: Hotword;
@@ -14,6 +15,10 @@ interface HotwordListItemProps {
 }
 
 function HotwordListItem({ hotword, onEdit, onDelete, onToggleActive, isLoading = false }: HotwordListItemProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const isOwner = hotword.ownerId ? hotword.ownerId === user?._id : isAdmin;
+  const readOnly = (!!hotword.isPublic && !isAdmin) || (!isOwner && !isAdmin);
   return (
     <div className="group bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 p-4">
       <div className="flex items-center gap-4">
@@ -23,7 +28,7 @@ function HotwordListItem({ hotword, onEdit, onDelete, onToggleActive, isLoading 
             type="checkbox"
             checked={hotword.isActive}
             onChange={() => onToggleActive(hotword)}
-            disabled={isLoading}
+            disabled={isLoading || readOnly}
             className="w-5 h-5 rounded"
           />
         </div>
@@ -35,6 +40,9 @@ function HotwordListItem({ hotword, onEdit, onDelete, onToggleActive, isLoading 
             <Badge variant={hotword.isActive ? 'default' : 'secondary'}>
               {hotword.isActive ? '启用' : '禁用'}
             </Badge>
+            {hotword.isPublic && (
+              <Badge variant="secondary">公开</Badge>
+            )}
           </div>
           <div className="text-sm text-gray-600">
             创建时间: {new Date(hotword.createdAt).toLocaleDateString()}
@@ -47,7 +55,7 @@ function HotwordListItem({ hotword, onEdit, onDelete, onToggleActive, isLoading 
             size="sm"
             variant="ghost"
             onClick={() => onEdit(hotword)}
-            disabled={isLoading}
+            disabled={isLoading || readOnly}
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -56,7 +64,7 @@ function HotwordListItem({ hotword, onEdit, onDelete, onToggleActive, isLoading 
             variant="ghost"
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={() => onDelete(hotword._id)}
-            disabled={isLoading}
+            disabled={isLoading || readOnly}
           >
             <Trash2 className="w-4 h-4" />
           </Button>

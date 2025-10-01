@@ -1,4 +1,4 @@
-import type { Hotword, HotwordCreate, HotwordUpdate } from '@/types';
+import type { Hotword, HotwordCreate, HotwordUpdate, HotwordBulkImportResult } from '@/types';
 import { api as defaultApi } from '@/services/api';
 import { API_ENDPOINTS } from '@/constants/apiEndpoints';
 
@@ -10,6 +10,7 @@ export interface HotwordService {
   updateHotword: (hotword: HotwordUpdate) => Promise<Hotword>;
   deleteHotword: (id: string) => Promise<void>;
   toggleHotwordStatus: (id: string, isActive: boolean) => Promise<Hotword>;
+  importHotwordsBulk: (words: string[], isPublic?: boolean) => Promise<HotwordBulkImportResult>;
 }
 
 export const createHotwordService = (client: ApiClient = defaultApi): HotwordService => ({
@@ -42,6 +43,14 @@ export const createHotwordService = (client: ApiClient = defaultApi): HotwordSer
     {
       method: 'PUT',
       body: JSON.stringify({ _id: id, isActive }),
+    }
+  ),
+
+  importHotwordsBulk: async (words: string[], isPublic?: boolean) => client<HotwordBulkImportResult>(
+    API_ENDPOINTS.BACKEND.HOTWORDS_BULK,
+    {
+      method: 'POST',
+      body: JSON.stringify({ words, isPublic }),
     }
   ),
 });

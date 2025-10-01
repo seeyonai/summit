@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Hotword } from '@/types';
+import type { Hotword, HotwordBulkImportResult, HotwordCreate } from '@/types';
 import type { HotwordService } from '@/services/hotwordService';
 
 export const useHotwords = (hotwordService: HotwordService) => {
@@ -21,7 +21,7 @@ export const useHotwords = (hotwordService: HotwordService) => {
     }
   };
 
-  const createHotword = async (hotwordData: { word: string }) => {
+  const createHotword = async (hotwordData: HotwordCreate) => {
     setLoading(true);
     setError(null);
 
@@ -91,6 +91,24 @@ export const useHotwords = (hotwordService: HotwordService) => {
     }
   };
 
+  const importHotwordsBulk = async (words: string[], isPublic?: boolean): Promise<HotwordBulkImportResult> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await hotwordService.importHotwordsBulk(words, isPublic);
+      if (result.created && result.created.length > 0) {
+        setHotwords(prev => [...prev, ...result.created]);
+      }
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import hotwords');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchHotwords();
   }, []);
@@ -105,6 +123,7 @@ export const useHotwords = (hotwordService: HotwordService) => {
       updateHotword,
       deleteHotword,
       toggleHotwordStatus,
+      importHotwordsBulk,
     },
   };
 };

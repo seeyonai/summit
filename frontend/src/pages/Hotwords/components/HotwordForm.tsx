@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Plus, AlertCircle } from 'lucide-react';
 import type { HotwordCreate } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HotwordFormProps {
   onSubmit: (hotword: HotwordCreate) => Promise<void>;
@@ -15,6 +16,8 @@ interface HotwordFormProps {
 const HotwordForm: React.FC<HotwordFormProps> = ({ onSubmit, isLoading = false, error }) => {
   const [word, setWord] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,8 +26,13 @@ const HotwordForm: React.FC<HotwordFormProps> = ({ onSubmit, isLoading = false, 
 
     setIsSubmitting(true);
     try {
-      await onSubmit({ word: word.trim() });
+      const payload: HotwordCreate = { word: word.trim() };
+      if (user?.role === 'admin') {
+        payload.isPublic = isPublic;
+      }
+      await onSubmit(payload);
       setWord('');
+      setIsPublic(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -55,6 +63,21 @@ const HotwordForm: React.FC<HotwordFormProps> = ({ onSubmit, isLoading = false, 
               disabled={isLoading || isSubmitting}
             />
           </div>
+          {user?.role === 'admin' && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isPublic"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                disabled={isLoading || isSubmitting}
+                className="rounded"
+              />
+              <label htmlFor="isPublic" className="text-sm font-medium">
+                设为公开（所有人只读）
+              </label>
+            </div>
+          )}
           
           <Button 
             type="submit" 

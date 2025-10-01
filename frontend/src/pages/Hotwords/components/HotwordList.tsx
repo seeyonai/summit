@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, AlertCircle } from 'lucide-react';
 import type { Hotword } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HotwordListProps {
   hotwords: Hotword[];
@@ -20,6 +21,8 @@ const HotwordList: React.FC<HotwordListProps> = ({
   onToggleActive, 
   isLoading = false 
 }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   if (isLoading) {
     return (
       <Card>
@@ -59,6 +62,9 @@ const HotwordList: React.FC<HotwordListProps> = ({
                   <Badge variant={hotword.isActive ? 'default' : 'secondary'}>
                     {hotword.isActive ? '启用' : '禁用'}
                   </Badge>
+                  {hotword.isPublic && (
+                    <Badge variant="secondary">公开</Badge>
+                  )}
                 </div>
                 <div className="text-sm text-gray-500">
                   创建时间: {new Date(hotword.createdAt).toLocaleDateString()}
@@ -73,7 +79,7 @@ const HotwordList: React.FC<HotwordListProps> = ({
                   type="checkbox"
                   checked={hotword.isActive}
                   onChange={() => onToggleActive(hotword)}
-                  disabled={isLoading}
+                  disabled={isLoading || (!!hotword.isPublic && !isAdmin)}
                   className="rounded"
                 />
               </div>
@@ -83,7 +89,7 @@ const HotwordList: React.FC<HotwordListProps> = ({
                   size="sm"
                   variant="outline"
                   onClick={() => onEdit(hotword)}
-                  disabled={isLoading}
+                  disabled={isLoading || (!!hotword.isPublic && !isAdmin)}
                   className="h-8 w-8 p-0"
                 >
                   <Edit className="h-4 w-4" />
@@ -92,7 +98,7 @@ const HotwordList: React.FC<HotwordListProps> = ({
                   size="sm"
                   variant="outline"
                   onClick={() => onDelete(hotword._id)}
-                  disabled={isLoading}
+                  disabled={isLoading || (!!hotword.isPublic && !isAdmin)}
                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
