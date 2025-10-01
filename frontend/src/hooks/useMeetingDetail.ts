@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '@/services/api';
-import type { MeetingUpdate, MeetingWithRecordings } from '@/types';
+import type { MeetingWithRecordings } from '@/types';
 
 interface UseMeetingDetailReturn {
   meeting: MeetingWithRecordings | null;
