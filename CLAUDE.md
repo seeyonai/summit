@@ -125,6 +125,10 @@ files/             # Audio file storage (served at /files/*)
 - Implement proper TypeScript types (avoid `any`)
 - Prefer functions for pure logic, utilities, and stateless operations. Use classes only when you actually need object instances with state/behavior. Default to functions.
 
+#### Design
+- Avoid overdesign with gradients.
+- Create tailwind util classes for common styles.
+
 #### Environment Variables
 - Backend: `MONGODB_URI`, `DB_NAME`, `FILE_BASE_PATH`, `SEED_DATA`, OpenAI keys, external service URLs
   - `SEGMENTATION_SERVICE_URL`: Echo Voices service URL (default: `http://localhost:2593`)
