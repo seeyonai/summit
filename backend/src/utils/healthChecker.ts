@@ -2,6 +2,7 @@ import { ensureTrailingSlash } from './httpClient';
 import { LIVE_SERVICE_BASE, TRANSCRIPTION_SERVICE_BASE } from '../services/RecordingService';
 import { SEGMENTATION_SERVICE_URL } from '../services/SegmentationService';
 import { ALIGNER_SERVICE_URL } from '../services/AlignerService';
+import { debug } from './logger';
 
 interface Service {
   name: string;
@@ -46,7 +47,7 @@ async function checkServiceHealth(service: Service): Promise<string> {
     const response = await fetch(`${service.url}health`);
     if (response.ok) {
       const healthStatus = await response.json();
-      console.log(`${service.name} health check:`, healthStatus);
+      debug(`${service.name} health check:`, healthStatus);
 
       return typeof healthStatus === 'object'
         && healthStatus !== null

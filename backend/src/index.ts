@@ -21,6 +21,7 @@ import { checkAllServices, generateHealthTable } from './utils/healthChecker';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
 import { getPreferredLang } from './utils/lang';
+import { debug, debugWarn } from './utils/logger';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 2591;
@@ -57,6 +58,7 @@ app.get('/health', async (req, res) => {
       database: 'connected'
     });
   } catch (error) {
+    debugWarn('Health check failed:', error);
     res.json({ 
       status: 'unhealthy', 
       service: 'Summit API', 
@@ -113,11 +115,13 @@ async function startServer() {
   try {
     // Connect to MongoDB
     await connectToDatabase();
+    debug('MongoDB connection established');
     
     // Seed data if environment variable is set
     if (!!process.env.SEED_DATA) {
       const seeder = new DataSeeder();
       await seeder.seedData();
+      debug('Seed data completed');
     }
     
     // Check all external services health
@@ -126,10 +130,12 @@ async function startServer() {
     // Start the HTTP API server
     const server = app.listen(PORT, () => {
       generateHealthTable(healthResult, PORT);
+      debug(`Summit API listening on port ${PORT}`);
     });
 
     // Initialize WebSocket service for live recording
     const liveRecorderService = new LiveRecorderService(server);
+    debug('LiveRecorderService initialized');
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
@@ -139,6 +145,7 @@ async function startServer() {
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
   console.log('🛑 Received SIGINT, shutting down gracefully...');
+  debug('SIGINT handler triggered');
   try {
     const { disconnectFromDatabase } = await import('./config/database');
     await disconnectFromDatabase();
@@ -151,6 +158,7 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
   console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  debug('SIGTERM handler triggered');
   try {
     const { disconnectFromDatabase } = await import('./config/database');
     await disconnectFromDatabase();

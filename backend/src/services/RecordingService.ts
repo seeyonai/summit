@@ -12,6 +12,7 @@ import { getMeetingById as getMeetingByIdService } from './MeetingService';
 import { getFilesBaseDir, makeRelativeToBase, resolveExistingPathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
 import { getMimeType, normalizeTranscriptText } from '../utils/recordingHelpers';
+import { debug } from '../utils/logger';
 
 interface LiveRecordingStartResponse {
   id: string;
@@ -390,7 +391,7 @@ export async function addRecordingToMeeting(meetingId: string, recordingId: stri
 export async function transcribeRecording(recordingId: string, hotword?: string): Promise<{ message: string; transcription: string }> {
   const document = await findRecordingOrThrow(recordingId);
   const absolutePath = await resolveAbsoluteFilePath(document);
-  console.log('Transcribing recording:', absolutePath);
+  debug('Transcribing recording:', absolutePath);
   const fileBuffer = await fs.readFile(absolutePath);
   const filename = path.basename(absolutePath);
 
@@ -443,7 +444,7 @@ export async function transcribeRecording(recordingId: string, hotword?: string)
 
 export async function segmentRecording(recordingId: string, oracleNumSpeakers?: number): Promise<{ message: string; segments: SpeakerSegment[] }> {
   const document = await findRecordingOrThrow(recordingId);
-  console.log('Segmenting recording:', document);
+  debug('Segmenting recording:', document);
   const relativePath = getRelativeFilePath(document);
 
   const segmentationResult = await segmentationService.analyzeSegmentation({

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response, RequestHandler } from 'express';
 import { AppError, isAppError, internal } from '../utils/errors';
+import { debugWarn } from '../utils/logger';
 
 type AsyncRequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<unknown>;
 
@@ -22,6 +23,9 @@ export function errorHandler(error: unknown, req: Request, res: Response, next: 
   if (!isAppError(error)) {
     // eslint-disable-next-line no-console
     console.error('Unhandled error:', error);
+    debugWarn('Unhandled error (debug):', { method: req.method, path: req.originalUrl });
+  } else {
+    debugWarn('Handled AppError', { method: req.method, path: req.originalUrl, code: resolvedError.code, status: resolvedError.status });
   }
 
   const payload: Record<string, unknown> = {

@@ -8,6 +8,7 @@ import { badRequest, notFound, internal } from '../../utils/errors';
 import type { RequestWithUser } from '../../types/auth';
 import { requireMemberOrOwner, requireOwner } from '../../middleware/auth';
 import { getPreferredLang } from '../../utils/lang';
+import { debug } from '../../utils/logger';
 
 const router = Router();
 
@@ -45,10 +46,7 @@ const serializeMeeting = (meeting: Meeting) => ({
   members: Array.isArray(meeting.members) ? meeting.members.map((m: any) => m?.toString?.() || m) : [],
 });
 
-// Health check
-router.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'healthy' });
-});
+// (Removed meetings-specific health check; root /health covers this)
 
 // Get meetings for current user (owner or member)
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
@@ -327,9 +325,9 @@ router.post('/:meetingId/extract-analysis', requireMemberOrOwner(), asyncHandler
   if (!transcript) {
     try {
       transcript = await transcriptExtractionService.buildTranscriptFromOrganizedSpeeches(meetingId);
-      console.log('Built transcript from organized speeches for analysis');
+      debug('Built transcript from organized speeches for analysis');
     } catch (error) {
-      console.log('Could not build transcript from organized speeches:', error);
+      debug('Could not build transcript from organized speeches:', error);
       throw badRequest(
         'Meeting must have a final transcript or organized speeches from recordings before analysis can be performed',
         'meeting.transcript_required'

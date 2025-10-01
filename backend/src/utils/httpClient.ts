@@ -1,6 +1,7 @@
 import http from 'http';
 import https from 'https';
 import { randomUUID } from 'crypto';
+import { debug, debugWarn } from './logger';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -58,6 +59,7 @@ export async function httpRequest(targetUrl: string, options: HttpRequestOptions
   const body = typeof options.body === 'string' ? Buffer.from(options.body, 'utf8') : options.body;
 
   return new Promise((resolve, reject) => {
+    debug('HTTP request', { method: requestOptions.method, url: targetUrl });
     const req = transport.request(requestOptions, (res) => {
       const chunks: Buffer[] = [];
 
@@ -71,15 +73,18 @@ export async function httpRequest(targetUrl: string, options: HttpRequestOptions
         const expectedStatuses = options.expectedStatus || [200, 201, 202, 204];
 
         if (!expectedStatuses.includes(status)) {
+          debugWarn('HTTP error response', { url: targetUrl, status, bytes: data.length });
           reject(new HttpError(status, `Request to ${targetUrl} failed with status ${status}`, data.toString('utf8')));
           return;
         }
 
+        debug('HTTP response', { url: targetUrl, status, bytes: data.length });
         resolve({ status, data });
       });
     });
 
     req.on('error', (error) => {
+      debugWarn('HTTP request error', { url: targetUrl, message: (error as Error).message });
       reject(error);
     });
 

@@ -6,23 +6,28 @@ import { ObjectId } from 'mongodb';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument } from '../types/documents';
 import type { RecordingDocument } from '../types/documents';
+import { debug, debugWarn } from '../utils/logger';
 
 export function authenticate(req: RequestWithUser, res: Response, next: NextFunction): void {
   const header = req.headers['authorization'] || req.headers['Authorization'];
   if (!header || typeof header !== 'string') {
+    debugWarn('Auth failed: missing Authorization header');
     next(unauthorized('Missing Authorization header', 'auth.missing_token'));
     return;
   }
   const [type, token] = header.split(' ');
   if (type !== 'Bearer' || !token) {
+    debugWarn('Auth failed: invalid Authorization header');
     next(unauthorized('Invalid Authorization header', 'auth.invalid_header'));
     return;
   }
   try {
     const payload = verifyJwt(token);
     req.user = payload;
+    debug('Auth success', { userId: payload.userId, role: payload.role });
     next();
   } catch (err) {
+    debugWarn('Auth failed: invalid or expired token');
     next(unauthorized('Invalid or expired token', 'auth.invalid_token'));
   }
 }
@@ -31,23 +36,28 @@ export function requireOwner() {
   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
     const meetingId = (req.params as any).id || (req.params as any).meetingId;
     if (!req.user || !meetingId) {
+      debugWarn('requireOwner: unauthorized or missing meetingId');
       next(unauthorized('Unauthorized', 'auth.unauthorized'));
       return;
     }
     if (req.user.role === 'admin') {
+      debug('requireOwner: admin bypass', { userId: req.user.userId });
       next();
       return;
     }
     const collection = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
     const meeting = await collection.findOne({ _id: new ObjectId(meetingId) });
     if (!meeting || !meeting.ownerId) {
+      debugWarn('requireOwner: meeting not found or has no owner', { meetingId });
       next(forbidden('Not allowed', 'auth.forbidden'));
       return;
     }
     if (meeting.ownerId.toString() !== req.user.userId) {
+      debugWarn('requireOwner: user is not owner', { meetingId, userId: req.user.userId });
       next(forbidden('Not allowed', 'auth.forbidden'));
       return;
     }
+    debug('requireOwner: access granted', { meetingId, userId: req.user.userId });
     next();
   };
 }
@@ -56,38 +66,46 @@ export function requireMemberOrOwner() {
   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
     const meetingId = (req.params as any).id || (req.params as any).meetingId;
     if (!req.user || !meetingId) {
+      debugWarn('requireMemberOrOwner: unauthorized or missing meetingId');
       next(unauthorized('Unauthorized', 'auth.unauthorized'));
       return;
     }
     if (req.user.role === 'admin') {
+      debug('requireMemberOrOwner: admin bypass', { userId: req.user.userId });
       next();
       return;
     }
     const collection = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
     const meeting = await collection.findOne({ _id: new ObjectId(meetingId) });
     if (!meeting) {
+      debugWarn('requireMemberOrOwner: meeting not found', { meetingId });
       next(forbidden('Not allowed', 'auth.forbidden'));
       return;
     }
     const isOwner = meeting.ownerId && meeting.ownerId.toString() === req.user.userId;
     const isMember = (meeting.members || []).some((m) => m.toString() === req.user?.userId);
     if (!isOwner && !isMember) {
+      debugWarn('requireMemberOrOwner: access denied', { meetingId, userId: req.user.userId });
       next(forbidden('Not allowed', 'auth.forbidden'));
       return;
     }
+    debug('requireMemberOrOwner: access granted', { meetingId, userId: req.user.userId, isOwner, isMember });
     next();
   };
 }
 
 export function requireAdmin(req: RequestWithUser, res: Response, next: NextFunction): void {
   if (!req.user) {
+    debugWarn('requireAdmin: missing user');
     next(unauthorized('Unauthorized', 'auth.unauthorized'));
     return;
   }
   if (req.user.role !== 'admin') {
+    debugWarn('requireAdmin: user not admin', { userId: req.user.userId, role: req.user.role });
     next(forbidden('Admin only', 'auth.admin_only'));
     return;
   }
+  debug('requireAdmin: access granted', { userId: req.user.userId });
   next();
 }
 

@@ -9,6 +9,7 @@ import { COLLECTIONS, RecordingDocument, MeetingDocument } from '../types/docume
 import { getFilesBaseDir, resolveExistingPathFromCandidate } from '../utils/filePaths';
 import { getMimeType } from '../utils/recordingHelpers';
 import { forbidden, notFound } from '../utils/errors';
+import { debug, debugWarn } from '../utils/logger';
 
 const router = Router();
 
@@ -46,23 +47,29 @@ router.get('/:filename', asyncHandler(async (req: Request, res: Response) => {
     const queryToken = typeof req.query.token === 'string' ? req.query.token : undefined;
     const token = header && header.startsWith('Bearer ') ? header.slice(7) : queryToken;
     if (!token) {
+      debugWarn('File access denied: missing token');
       throw forbidden('Unauthorized', 'auth.unauthorized');
     }
     try {
       const payload = verifyJwt(token);
       userId = payload.userId;
       role = payload.role;
+      debug('File access via query/header token', { userId, role });
     } catch {
+      debugWarn('File access denied: invalid token');
       throw forbidden('Unauthorized', 'auth.unauthorized');
     }
   }
   const { filename } = req.params as { filename: string };
+  debug('File request received', { filename, userId, role });
   const rec = await findRecordingByFilename(filename);
   if (!rec) {
+    debugWarn('File not found in DB', { filename });
     throw notFound('Recording not found', 'recording.not_found');
   }
   const allowed = await userHasAccess(rec, userId!, role);
   if (!allowed) {
+    debugWarn('File access forbidden', { filename, userId, role });
     throw forbidden('Not allowed', 'recording.forbidden');
   }
 
@@ -79,6 +86,7 @@ router.get('/:filename', asyncHandler(async (req: Request, res: Response) => {
       const start = match[1] ? parseInt(match[1], 10) : 0;
       const end = match[2] ? parseInt(match[2], 10) : stat.size - 1;
       const chunkSize = (end - start) + 1;
+      debug('Streaming ranged file response', { filename: path.basename(absolutePath), start, end, chunkSize });
       res.status(206);
       res.setHeader('Content-Range', `bytes ${start}-${end}/${stat.size}`);
       res.setHeader('Accept-Ranges', 'bytes');
@@ -92,6 +100,7 @@ router.get('/:filename', asyncHandler(async (req: Request, res: Response) => {
 
   res.setHeader('Content-Length', String(stat.size));
   res.setHeader('Content-Type', mime);
+  debug('Streaming full file response', { filename: path.basename(absolutePath), size: stat.size });
   const stream = fs.createReadStream(absolutePath);
   stream.pipe(res);
 }));

@@ -1,5 +1,6 @@
 import { MongoClient, Db, Collection, Document } from 'mongodb';
 import dotenv from 'dotenv';
+import { debug, debugWarn } from '../utils/logger';
 
 // Load environment variables from .env file
 dotenv.config({ quiet: true });
@@ -18,13 +19,28 @@ export async function connectToDatabase(): Promise<Db> {
   }
 
   try {
+    const redactUri = (uri: string): string => {
+      try {
+        const u = new URL(uri);
+        if (u.username || u.password) {
+          u.password = '****';
+        }
+        return u.toString();
+      } catch {
+        return uri.replace(/:\\S+@/, ':****@');
+      }
+    };
+
+    debug('Connecting to MongoDB', { uri: redactUri(MONGODB_URI), dbName: DB_NAME });
     client = new MongoClient(MONGODB_URI);
     await client.connect();
     db = client.db(DB_NAME);
     console.log('✅ Connected to MongoDB');
+    debug('MongoDB connected', { dbName: DB_NAME });
     return db;
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
+    debugWarn('MongoDB connection error (debug):', error);
     throw error;
   }
 }
@@ -33,6 +49,7 @@ export async function disconnectFromDatabase(): Promise<void> {
   if (client) {
     await client.close();
     console.log('🔌 Disconnected from MongoDB');
+    debug('MongoDB client closed');
   }
 }
 

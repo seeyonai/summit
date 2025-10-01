@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getFilesBaseDir, resolveWithinBase } from '../utils/filePaths';
 import { getCollection } from '../config/database';
 import { Recording } from '../types';
+import { debug, debugWarn } from '../utils/logger';
 
 interface ActiveRecording {
   id: string;
@@ -30,8 +31,8 @@ export class LiveRecorderService {
 
   private setupWebSocketHandlers() {
     this.wss.on('connection', (ws: WebSocket) => {
-      console.log('New WebSocket connection for live recorder');
-      console.log('WebSocket connected from client on port 2591');
+      debug('New WebSocket connection for live recorder');
+      debug('WebSocket connected from client on port 2591');
 
       const recordingId = uuidv4();
       const filename = `recording_${recordingId}.wav`;
@@ -62,13 +63,13 @@ export class LiveRecorderService {
       });
 
       ws.on('close', () => {
-        console.log(`WebSocket disconnected from client on port 2591`);
+        debug('WebSocket disconnected from client on port 2591');
         this.handleConnectionClose(recordingId);
       });
 
       ws.on('error', (error) => {
         console.error(`WebSocket error for recording ${recordingId}:`, error);
-        console.log(`WebSocket connection failed from client on port 2591`);
+        debug('WebSocket connection failed from client on port 2591');
         this.handleConnectionClose(recordingId);
       });
 
@@ -82,12 +83,12 @@ export class LiveRecorderService {
   private handleAudioChunk(recordingId: string, chunk: Buffer) {
     const recording = this.activeRecordings.get(recordingId);
     if (!recording) {
-      console.warn(`Received chunk for unknown recording: ${recordingId}`);
+      debugWarn(`Received chunk for unknown recording: ${recordingId}`);
       return;
     }
 
     try {
-      console.log(`Received audio chunk for recording ${recordingId}: ${chunk.length} bytes`);
+      debug(`Received audio chunk for recording ${recordingId}: ${chunk.length} bytes`);
       recording.chunks.push(chunk);
       
       // Send acknowledgment
@@ -109,20 +110,20 @@ export class LiveRecorderService {
     const recording = this.activeRecordings.get(recordingId);
     if (!recording) return;
 
-    console.log(`WebSocket connection closed for recording: ${recordingId}`);
-    console.log(`Total chunks received: ${recording.chunks.length}`);
+    debug(`WebSocket connection closed for recording: ${recordingId}`);
+    debug(`Total chunks received: ${recording.chunks.length}`);
 
     if (recording.chunks.length > 0) {
       this.saveRecording(recording);
     } else {
-      console.log(`No audio chunks received for recording ${recordingId}, skipping save`);
+      debug(`No audio chunks received for recording ${recordingId}, skipping save`);
       this.activeRecordings.delete(recordingId);
     }
   }
 
   private async saveRecording(recording: ActiveRecording) {
     try {
-      console.log(`Starting to save recording ${recording.id} to ${recording.filePath}`);
+      debug(`Starting to save recording ${recording.id} to ${recording.filePath}`);
       
       // Concatenate all audio chunks
       const audioBuffer = Buffer.concat(recording.chunks);
@@ -172,7 +173,7 @@ export class LiveRecorderService {
         fileSize: wavBuffer.length
       }));
       
-      console.log(`Recording saved: ${recording.filename} (${wavBuffer.length} bytes, ${duration}s)`);
+      debug(`Recording saved: ${recording.filename} (${wavBuffer.length} bytes, ${duration}s)`);
 
       // Create Recording document in database
       try {
@@ -194,7 +195,7 @@ export class LiveRecorderService {
         };
 
         const result = await collection.insertOne(recordingDocument);
-        console.log(`Recording document created with ID: ${result.insertedId}`);
+        debug(`Recording document created with ID: ${result.insertedId}`);
       } catch (dbError) {
         console.error('Error creating Recording document:', dbError);
       }

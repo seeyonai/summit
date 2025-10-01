@@ -6,6 +6,7 @@ import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../uti
 import { SegmentationRequest, SegmentationResponse, SegmentationModelInfo, SpeakerSegment } from '../types';
 import { getFilesBaseDir, normalizePublicOrRelative, resolvePathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
+import { debug, debugWarn } from '../utils/logger';
 
 interface ApiModelInfo {
   model: string;
@@ -44,7 +45,7 @@ export class SegmentationService {
 
       return audioStream?.sample_rate ? Number(audioStream.sample_rate) : undefined;
     } catch (error) {
-      console.warn(`Failed to probe audio sample rate for ${filePath}:`, error);
+      debugWarn(`Failed to probe audio sample rate for ${filePath}:`, error);
       return undefined;
     }
   }
@@ -105,7 +106,7 @@ export class SegmentationService {
 
     const normalizedPath = normalizePublicOrRelative(request.audioFilePath);
     const absolutePath = this.resolveAudioFilePath(normalizedPath);
-    console.log('Analyzing segmentation for:', absolutePath);
+    debug('Analyzing segmentation for:', absolutePath);
 
     let audioBuffer: Buffer;
     let contentType: string;
@@ -113,7 +114,7 @@ export class SegmentationService {
     const sampleRate = await this.getAudioSampleRate(absolutePath);
     
     if (sampleRate && sampleRate !== 16000) {
-      console.log(`Audio sample rate is ${sampleRate}Hz, resampling to 16kHz for segmentation`);
+      debug(`Audio sample rate is ${sampleRate}Hz, resampling to 16kHz for segmentation`);
       
       const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'summit-resample-'));
       const resampledPath = path.join(tempDir, 'resampled.wav');

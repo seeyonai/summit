@@ -9,7 +9,7 @@ const router = Router({ mergeParams: true });
 
 // Run speaker diarization on a recording
 router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request, res: Response) => {
-  const { recordingId } = req.params; // recordingId is undefined?
+  const { recordingId } = req.params;
   const { oracleNumSpeakers: camelCaseOracle, oracle_num_speakers: snakeCaseOracle } = req.body as Record<string, unknown>;
   const oracleNumSpeakersValue = camelCaseOracle ?? snakeCaseOracle;
   const parsedValue = typeof oracleNumSpeakersValue !== 'undefined'

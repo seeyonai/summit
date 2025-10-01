@@ -3,6 +3,7 @@ import path from 'path';
 import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../utils/httpClient';
 import { getFilesBaseDir, normalizePublicOrRelative, resolvePathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
+import { debug } from '../utils/logger';
 
 interface ApiModelInfo {
   model: string;
@@ -80,7 +81,7 @@ export class AlignerService {
 
     const normalizedPath = normalizePublicOrRelative(audioFilePath);
     const absolutePath = this.resolveAudioFilePath(normalizedPath);
-    console.log('Aligning audio with text:', absolutePath);
+    debug('Aligning audio with text:', absolutePath);
     const audioBuffer = await fs.promises.readFile(absolutePath);
     const contentType = this.determineContentType(absolutePath);
 
