@@ -41,6 +41,7 @@ export interface Recording {
   externalId?: string;
   meeting?: Meeting;
   organizedSpeeches?: OrganizedSpeech[];
+  createdAt?: Date;
   metadata?: {
     duration?: number;
     sampleRate?: number;
@@ -67,11 +68,17 @@ export interface TodoItem {
   completed: boolean;
   priority?: 'low' | 'medium' | 'high';
   dueDate?: string;
+  assignee?: string;
 }
 
 export interface DisputedIssue {
   id?: string;
   text: string;
+  title?: string;
+  description?: string;
+  priority?: 'low' | 'medium' | 'high';
+  status?: 'resolved' | 'ongoing' | 'pending';
+  resolved?: boolean;
 }
 
 export interface AgendaItem {

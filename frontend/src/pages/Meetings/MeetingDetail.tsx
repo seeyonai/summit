@@ -31,6 +31,7 @@ import {
   HeadphonesIcon,
 } from "lucide-react";
 import OngoingMeetingDisplay from "./components/OngoingMeetingDisplay";
+import type { RecordingInfo } from './components/hooks/useOngoingMeetingRecording';
 
 function MeetingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -54,6 +55,7 @@ function MeetingDetail() {
     setShowTranscript,
     deleteMeeting,
     handleRecordingComplete,
+    refresh,
   } = useMeetingDetail(id);
 
   const {
@@ -106,9 +108,15 @@ function MeetingDetail() {
   }, [searchParams, setSearchParams]);
 
   const handleMeetingRecordingComplete = useCallback(
-    (recordingInfo: { id: string; status: string }) => {
-      // Handle recording completion
-      handleRecordingComplete(recordingInfo);
+    (recordingInfo: RecordingInfo) => {
+      if (!recordingInfo.filename || typeof recordingInfo.duration !== 'number') {
+        return;
+      }
+      handleRecordingComplete({
+        filename: recordingInfo.filename,
+        duration: recordingInfo.duration,
+        downloadUrl: recordingInfo.downloadUrl,
+      });
       setSuccess("Recording saved successfully!");
     },
     [handleRecordingComplete]

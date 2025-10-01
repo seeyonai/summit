@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, CheckCircle, Clock, Circle } from 'lucide-react'
 import AnnotatedMarkdown from './AnnotatedMarkdown'
-import type { Meeting, TodoItem, DiscussionPoint } from '@/types';
+import type { Meeting, TodoItem, DisputedIssue } from '@/types';
 
 interface TranscriptDisplayProps {
   meeting: Meeting
@@ -12,22 +12,23 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
   // Extract todos and discussion points from transcript
   const extractAnnotations = (transcript: string) => {
     const todos: TodoItem[] = []
-    const disputedIssues: DiscussionPoint[] = []
+    const disputedIssues: DisputedIssue[] = []
     
     const lines = transcript.split('\n')
-    let todoId = 1
-    let discussionId = 1
+    let todoId = '1'
+    let discussionId = '1'
     
     lines.forEach(line => {
       if (line.includes('[待办事项]')) {
         const todoText = line.replace(/\*\*\[待办事项\]\*\*/, '').replace(/^[-*]\s*/, '').trim()
         if (todoText) {
           todos.push({
-            id: todoId++,
+            id: todoId,
             text: todoText,
             completed: false,
             priority: 'medium',
           })
+          todoId = (parseInt(todoId) + 1).toString()
         }
       }
       
@@ -35,12 +36,14 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
         const discussionText = line.replace(/\*\*\[争论焦点\]\*\*/, '').replace(/^[-*]\s*/, '').trim()
         if (discussionText) {
           disputedIssues.push({
-            id: discussionId++,
+            id: discussionId,
+            text: discussionText,
             title: discussionText,
             description: discussionText,
             priority: 'medium',
             status: 'ongoing'
           })
+          discussionId = (parseInt(discussionId) + 1).toString()
         }
       }
     })
@@ -59,7 +62,7 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
         <div className="mb-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">会议纪要</h3>
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span>最后更新: {new Date(meeting.updatedAt).toLocaleString('zh-CN')}</span>
+            <span>最后更新: {meeting.updatedAt ? new Date(meeting.updatedAt).toLocaleString('zh-CN') : '未知'}</span>
           </div>
         </div>
         

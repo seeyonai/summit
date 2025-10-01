@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 
-interface RecordingInfo {
+export interface RecordingInfo {
   recordingId?: string;
   filename?: string;
   downloadUrl?: string;

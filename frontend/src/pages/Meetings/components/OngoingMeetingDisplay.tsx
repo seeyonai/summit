@@ -16,6 +16,7 @@ import {
 import { formatDate } from '@/utils/date';
 import type { MeetingWithRecordings } from '@/types';
 import { useOngoingMeetingRecording } from './hooks/useOngoingMeetingRecording';
+import type { RecordingInfo } from './hooks/useOngoingMeetingRecording';
 import { MeetingAgenda } from './MeetingAgenda';
 import { RecordingControls } from './RecordingControls';
 import { MeetingStats } from './MeetingStats';
@@ -25,7 +26,7 @@ import LiveTranscript from './LiveTranscript';
 interface OngoingMeetingDisplayProps {
   meeting: MeetingWithRecordings;
   onClose: () => void;
-  onRecordingComplete?: (recordingInfo: { filename: string; duration: number }) => void;
+  onRecordingComplete?: (recordingInfo: RecordingInfo) => void;
 }
 
 function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: OngoingMeetingDisplayProps) {

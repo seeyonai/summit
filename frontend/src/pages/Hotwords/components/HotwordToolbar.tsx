@@ -38,7 +38,7 @@ function HotwordToolbar({
         </div>
 
         <div className="flex gap-2 items-center">
-          <Select value={statusFilter} onValueChange={(v: string) => onStatusFilterChange(v)}>
+          <Select value={statusFilter} onValueChange={(v) => onStatusFilterChange(v as 'all' | 'active' | 'inactive')}>
             <SelectTrigger className="w-[180px] h-11">
               <FilterIcon className="w-4 h-4 mr-2" />
               <SelectValue placeholder="筛选状态" />

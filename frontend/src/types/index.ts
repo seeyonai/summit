@@ -124,14 +124,17 @@ export type MeetingStatus = baseTypes.MeetingStatus;
 
 export type TodoItem = baseTypes.TodoItem;
 
-export type DiscussionPoint = baseTypes.DiscussionPoint;
+export type DisputedIssue = baseTypes.DisputedIssue;
 
 export type AgendaItem = baseTypes.AgendaItem;
+
+export type OrganizedSpeech = baseTypes.OrganizedSpeech;
 
 export type Meeting = baseTypes.Meeting & Id & Timestamp & {
   ownerId?: string;
   members?: string[];
   combinedRecording?: Recording | null;
+  recordings?: Recording[];
 };
 
 export type MeetingWithRecordings = Meeting & { recordings: Recording[] };

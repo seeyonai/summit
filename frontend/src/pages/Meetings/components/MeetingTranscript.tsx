@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Meeting } from '@/types';
+import type { Meeting, OrganizedSpeech } from '@/types';
 import {
   FileTextIcon,
   CopyIcon,
@@ -75,12 +75,12 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
   ];
 
   // Combine organized speeches from all recordings
-  const combinedOrganizedSpeeches = meeting.recordings?.reduce((acc, recording) => {
+  const combinedOrganizedSpeeches: OrganizedSpeech[] | undefined = meeting.recordings?.reduce<OrganizedSpeech[]>((acc, recording) => {
     if (recording.organizedSpeeches && recording.organizedSpeeches.length > 0) {
-      return [...acc, ...recording.organizedSpeeches];
+      return acc.concat(recording.organizedSpeeches);
     }
     return acc;
-  }, [] as typeof meeting.recordings[0]['organizedSpeeches']);
+  }, []);
 
   // Also check meeting's combined recording
   const combinedRecordingSpeeches = meeting.combinedRecording?.organizedSpeeches || [];
@@ -236,7 +236,7 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.values(speakerStats).map((speaker) => {
+              {(Object.values(speakerStats) as Array<{ index: number; segments: number; totalDuration: number }>).map((speaker) => {
                 const minutes = Math.floor(speaker.totalDuration / 60);
                 const seconds = Math.floor(speaker.totalDuration % 60);
                 return (

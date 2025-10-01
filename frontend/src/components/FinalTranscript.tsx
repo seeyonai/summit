@@ -1,8 +1,8 @@
 import React from 'react';
-import type { Meeting } from '@/types';
+import type { MeetingWithRecordings } from '@/types';
 
 interface FinalTranscriptProps {
-  meeting: Meeting;
+  meeting: MeetingWithRecordings;
   onGenerateFinalTranscript?: (meetingId: string) => void;
   isGenerating?: boolean;
 }

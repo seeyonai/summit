@@ -78,22 +78,23 @@ const sizeClasses = {
 };
 
 function StatusBadge({ status, type = 'meeting', className, size = 'md' }: StatusBadgeProps) {
-  const config = statusConfig[type][status as keyof typeof statusConfig[typeof type]];
-  
-  if (!config) return null;
+  const typeConfig = statusConfig[type] as Record<string, { label: string; className: string; dotClass: string }>;
+  const currentStatusConfig = typeConfig[status];
+
+  if (!currentStatusConfig) return null;
 
   return (
     <Badge
       variant="outline"
       className={cn(
         'inline-flex items-center gap-1.5 font-medium transition-all hover:shadow-md',
-        config.className,
+        currentStatusConfig.className,
         sizeClasses[size],
         className
       )}
     >
-      <span className={cn('w-1.5 h-1.5 rounded-full', config.dotClass)} />
-      {config.label}
+      <span className={cn('w-1.5 h-1.5 rounded-full', currentStatusConfig.dotClass)} />
+      {currentStatusConfig.label}
     </Badge>
   );
 }

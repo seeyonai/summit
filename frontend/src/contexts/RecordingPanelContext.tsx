@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
 
 interface RecordingPanelContextType {
   showFloatingPanel: boolean;
   isPanelMinimized: boolean;
+  isMinimized: boolean;
   isFullscreen: boolean;
   toggleFloatingPanel: () => void;
   minimizePanel: () => void;
@@ -53,6 +55,7 @@ export function RecordingPanelProvider({ children }: { children: ReactNode }) {
     <RecordingPanelContext.Provider value={{
       showFloatingPanel,
       isPanelMinimized,
+      isMinimized: isPanelMinimized,
       isFullscreen,
       toggleFloatingPanel,
       minimizePanel,

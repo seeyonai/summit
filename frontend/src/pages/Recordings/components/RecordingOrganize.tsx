@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { Recording } from '@/types';
+import type { Recording, OrganizedSpeech } from '@/types';
 import { apiService } from '@/services/api';
 import { UsersIcon, ClockIcon, SparklesIcon } from 'lucide-react';
 

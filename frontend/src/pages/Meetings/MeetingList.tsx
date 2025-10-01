@@ -117,7 +117,9 @@ function MeetingList() {
         // Sort by most recently updated (use createdAt or updatedAt if available, fallback to scheduledStart)
         const dateA = a.updatedAt || a.createdAt || a.scheduledStart;
         const dateB = b.updatedAt || b.createdAt || b.scheduledStart;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
+        const timeA = dateA ? new Date(dateA as string | number | Date).getTime() : 0;
+        const timeB = dateB ? new Date(dateB as string | number | Date).getTime() : 0;
+        return timeB - timeA;
       });
   }, [meetings, searchQuery, filterStatus]);
 

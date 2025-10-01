@@ -42,7 +42,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
               <div>
                 <p className="text-sm text-gray-600">总时长</p>
                 <p className="text-2xl font-bold">
-                  {formatDuration(recordings.reduce((acc, r) => acc + (r.duration || 0), 0))}
+                  {formatDuration(recordings.reduce<number>((acc, r) => acc + (r.duration || 0), 0))}
                 </p>
               </div>
               <ClockIcon className="w-8 h-8 text-blue-500" />
@@ -56,7 +56,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
               <div>
                 <p className="text-sm text-gray-600">已转录</p>
                 <p className="text-2xl font-bold">
-                  {recordings.filter(r => r.transcription).length}
+                  {recordings.filter((r) => Boolean(r.transcription)).length}
                 </p>
               </div>
               <FileAudioIcon className="w-8 h-8 text-green-500" />

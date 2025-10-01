@@ -316,8 +316,8 @@ class ApiService {
   }
 
   async organizeRecording(id: string): Promise<{ speeches: Array<{ speakerIndex: number; startTime: number; endTime: number; rawText: string; polishedText: string }>; message: string }>{
-    const result = await this.post(`/api/recordings/${id}/organize`);
-    if (result.speeches && result.speeches.length > 0) {
+    const result = await this.post<{ speeches: Array<{ speakerIndex: number; startTime: number; endTime: number; rawText: string; polishedText: string }>; message: string }>(`/api/recordings/${id}/organize`);
+    if (Array.isArray(result.speeches) && result.speeches.length > 0) {
       await this.updateRecording(id, { organizedSpeeches: result.speeches });
     }
     return result;

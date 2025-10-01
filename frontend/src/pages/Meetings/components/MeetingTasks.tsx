@@ -229,12 +229,12 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
                       {!todo.completed && (
                         <Button
                           onClick={() => onGenerateAdvice(todo)}
-                          disabled={generatingAdvice[todo.id]}
+                          disabled={!!(todo.id && generatingAdvice[todo.id])}
                           variant="outline"
                           size="sm"
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          {generatingAdvice[todo.id] ? (
+                          {todo.id && generatingAdvice[todo.id] ? (
                             <>
                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2" />
                               生成中...

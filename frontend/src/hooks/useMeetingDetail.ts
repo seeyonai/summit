@@ -15,9 +15,9 @@ interface UseMeetingDetailReturn {
   deleteMeeting: () => Promise<void>;
   handleRecordingComplete: (recordingData: {
     filename: string;
-    downloadUrl: string;
-    transcription: string;
     duration: number;
+    downloadUrl?: string;
+    transcription?: string;
   }) => Promise<void>;
 }
 
@@ -59,15 +59,15 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
 
   const handleRecordingComplete = useCallback(async (recordingData: {
     filename: string;
-    downloadUrl: string;
-    transcription: string;
     duration: number;
+    downloadUrl?: string;
+    transcription?: string;
   }) => {
     if (!meeting) return;
 
     try {
       // Update meeting with new recording
-      const updatedMeeting: MeetingUpdate = {
+      const updatedMeeting = {
         ...meeting,
         recordings: [
           ...meeting.recordings,
@@ -75,7 +75,7 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
             filename: recordingData.filename,
             filePath: `/files/${recordingData.filename}`,
             duration: recordingData.duration,
-            transcription: recordingData.transcription,
+            ...(recordingData.transcription ? { transcription: recordingData.transcription } : {}),
           }
         ]
       };

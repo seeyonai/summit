@@ -69,7 +69,7 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
         ) : (
           <div className="space-y-4">
             {meetings.map((meeting) => (
-              <Link key={meeting._id} to={`/meetings/${meeting._id}`}>
+              <Link key={meeting.id} to={`/meetings/${meeting.id}`}>
                 <div className="group p-4 rounded-lg border border-border/50 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200 cursor-pointer">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
