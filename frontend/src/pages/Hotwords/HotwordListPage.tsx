@@ -7,7 +7,7 @@ import { AlertCircle as AlertCircleIcon, PlusIcon } from 'lucide-react';
 import type { Hotword, HotwordUpdate, HotwordCreate } from '@/types';
 import createHotwordService from '@/services/hotwordService';
 import { useHotwords } from '@/hooks/useHotwords';
-import { getHotwordAnalytics, filterHotwords, exportHotwords } from '@/utils/hotwords';
+import { getHotwordAnalytics, filterHotwords, exportHotwords, readHotwordsFromFile } from '@/utils/hotwords';
 import HotwordHeader from '@/pages/Hotwords/components/HotwordHeader';
 import HotwordToolbar from '@/pages/Hotwords/components/HotwordToolbar';
 import HotwordCreateModal from '@/pages/Hotwords/components/HotwordCreateModal';
@@ -78,9 +78,23 @@ function HotwordListPage() {
   };
 
   const handleImport = async (file: File) => {
-    // Placeholder: parsing logic could be implemented later
-    // For now, simply simulate a delay
-    await new Promise((r) => setTimeout(r, 400));
+    try {
+      setOpError(undefined);
+      const parsed = await readHotwordsFromFile(file);
+      if (parsed.valid.length === 0) {
+        setOpError('未找到可导入的热词');
+        return;
+      }
+
+      const result = await actions.importHotwordsBulk(parsed.valid);
+
+      const createdCount = result.created?.length || 0;
+      const skippedCount = result.skipped?.length || 0;
+      // Light feedback without introducing new UI state
+      alert(`导入完成：新增 ${createdCount} 个，跳过 ${skippedCount} 个`);
+    } catch (e) {
+      setOpError(e instanceof Error ? e.message : '导入失败');
+    }
   };
 
   const handleExport = () => {

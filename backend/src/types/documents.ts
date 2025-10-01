@@ -32,6 +32,8 @@ export interface HotwordDocument extends Document {
   word: string;
   createdAt: Date | string;
   isActive: boolean;
+  isPublic: boolean;
+  ownerId?: ObjectId;
 }
 
 export interface RecordingDocument extends Document, Omit<Recording, '_id'> {

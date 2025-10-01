@@ -42,6 +42,8 @@ export function hotwordDocumentToHotword(hotwordDoc: HotwordDocument): Hotword {
     word: hotwordDoc.word,
     createdAt,
     isActive: hotwordDoc.isActive,
+    isPublic: !!hotwordDoc.isPublic,
+    ownerId: hotwordDoc.ownerId,
   };
 }
 

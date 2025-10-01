@@ -128,4 +128,6 @@ export interface SpeechModelInfo {
 export interface Hotword {
   word: string;
   isActive: boolean;
+  isPublic?: boolean;
+  ownerId?: string;
 }

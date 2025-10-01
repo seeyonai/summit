@@ -111,9 +111,14 @@ export interface ErrorMessage {
 // Hotword management types
 export type Hotword = baseTypes.Hotword & Id & Timestamp;
 
-export type HotwordCreate = Pick<baseTypes.Hotword, 'word'>;
+export type HotwordCreate = Pick<baseTypes.Hotword, 'word'> & { isPublic?: boolean };
 
-export type HotwordUpdate = Partial<Hotword> & Pick<Hotword, '_id'>;
+export type HotwordUpdate = Partial<Hotword> & Pick<Hotword, '_id'> & { isPublic?: boolean };
+
+export interface HotwordBulkImportResult {
+  created: Hotword[];
+  skipped: { word: string; reason: string }[];
+}
 
 export type MeetingStatus = baseTypes.MeetingStatus;
 

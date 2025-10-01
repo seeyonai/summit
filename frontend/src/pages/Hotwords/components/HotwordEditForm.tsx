@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Save, X, AlertCircle } from 'lucide-react';
 import type { Hotword, HotwordUpdate } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HotwordEditFormProps {
   hotword: Hotword;
@@ -24,7 +25,11 @@ const HotwordEditForm: React.FC<HotwordEditFormProps> = ({
 }) => {
   const [word, setWord] = useState(hotword.word);
   const [isActive, setIsActive] = useState(hotword.isActive);
+  const [isPublic, setIsPublic] = useState(!!hotword.isPublic);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const isReadOnlyPublic = hotword.isPublic && !isAdmin;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,11 +38,9 @@ const HotwordEditForm: React.FC<HotwordEditFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onSubmit({ 
-        _id: hotword._id, 
-        word: word.trim(),
-        isActive 
-      });
+      const payload: HotwordUpdate = { _id: hotword._id, word: word.trim(), isActive };
+      if (isAdmin) payload.isPublic = isPublic;
+      await onSubmit(payload);
     } finally {
       setIsSubmitting(false);
     }
@@ -63,7 +66,7 @@ const HotwordEditForm: React.FC<HotwordEditFormProps> = ({
               value={word}
               onChange={(e) => setWord(e.target.value)}
               placeholder="输入热词..."
-              disabled={isLoading || isSubmitting}
+              disabled={isLoading || isSubmitting || isReadOnlyPublic}
             />
           </div>
           
@@ -73,7 +76,7 @@ const HotwordEditForm: React.FC<HotwordEditFormProps> = ({
               id="isActive"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              disabled={isLoading || isSubmitting}
+              disabled={isLoading || isSubmitting || isReadOnlyPublic}
               className="rounded"
             />
             <label htmlFor="isActive" className="text-sm font-medium">
@@ -83,6 +86,25 @@ const HotwordEditForm: React.FC<HotwordEditFormProps> = ({
               {isActive ? '启用' : '禁用'}
             </Badge>
           </div>
+
+          {isAdmin && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isPublic"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                disabled={isLoading || isSubmitting}
+                className="rounded"
+              />
+              <label htmlFor="isPublic" className="text-sm font-medium">
+                公开（所有人只读）
+              </label>
+              <Badge variant={isPublic ? 'default' : 'secondary'}>
+                {isPublic ? '公开' : '私有'}
+              </Badge>
+            </div>
+          )}
           
           <div className="flex gap-2">
             <Button 

@@ -128,8 +128,15 @@ export interface SpeechModelInfo {
 }
 
 // Hotword management types
-export type Hotword = baseTypes.Hotword & Timestamp & Id;
+export type Hotword = baseTypes.Hotword & Timestamp & Id & {
+  isPublic: boolean;
+  ownerId?: ObjectId;
+};
 
-export type HotwordCreate = baseTypes.Hotword;
+export type HotwordCreate = baseTypes.Hotword & {
+  isPublic?: boolean;
+};
 
-export type HotwordUpdate = Pick<Hotword, 'word' | 'isActive'>;
+export type HotwordUpdate = Pick<Hotword, '_id' | 'word' | 'isActive'> & {
+  isPublic?: boolean;
+};
