@@ -34,7 +34,14 @@ function Register() {
 
   return (
     <div className="max-w-md mx-auto py-10">
-      <h1 className="text-2xl font-semibold mb-6">注册</h1>
+      <div className="flex justify-center mb-6">
+        <img
+          src="/logo-square.png"
+          alt="Summit AI"
+          className="h-16 w-auto"
+        />
+      </div>
+      <h1 className="text-2xl font-semibold mb-6 text-center">注册</h1>
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label className="block text-sm mb-1">姓名（可选）</label>
