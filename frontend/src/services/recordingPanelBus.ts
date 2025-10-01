@@ -13,7 +13,7 @@ function emit(event: RecordingPanelEvent): void {
   listeners.forEach((listener) => {
     try {
       listener(event);
-    } catch (err) {
+    } catch {
       // no-op: isolate listener errors
     }
   });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiUrl } from '@/services/api';
+import { fileUrlFor } from '@/services/api';
 import type { Recording } from '@/types';
 
 interface RecordingDisplayProps {

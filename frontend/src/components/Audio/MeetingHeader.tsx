@@ -30,7 +30,6 @@ interface MeetingHeaderProps {
   onToggleTranscript: () => void;
   showTranscript: boolean;
   title: string;
-  darkModeTextClasses: string;
   themeClasses: {
     header: string;
     text: {
@@ -55,7 +54,6 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
   onToggleTranscript,
   showTranscript,
   title,
-  darkModeTextClasses,
   themeClasses
 }) => {
   const formatTime = (seconds: number): string => {

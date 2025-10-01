@@ -40,6 +40,7 @@ declare global {
 
 const DEFAULT_TRANSCRIPTION_API_BASE = 'http://localhost:2592/';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getLiveServiceUrlFromEnv = (): string | undefined => {
   const env = import.meta.env as Record<string, string | undefined>;
   const unprefixed = env?.LIVE_SERVICE_URL?.trim();
@@ -135,7 +136,7 @@ function LiveRecorderTest() {
               : '';
           const base = trimmedPath ? `${url.origin}${trimmedPath}` : url.origin;
           return base.endsWith('/') ? base : `${base}/`;
-        } catch (error) {
+        } catch {
           return null;
         }
       };
@@ -163,7 +164,7 @@ function LiveRecorderTest() {
       const endpoint = new URL('api/ws', transcriptionApiBase);
       const protocol = endpoint.protocol === 'https:' ? 'wss:' : 'ws:';
       return `${protocol}//${endpoint.host}${endpoint.pathname}${endpoint.search}`;
-    } catch (error) {
+    } catch {
       return 'ws://localhost:2592/api/ws';
     }
   }, [transcriptionApiBase]);

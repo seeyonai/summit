@@ -66,7 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setToken(null);
-    try { localStorage.removeItem('auth_token'); } catch {}
+    try { localStorage.removeItem('auth_token'); } catch {
+      // Ignore localStorage errors
+    }
   };
 
   const updateProfile = async (updates: { name?: string }) => {
@@ -83,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');

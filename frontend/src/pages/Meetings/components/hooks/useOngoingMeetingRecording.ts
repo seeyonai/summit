@@ -28,6 +28,7 @@ const PRODUCTION_TRANSCRIPTION_API_BASE = '/live/';
 const DEFAULT_TRANSCRIPTION_API_BASE = isDev ? 'http://localhost:2592/' : PRODUCTION_TRANSCRIPTION_API_BASE;
 const TRANSCRIPTION_API_BASE = import.meta.env.VITE_TRANSCRIPTION_API_BASE || DEFAULT_TRANSCRIPTION_API_BASE;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getLiveServiceUrlFromEnv = (): string | undefined => {
   const env = import.meta.env as Record<string, string | undefined>;
   const unprefixed = env?.LIVE_SERVICE_URL?.trim();
@@ -82,7 +83,7 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
       const endpoint = new URL('api/ws', TRANSCRIPTION_API_BASE);
       const protocol = endpoint.protocol === 'https:' ? 'wss:' : 'ws:';
       return `${protocol}//${endpoint.host}${endpoint.pathname}${endpoint.search}`;
-    } catch (error) {
+    } catch {
       return 'ws://localhost:2592/api/ws';
     }
   }, []);
@@ -279,7 +280,7 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
             console.log('Chunk acknowledged by server:', data.chunkSize, 'bytes, total:', data.totalChunks);
             break;
             
-          case 'recording_saved':
+          case 'recording_saved': {
             setStatus('completed');
             const recordingInfo = {
               downloadUrl: data.downloadUrl,
@@ -295,7 +296,8 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
               onRecordingComplete(recordingInfo);
             }
             break;
-            
+          }
+
           case 'error':
             setStatus('error');
             setMessage(`Error: ${data.message}`);

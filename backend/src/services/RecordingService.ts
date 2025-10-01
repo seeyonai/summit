@@ -8,7 +8,6 @@ import { recordingDocumentToResponse, meetingDocumentToMeeting } from '../utils/
 import { SegmentationService } from './SegmentationService';
 import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
 import type { JsonRequestOptions } from '../utils/httpClient';
-import { getMeetingById as getMeetingByIdService } from './MeetingService';
 import { getFilesBaseDir, makeRelativeToBase, resolveExistingPathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
 import { getMimeType, normalizeTranscriptText } from '../utils/recordingHelpers';

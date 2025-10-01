@@ -32,7 +32,7 @@ function AdviceDialog({
       setCopied(true);
       toast.success('建议已复制到剪贴板');
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast.error('复制失败');
     }
   }, [advice]);

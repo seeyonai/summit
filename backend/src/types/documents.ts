@@ -5,7 +5,6 @@ import {
   MeetingStatus,
   Recording,
   TodoItem,
-  Hotword,
 } from '../types';
 
 export interface MeetingDocument extends Document {

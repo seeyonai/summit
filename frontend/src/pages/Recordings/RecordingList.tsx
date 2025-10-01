@@ -3,19 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiService } from '@/services/api';
 import { recordingPanelBus } from '@/services/recordingPanelBus';
 import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
 import { formatDuration, formatFileSize } from '@/utils/formatHelpers';
-import type { Recording, Meeting } from '@/types';
+import type { Recording } from '@/types';
 import RecordingCard from '@/components/RecordingCard';
 import RecordingListItem from '@/components/RecordingListItem';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
-import { useMeetings } from '@/hooks/useMeetings';
 import {
   MicIcon,
   SearchIcon,

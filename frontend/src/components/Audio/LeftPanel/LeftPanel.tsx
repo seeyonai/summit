@@ -7,7 +7,6 @@ interface LeftPanelProps {
   title: string;
   agenda: string;
   showAgenda: boolean;
-  isDarkMode: boolean;
   onPauseToggle: () => void;
   isPaused: boolean;
   isRecording: boolean;
@@ -29,7 +28,6 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
   title,
   agenda,
   showAgenda,
-  isDarkMode,
   onPauseToggle,
   isPaused,
   isRecording,

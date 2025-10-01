@@ -1,16 +1,10 @@
 import { Router, Request, Response } from 'express';
 import meetingService from '../services/MeetingService';
 import transcriptExtractionService from '../services/TranscriptExtractionService';
-import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../types';
+import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse } from '../types';
 import recordingService from '../services/RecordingService';
 
 const router = Router();
-
-type RecordingPayload = Omit<Recording, '_id' | 'createdAt' | 'updatedAt'> & {
-  _id: string;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-};
 
 const toIsoString = (value?: Date | string): string | undefined => {
   if (!value) {
@@ -32,9 +26,9 @@ const serializeMeeting = (meeting: Meeting) => ({
   createdAt: toIsoString(meeting.createdAt),
   updatedAt: toIsoString(meeting.updatedAt),
   scheduledStart: toIsoString(meeting.scheduledStart),
-  // @ts-ignore
+  // @ts-expect-error - Type mismatch between expected and actual recording type
   recordings: meeting.recordings?.map(serializeRecording) || [],
-  // @ts-ignore
+  // @ts-expect-error - Type mismatch between expected and actual recording type
   combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
 });
 
@@ -262,9 +256,9 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
 ---
 *此纪要由AI自动生成，仅供参考。*`;
     
-    const updatedMeeting = await meetingService.updateMeeting(meetingId, { 
+    await meetingService.updateMeeting(meetingId, {
       _id: meeting._id,
-      finalTranscript: meeting.finalTranscript 
+      finalTranscript: meeting.finalTranscript
     } as any);
     
     res.json({
@@ -281,7 +275,8 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
 // Generate AI advice for a todo item
 router.post('/:meetingId/todo-advice', async (req: Request, res: Response) => {
   try {
-    const { meetingId } = req.params;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { meetingId } = req.params; // TODO: Use meetingId for context in AI advice generation
     const { todoText } = req.body;
     
     if (!todoText) {

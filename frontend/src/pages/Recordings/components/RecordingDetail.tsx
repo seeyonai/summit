@@ -5,11 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import HotwordSelection from '@/components/HotwordSelection';
-import type { Recording, Meeting } from '@/types';
+import type { Recording } from '@/types';
 import { apiService, apiUrl } from '@/services/api';
 import RecordingTranscription from './RecordingTranscription';
 import RecordingAlignment from './RecordingAlignment';
@@ -19,17 +18,12 @@ import RecordingOrganize from './RecordingOrganize';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
 import {
   ArrowLeftIcon,
-  EditIcon,
-  XIcon,
   SaveIcon,
   LinkIcon,
   CalendarIcon,
   ClockIcon,
   FileAudioIcon,
   AlertCircleIcon,
-  MoreVerticalIcon,
-  DownloadIcon,
-  ShareIcon,
   HeadphonesIcon,
   ActivityIcon,
   BarChart3Icon,

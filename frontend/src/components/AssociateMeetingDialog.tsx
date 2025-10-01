@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Link2Icon } from 'lucide-react';
-import type { Meeting, Recording } from '@/types';
+import type { Recording } from '@/types';
 import { apiService } from '@/services/api';
 import { useMeetings } from '@/hooks/useMeetings';
 

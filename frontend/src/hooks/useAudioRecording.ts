@@ -184,7 +184,7 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       }));
       cleanup();
     }
-  }, [cleanup, options.wsUrl, options.onRecordingComplete]);
+  }, [cleanup, options]);
 
   const stopRecording = useCallback(() => {
     cleanup();

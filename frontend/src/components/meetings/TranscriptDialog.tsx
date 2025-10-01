@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, Copy, CheckCheck } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -26,9 +26,10 @@ function TranscriptDialog({
 }: TranscriptDialogProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  const recordingsToShow = showCombinedRecording && combinedRecording
-    ? [combinedRecording]
-    : recordings;
+  const recordingsToShow = useMemo(() =>
+    showCombinedRecording && combinedRecording
+      ? [combinedRecording]
+      : recordings, [showCombinedRecording, combinedRecording, recordings]);
 
   const handleCopy = useCallback(async (text: string, index: number) => {
     try {
@@ -36,7 +37,7 @@ function TranscriptDialog({
       setCopiedIndex(index);
       toast.success('转录内容已复制到剪贴板');
       setTimeout(() => setCopiedIndex(null), 2000);
-    } catch (error) {
+    } catch {
       toast.error('复制失败');
     }
   }, []);

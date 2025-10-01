@@ -17,10 +17,11 @@ function MeetingMembers({ meetingId, ownerId, members = [], onChanged }: Meeting
   const [ownerUser, setOwnerUser] = useState<UserListItem | null>(null);
   const [q, setQ] = useState('');
   const [results, setResults] = useState<UserListItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const isOwner = !!currentUser && ownerId === currentUser._id;
 
   const memberIds = useMemo(() => new Set(members.map((m) => m)), [members]);
+  const membersString = useMemo(() => members.join(','), [members]);
 
   useEffect(() => {
     // Fetch owner + members basic info
@@ -31,14 +32,14 @@ function MeetingMembers({ meetingId, ownerId, members = [], onChanged }: Meeting
     setLoading(true);
     api<{ users: UserListItem[] }>(`/api/users?ids=${ids.join(',')}`)
       .then((data) => {
-        const list: UserListItem[] = (data?.users || []).map((u: any) => ({ _id: u._id, email: u.email, name: u.name, role: u.role }));
+        const list: UserListItem[] = (data?.users || []).map((u: { _id: string; email: string; name: string; role: string }) => ({ _id: u._id, email: u.email, name: u.name, role: u.role }));
         const owner = list.find((u) => u._id === ownerId) || null;
         const membersOnly = list.filter((u) => u._id !== ownerId);
         setOwnerUser(owner);
         setMemberUsers(membersOnly);
       })
       .finally(() => setLoading(false));
-  }, [meetingId, ownerId, members.join(',')]);
+  }, [meetingId, ownerId, members, membersString]);
 
   useEffect(() => {
     let active = true;

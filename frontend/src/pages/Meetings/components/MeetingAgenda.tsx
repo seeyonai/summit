@@ -1,8 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Clock,
-  Users,
+import {
   CheckCircle2,
   Circle,
   Target

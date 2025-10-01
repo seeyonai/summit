@@ -16,19 +16,12 @@ interface AiActionsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onActionSelect: (option: string) => void;
-  themeClasses: {
-    text: {
-      primary: string;
-      secondary: string;
-    };
-  };
 }
 
 const AiActionsDialog: React.FC<AiActionsDialogProps> = ({
   open,
   onOpenChange,
-  onActionSelect,
-  themeClasses
+  onActionSelect
 }) => {
   const aiOptions = [
     { id: '梳理议程', title: '梳理议程', description: '整理和优化会议议程结构', icon: Target, color: 'blue' },

@@ -5,7 +5,7 @@ export function buildWsUrl(path: string): string {
     return `ws://localhost:2591${normalizedPath}`;
   }
 
-  const isDev = (import.meta as any)?.env?.DEV || window.location.port === '2590';
+  const isDev = (import.meta as { env?: { DEV?: boolean } })?.env?.DEV || window.location.port === '2590';
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = isDev ? `${window.location.hostname}:2591` : window.location.host;
 

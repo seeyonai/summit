@@ -140,7 +140,9 @@ export function fileUrlFor(pathOrFilename: string): string {
       const sep = base.includes('?') ? '&' : '?';
       return `${base}${sep}token=${encodeURIComponent(token)}`;
     }
-  } catch {}
+  } catch {
+    // Ignore URL parsing errors
+  }
   return base;
 }
 
@@ -272,7 +274,9 @@ class ApiService {
         if (token) {
           xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         }
-      } catch {}
+      } catch {
+    // Ignore URL parsing errors
+  }
       xhr.send(formData);
     });
   }

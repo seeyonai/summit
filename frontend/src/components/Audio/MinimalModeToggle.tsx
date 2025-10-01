@@ -5,18 +5,11 @@ import { Expand } from 'lucide-react';
 interface MinimalModeToggleProps {
   isDarkMode: boolean;
   onExitMinimal: () => void;
-  themeClasses: {
-    text: {
-      primary: string;
-      secondary: string;
-    };
-  };
 }
 
 const MinimalModeToggle: React.FC<MinimalModeToggleProps> = ({
   isDarkMode,
-  onExitMinimal,
-  themeClasses
+  onExitMinimal
 }) => {
   return (
     <div className="fixed top-4 right-4 z-60">

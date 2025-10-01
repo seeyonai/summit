@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ThemeProvider, Header } from './layout';
@@ -37,7 +37,7 @@ function AppContent() {
     if (isRecording) {
       toggleFloatingPanel();
     }
-  }, [isRecording]);
+  }, [isRecording, toggleFloatingPanel]);
 
   // Listen to cross-app recording panel events
   useEffect(() => {

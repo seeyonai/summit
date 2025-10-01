@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { Edit, Trash2 } from 'lucide-react';
 import type { Hotword } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';

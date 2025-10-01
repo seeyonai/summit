@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-expect-error - Seed data file may have type issues that are acceptable for data seeding
 import { ObjectId } from 'mongodb';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument, HotwordDocument, RecordingDocument } from '../types/documents';

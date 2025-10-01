@@ -14,7 +14,7 @@ function Profile() {
 
   useEffect(() => {
     setName(user?.name || '');
-  }, [user?._id]);
+  }, [user?.name, user?._id]);
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
@@ -22,7 +22,7 @@ function Profile() {
       setSaving(true);
       await updateProfile({ name });
       toast.success('Profile updated');
-    } catch (err) {
+    } catch {
       // api layer will toast errors
     } finally {
       setSaving(false);
@@ -46,7 +46,7 @@ function Profile() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (err) {
+    } catch {
       // api layer will toast errors
     } finally {
       setSavingPwd(false);

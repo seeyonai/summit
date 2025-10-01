@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Mic, FileAudio, Play, Pause, Volume2 } from 'lucide-react';
+import { Mic, FileAudio, Volume2 } from 'lucide-react';
 import AudioPlayer from '@/components/AudioPlayer';
 import { cn } from '@/lib/utils';
 

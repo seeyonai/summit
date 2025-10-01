@@ -2,7 +2,6 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
 import { SearchIcon, FilterIcon, GridIcon, ListIcon, RefreshCwIcon } from 'lucide-react';
 
 interface HotwordToolbarProps {
@@ -39,7 +38,7 @@ function HotwordToolbar({
         </div>
 
         <div className="flex gap-2 items-center">
-          <Select value={statusFilter} onValueChange={(v: any) => onStatusFilterChange(v)}>
+          <Select value={statusFilter} onValueChange={(v: string) => onStatusFilterChange(v)}>
             <SelectTrigger className="w-[180px] h-11">
               <FilterIcon className="w-4 h-4 mr-2" />
               <SelectValue placeholder="筛选状态" />

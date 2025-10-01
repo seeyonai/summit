@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,14 +16,11 @@ import AdviceDialog from "@/components/meetings/AdviceDialog";
 import MeetingMembers from "@/components/MeetingMembers";
 import {
   ArrowLeftIcon,
-  EditIcon,
   TrashIcon,
-  MoreVerticalIcon,
   CalendarIcon,
   ClockIcon,
   UsersIcon,
   AlertCircleIcon,
-  MicIcon,
   PlayIcon,
   PauseIcon,
   BrainIcon,
@@ -108,7 +105,7 @@ function MeetingDetail() {
   }, [searchParams, setSearchParams]);
 
   const handleMeetingRecordingComplete = useCallback(
-    (recordingInfo: any) => {
+    (recordingInfo: { id: string; status: string }) => {
       // Handle recording completion
       handleRecordingComplete(recordingInfo);
       setSuccess("Recording saved successfully!");

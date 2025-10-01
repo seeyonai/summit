@@ -29,14 +29,11 @@ import {
   AlertCircleIcon,
   FileTextIcon,
   ActivityIcon,
-  SparklesIcon,
   FolderOpenIcon,
   TrashIcon,
-  EditIcon,
   PlayIcon,
   EyeIcon,
-  TargetIcon,
-  TrendingUpIcon
+  TargetIcon
 } from 'lucide-react';
 
 function MeetingList() {
@@ -177,7 +174,6 @@ function MeetingList() {
 
   const MeetingCard = ({ meeting }: { meeting: Meeting }) => {
     const StatusIcon = getStatusIcon(meeting.status);
-    const completedTodos = meeting.parsedTodos?.filter(t => t.completed).length || 0;
     const totalTodos = meeting.parsedTodos?.length || 0;
 
     return (

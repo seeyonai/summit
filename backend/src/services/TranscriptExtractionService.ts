@@ -193,7 +193,7 @@ class TranscriptExtractionService {
       transcriptLines.push('');
       
       // Format each speech segment
-      allSpeeches.forEach((speech, index) => {
+      allSpeeches.forEach((speech) => {
         const startTime = this.formatTime(speech.startTime);
         const endTime = this.formatTime(speech.endTime);
         const speakerLabel = `发言人 ${speech.speakerIndex + 1}`;

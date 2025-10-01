@@ -13,13 +13,12 @@ import {
   TrendingUpIcon,
   ClockIcon,
   AlertCircleIcon,
-  LightbulbIcon,
-  ChevronRightIcon
+  LightbulbIcon
 } from 'lucide-react';
 
 interface MeetingTasksProps {
   meeting: Meeting;
-  onGenerateAdvice: (todo: any) => void;
+  onGenerateAdvice: (todo: { id?: string; text: string; completed?: boolean }) => void;
   generatingAdvice: Record<string, boolean>;
 }
 

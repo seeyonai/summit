@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { searchUsers, type UserListItem } from '@/services/users';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ function AdminUsers() {
     }
   };
 
-  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [q]);
+  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [q, load]);
 
   const updateRole = async (id: string, role: 'admin' | 'user') => {
     await api(`/api/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) });

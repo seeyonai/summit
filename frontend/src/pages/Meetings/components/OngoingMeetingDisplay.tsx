@@ -25,7 +25,7 @@ import LiveTranscript from './LiveTranscript';
 interface OngoingMeetingDisplayProps {
   meeting: MeetingWithRecordings;
   onClose: () => void;
-  onRecordingComplete?: (recordingInfo: any) => void;
+  onRecordingComplete?: (recordingInfo: { filename: string; duration: number }) => void;
 }
 
 function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: OngoingMeetingDisplayProps) {
@@ -39,7 +39,6 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
     status,
     message,
     isTranscriptionConnected,
-    transcriptionStatus,
     transcriptSegments,
     partialSegment,
     transcriptionStats,

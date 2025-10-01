@@ -3,7 +3,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Download, Upload } from 'lucide-react';
 import type { Hotword } from '@/types';
-import { exportHotwords } from '@/utils/hotwords';
 
 interface HotwordBulkActionsProps {
   hotwords: Hotword[];

@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-import { DownloadIcon } from 'lucide-react';
 import type { Recording as BaseRecording } from '@base/types';
 import { fileUrlFor } from '@/services/api';
 
@@ -17,14 +16,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ recording, onTimestampClick }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return '-';
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    if (bytes === 0) return '0 B';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   const handleSeek = (time: number) => {

@@ -12,8 +12,7 @@ import type { Meeting, MeetingStatus } from '@/types';
 import {
   ArrowLeftIcon,
   SaveIcon,
-  AlertCircleIcon,
-  CheckCircleIcon
+  AlertCircleIcon
 } from 'lucide-react';
 
 function MeetingEdit() {
