@@ -37,9 +37,9 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
   const completionRate = todos.length > 0 ? (completedCount / todos.length) * 100 : 0;
 
   const priorityColors = {
-    high: 'bg-red-100 text-red-800 border-red-300',
-    medium: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    low: 'bg-green-100 text-green-800 border-green-300'
+    high: 'bg-badge-destructive',
+    medium: 'bg-badge-warning',
+    low: 'bg-badge-success'
   };
 
   const priorityIcons = {
@@ -56,10 +56,10 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">总任务数</p>
+                <p className="text-sm text-muted-foreground">总任务数</p>
                 <p className="text-2xl font-bold">{todos.length}</p>
               </div>
-              <TargetIcon className="w-8 h-8 text-blue-500" />
+              <TargetIcon className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -68,10 +68,10 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">已完成</p>
-                <p className="text-2xl font-bold text-green-600">{completedCount}</p>
+                <p className="text-sm text-muted-foreground">已完成</p>
+                <p className="text-2xl font-bold text-success">{completedCount}</p>
               </div>
-              <CheckCircleIcon className="w-8 h-8 text-green-500" />
+              <CheckCircleIcon className="w-8 h-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -80,10 +80,10 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">待处理</p>
-                <p className="text-2xl font-bold text-orange-600">{pendingCount}</p>
+                <p className="text-sm text-muted-foreground">待处理</p>
+                <p className="text-2xl font-bold text-warning">{pendingCount}</p>
               </div>
-              <CircleIcon className="w-8 h-8 text-orange-500" />
+              <CircleIcon className="w-8 h-8 text-warning" />
             </div>
           </CardContent>
         </Card>
@@ -92,10 +92,10 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">完成率</p>
+                <p className="text-sm text-muted-foreground">完成率</p>
                 <p className="text-2xl font-bold">{completionRate.toFixed(0)}%</p>
               </div>
-              <TrendingUpIcon className="w-8 h-8 text-purple-500" />
+              <TrendingUpIcon className="w-8 h-8 text-accent" />
             </div>
           </CardContent>
         </Card>
@@ -111,32 +111,32 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
           <div className="space-y-4">
             <Progress value={completionRate} className="h-4" />
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">开始</span>
-              <span className="font-medium text-gray-900">{completionRate.toFixed(1)}% 完成</span>
-              <span className="text-gray-600">完成</span>
+              <span className="text-muted-foreground">开始</span>
+              <span className="font-medium text-foreground">{completionRate.toFixed(1)}% 完成</span>
+              <span className="text-muted-foreground">完成</span>
             </div>
             
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-4 pt-4 border-t">
               <div className="text-center">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <AlertCircleIcon className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <AlertCircleIcon className="w-6 h-6 text-destructive" />
                 </div>
-                <p className="text-sm text-gray-600">高优先级</p>
+                <p className="text-sm text-muted-foreground">高优先级</p>
                 <p className="font-semibold">{todos.filter(t => t.priority === 'high').length}</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <ClockIcon className="w-6 h-6 text-yellow-600" />
+                <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <ClockIcon className="w-6 h-6 text-warning" />
                 </div>
-                <p className="text-sm text-gray-600">中优先级</p>
+                <p className="text-sm text-muted-foreground">中优先级</p>
                 <p className="font-semibold">{todos.filter(t => t.priority === 'medium').length}</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <CheckCircleIcon className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <CheckCircleIcon className="w-6 h-6 text-success" />
                 </div>
-                <p className="text-sm text-gray-600">低优先级</p>
+                <p className="text-sm text-muted-foreground">低优先级</p>
                 <p className="font-semibold">{todos.filter(t => t.priority === 'low').length}</p>
               </div>
             </div>
@@ -187,8 +187,8 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
                     key={todo.id}
                     className={`group p-4 rounded-lg border-2 transition-all duration-200 ${
                       todo.completed 
-                        ? 'bg-gray-50 border-gray-200' 
-                        : 'bg-white hover:shadow-md border-gray-200 hover:border-blue-300'
+                        ? 'bg-muted border-border' 
+                        : 'bg-background hover:shadow-md border-border hover:border-primary'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -200,7 +200,7 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                           <p className={`font-medium ${
-                            todo.completed ? 'text-gray-500 line-through' : 'text-gray-900'
+                            todo.completed ? 'text-muted-foreground line-through' : 'text-foreground'
                           }`}>
                             {todo.text}
                           </p>
@@ -216,12 +216,12 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
                           )}
                         </div>
                         {todo.assignee && (
-                          <p className="text-sm text-gray-600 mb-1">
+                          <p className="text-sm text-muted-foreground mb-1">
                             负责人: {todo.assignee}
                           </p>
                         )}
                         {todo.dueDate && (
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             截止日期: {new Date(todo.dueDate).toLocaleDateString('zh-CN')}
                           </p>
                         )}
@@ -236,7 +236,7 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
                         >
                           {todo.id && generatingAdvice[todo.id] ? (
                             <>
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2" />
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2" />
                               生成中...
                             </>
                           ) : (
@@ -254,14 +254,14 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TargetIcon className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <TargetIcon className="w-8 h-8 text-muted-foreground" />
               </div>
-              <p className="text-gray-500 mb-2">
+              <p className="text-muted-foreground mb-2">
                 {filter === 'all' ? '暂无任务' : 
                  filter === 'completed' ? '暂无已完成的任务' : '暂无待处理的任务'}
               </p>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 任务将从会议转录中自动提取
               </p>
             </div>
@@ -278,12 +278,12 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-gradient-to-br from-blue-50/20 to-purple-50/20 rounded-lg border border-blue-200/50">
+              <div className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border border-primary/30">
                 <div className="flex items-center gap-3 mb-3">
-                  <LightbulbIcon className="w-6 h-6 text-blue-600" />
-                  <h4 className="font-semibold text-gray-900">效率建议</h4>
+                  <LightbulbIcon className="w-6 h-6 text-primary" />
+                  <h4 className="font-semibold text-foreground">效率建议</h4>
                 </div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-muted-foreground">
                   {completionRate < 30 
                     ? '任务完成率较低，建议优先处理高优先级任务'
                     : completionRate < 70
@@ -292,12 +292,12 @@ function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTa
                 </p>
               </div>
               
-              <div className="p-4 bg-gradient-to-br from-green-50/20 to-emerald-50/20 rounded-lg border border-green-200/50">
+              <div className="p-4 bg-gradient-to-br from-success/10 to-success/10 rounded-lg border border-success/30">
                 <div className="flex items-center gap-3 mb-3">
-                  <TrendingUpIcon className="w-6 h-6 text-green-600" />
-                  <h4 className="font-semibold text-gray-900">进度预测</h4>
+                  <TrendingUpIcon className="w-6 h-6 text-success" />
+                  <h4 className="font-semibold text-foreground">进度预测</h4>
                 </div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-muted-foreground">
                   按当前进度，预计还需要 {Math.ceil(pendingCount / Math.max(completedCount, 1))} 个工作日完成所有任务
                 </p>
               </div>

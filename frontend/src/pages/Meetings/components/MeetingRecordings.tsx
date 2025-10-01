@@ -28,10 +28,10 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">录音总数</p>
+                <p className="text-sm text-muted-foreground">录音总数</p>
                 <p className="text-2xl font-bold">{recordings.length}</p>
               </div>
-              <MicIcon className="w-8 h-8 text-blue-500" />
+              <MicIcon className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -40,12 +40,12 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">总时长</p>
+                <p className="text-sm text-muted-foreground">总时长</p>
                 <p className="text-2xl font-bold">
                   {formatDuration(recordings.reduce<number>((acc, r) => acc + (r.duration || 0), 0))}
                 </p>
               </div>
-              <ClockIcon className="w-8 h-8 text-blue-500" />
+              <ClockIcon className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -54,12 +54,12 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">已转录</p>
+                <p className="text-sm text-muted-foreground">已转录</p>
                 <p className="text-2xl font-bold">
                   {recordings.filter((r) => Boolean(r.transcription)).length}
                 </p>
               </div>
-              <FileAudioIcon className="w-8 h-8 text-green-500" />
+              <FileAudioIcon className="w-8 h-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -68,12 +68,12 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">合并状态</p>
+                <p className="text-sm text-muted-foreground">合并状态</p>
                 <p className="text-2xl font-bold">
                   {combinedRecording ? '已合并' : '未合并'}
                 </p>
               </div>
-              <LinkIcon className="w-8 h-8 text-purple-500" />
+              <LinkIcon className="w-8 h-8 text-accent" />
             </div>
           </CardContent>
         </Card>
@@ -113,9 +113,9 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
         ) : (
           <Card className="p-12">
             <div className="text-center">
-              <MicIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-2">暂无录音</p>
-              <p className="text-sm text-gray-400">
+              <MicIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-2">暂无录音</p>
+              <p className="text-sm text-muted-foreground">
                 会议进行中可以开始录音
               </p>
             </div>

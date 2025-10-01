@@ -53,7 +53,7 @@ export class LiveRecorderService {
       // Send ready message to client
       ws.send(JSON.stringify({
         type: 'ready',
-        message: 'Ready to receive audio chunks',
+        message: '准备接收音频数据',
         recordingId,
         filename
       }));
@@ -75,7 +75,7 @@ export class LiveRecorderService {
 
       ws.send(JSON.stringify({
         type: 'ready',
-        message: 'Ready to receive audio chunks'
+        message: '准备接收音频数据'
       }));
     });
   }
@@ -101,7 +101,7 @@ export class LiveRecorderService {
       console.error(`Error handling audio chunk for recording ${recordingId}:`, error);
       recording.ws.send(JSON.stringify({
         type: 'error',
-        message: 'Failed to process audio chunk'
+        message: '音频数据处理失败'
       }));
     }
   }
@@ -209,7 +209,7 @@ export class LiveRecorderService {
       try {
         recording.ws.send(JSON.stringify({
           type: 'error',
-          message: 'Failed to save recording'
+          message: '录音保存失败'
         }));
       } catch (wsError) {
         console.error('Error sending error message:', wsError);

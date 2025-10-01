@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import SearchInput from '@/components/SearchInput';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,7 +21,7 @@ import {
   Clock,
   CheckCircle,
   PlusIcon,
-  SearchIcon,
+  
   FilterIcon,
   RefreshCwIcon,
   GridIcon,
@@ -147,11 +148,11 @@ function MeetingList() {
 
   const getStatusColor = (status: MeetingStatus) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
-      case 'in_progress': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
-      case 'completed': return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
-      case 'failed': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
-      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
+      case 'scheduled': return 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary/80';
+      case 'in_progress': return 'bg-success/10 dark:bg-success/20 text-success dark:text-success/80';
+      case 'completed': return 'bg-muted text-muted-foreground';
+      case 'failed': return 'bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive/80';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -180,7 +181,7 @@ function MeetingList() {
 
     return (
       <Card 
-        className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-gray-200 hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-400 overflow-hidden"
+        className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-border hover:border-primary dark:border-border dark:hover:border-primary overflow-hidden"
         onClick={() => navigate(`/meetings/${meeting._id}`)}
       >
         <CardHeader className="pb-3">
@@ -203,8 +204,8 @@ function MeetingList() {
         <CardContent className="space-y-4">
           {/* Meeting Summary */}
           {meeting.summary && (
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">
+            <div className="p-3 bg-muted dark:bg-muted rounded-lg">
+              <p className="text-xs text-foreground dark:text-foreground line-clamp-2">
                 {meeting.summary}
               </p>
             </div>
@@ -213,21 +214,21 @@ function MeetingList() {
   
           {/* Meeting Info */}
           <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
               <Users className="w-3 h-3" />
               <span>{meeting.participants || 0} 人</span>
             </div>
-            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
               <Mic className="w-3 h-3" />
               <span>{meeting.recordings?.length || 0} 录音</span>
             </div>
             {totalTodos > 0 ? (
-              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
                 <TargetIcon className="w-3 h-3" />
                 <span>{totalTodos} 任务</span>
               </div>
             ) : meeting.agenda && meeting.agenda.length > 0 ? (
-              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
                 <FileTextIcon className="w-3 h-3" />
                 <span>{meeting.agenda.length} 议程</span>
               </div>
@@ -252,7 +253,7 @@ function MeetingList() {
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/30 dark:hover:bg-green-800/30 dark:text-green-400"
+                className="bg-success/10 hover:bg-success/20 text-success dark:bg-success/20 dark:hover:bg-success/30 dark:text-success/80"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/meetings/${meeting._id}`);
@@ -264,7 +265,7 @@ function MeetingList() {
             <Button
               size="sm"
               variant="outline"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
+              className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 dark:hover:bg-destructive/20"
               onClick={(e) => deleteMeeting(meeting._id, e)}
             >
               <TrashIcon className="w-3 h-3" />
@@ -282,15 +283,15 @@ function MeetingList() {
 
     return (
       <div 
-        className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-400 hover:shadow-md transition-all duration-300 p-4 cursor-pointer"
+        className="group bg-background dark:bg-background rounded-lg border border-border hover:border-primary dark:border-border dark:hover:border-primary hover:shadow-md transition-all duration-300 p-4 cursor-pointer"
         onClick={() => navigate(`/meetings/${meeting._id}`)}
       >
         <div className="flex items-center gap-4">
           {/* Status Icon */}
           <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-            meeting.status === 'in_progress' ? 'bg-gradient-to-r from-green-500/80 to-green-600/80' :
-            meeting.status === 'completed' ? 'bg-gradient-to-r from-gray-400/80 to-gray-500/80' :
-            'bg-gradient-to-r from-primary/80 to-blue-500/80'
+            meeting.status === 'in_progress' ? 'bg-gradient-to-r from-success/80 to-success/90' :
+            meeting.status === 'completed' ? 'bg-gradient-to-r from-muted/80 to-muted/90' :
+            'bg-gradient-to-r from-primary/80 to-primary/90'
           } text-white`}>
             <StatusIcon className="w-5 h-5" />
           </div>
@@ -298,17 +299,17 @@ function MeetingList() {
           {/* Meeting Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{meeting.title}</h3>
+              <h3 className="font-semibold text-foreground dark:text-foreground truncate">{meeting.title}</h3>
               <Badge variant="outline" className={getStatusColor(meeting.status)}>
                 {getStatusText(meeting.status)}
               </Badge>
               {totalTodos > 0 && (
-                <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
+                <Badge variant="secondary" className="bg-success/10 text-success text-xs dark:bg-success/20 dark:text-success/80">
                   {completedTodos}/{totalTodos} 任务
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {formatDate(meeting.scheduledStart)}
@@ -323,7 +324,7 @@ function MeetingList() {
               </span>
             </div>
             {meeting.summary && (
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
+              <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground line-clamp-1">
                 {meeting.summary}
               </p>
             )}
@@ -335,7 +336,7 @@ function MeetingList() {
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                className="text-success hover:text-success/80 hover:bg-success/10"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/meetings/${meeting._id}`);
@@ -347,12 +348,12 @@ function MeetingList() {
             <Button
               size="sm"
               variant="ghost"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
+              className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 dark:hover:bg-destructive/20"
               onClick={(e) => deleteMeeting(meeting._id, e)}
             >
               <TrashIcon className="w-4 h-4" />
             </Button>
-            <ChevronRightIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <ChevronRightIcon className="w-4 h-4 text-muted-foreground dark:text-muted-foreground" />
           </div>
         </div>
       </div>
@@ -362,18 +363,17 @@ function MeetingList() {
   return (
     <div className="space-y-8">
         {/* Header Section with Stats */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/90 to-blue-600/90 p-8 text-white shadow-xl">
-          <div className="absolute inset-0 bg-black/10" />
-          <div className="relative z-10">
+        <div className="page-header">
+          <div className="page-header-content">
             <div className="flex justify-between items-start mb-6">
-              <div>
-                <h1 className="text-4xl font-bold mb-2">会议</h1>
-                <p className="text-blue-100 text-lg">智能管理您的会议记录和任务进度</p>
+              <div className="page-header-title">
+                <h1>会议</h1>
+                <p>智能管理您的会议记录和任务进度</p>
               </div>
               <Button
                 onClick={() => setShowCreateModal(true)}
                 size="lg"
-                className="bg-white text-blue-600 hover:bg-blue-50 transition-all duration-300 shadow-lg"
+                className="bg-background text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg"
               >
                 <PlusIcon className="w-5 h-5 mr-2" />
                 创建会议
@@ -381,109 +381,103 @@ function MeetingList() {
             </div>
             
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">总会议数</p>
-                    <p className="text-2xl font-bold">{stats.total}</p>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-info">
+                    <p className="stat-label">总会议数</p>
+                    <p className="stat-value">{stats.total}</p>
                   </div>
-                  <FolderOpenIcon className="w-8 h-8 text-blue-200" />
+                  <FolderOpenIcon className="stat-icon" />
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">进行中</p>
-                    <p className="text-2xl font-bold">{stats.inProgressCount}</p>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-info">
+                    <p className="stat-label">进行中</p>
+                    <p className="stat-value">{stats.inProgressCount}</p>
                   </div>
-                  <ActivityIcon className="w-8 h-8 text-green-300" />
+                  <ActivityIcon className="stat-icon" />
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">任务完成率</p>
-                    <p className="text-2xl font-bold">{stats.todoCompletionRate.toFixed(0)}%</p>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-info">
+                    <p className="stat-label">任务完成率</p>
+                    <p className="stat-value">{stats.todoCompletionRate.toFixed(0)}%</p>
                   </div>
-                  <TargetIcon className="w-8 h-8 text-purple-200" />
+                  <TargetIcon className="stat-icon" />
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">总录音数</p>
-                    <p className="text-2xl font-bold">{stats.totalRecordings}</p>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-info">
+                    <p className="stat-label">总录音数</p>
+                    <p className="stat-value">{stats.totalRecordings}</p>
                   </div>
-                  <Mic className="w-8 h-8 text-pink-200" />
+                  <Mic className="stat-icon" />
                 </div>
               </div>
             </div>
           </div>
           
           {/* Decorative elements */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+          <div className="header-decoration header-decoration-top-right" />
+          <div className="header-decoration header-decoration-bottom-left" />
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="搜索会议标题或概要..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 h-11 border-gray-200 focus:border-blue-500 dark:border-gray-600 dark:focus:border-blue-400 transition-colors"
-              />
-            </div>
+        <div className="flex flex-col lg:flex-row gap-4">
+          <SearchInput
+            className="flex-1"
+            placeholder="搜索会议标题或概要..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+          
+          <div className="flex gap-2 items-center">
+            <Select value={filterStatus} onValueChange={(value: 'all' | 'scheduled' | 'in_progress' | 'completed') => setFilterStatus(value)}>
+              <SelectTrigger className="w-[180px] h-11">
+                <FilterIcon className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="筛选状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部会议</SelectItem>
+                <SelectItem value="scheduled">已排期</SelectItem>
+                <SelectItem value="in_progress">进行中</SelectItem>
+                <SelectItem value="completed">已完成</SelectItem>
+              </SelectContent>
+            </Select>
             
-            <div className="flex gap-2 items-center">
-              <Select value={filterStatus} onValueChange={(value: 'all' | 'scheduled' | 'in_progress' | 'completed') => setFilterStatus(value)}>
-                <SelectTrigger className="w-[180px] h-11">
-                  <FilterIcon className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="筛选状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部会议</SelectItem>
-                  <SelectItem value="scheduled">已排期</SelectItem>
-                  <SelectItem value="in_progress">进行中</SelectItem>
-                  <SelectItem value="completed">已完成</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  onClick={() => setViewMode('grid')}
-                  className="rounded-r-none"
-                >
-                  <GridIcon className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  onClick={() => setViewMode('list')}
-                  className="rounded-l-none"
-                >
-                  <ListIcon className="w-4 h-4" />
-                </Button>
-              </div>
-              
+            <div className="flex border border-border dark:border-border rounded-lg">
               <Button
-                onClick={refetch}
-                variant="outline"
-                size="default"
-                className="h-11"
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('grid')}
+                className="rounded-r-none"
               >
-                <RefreshCwIcon className="w-4 h-4 mr-2" />
-                刷新
+                <GridIcon className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('list')}
+                className="rounded-l-none"
+              >
+                <ListIcon className="w-4 h-4" />
               </Button>
             </div>
+            
+            <Button
+              onClick={refetch}
+              variant="outline"
+              size="default"
+              className="h-11"
+            >
+              <RefreshCwIcon className="w-4 h-4 mr-2" />
+              刷新
+            </Button>
           </div>
         </div>
 
@@ -535,13 +529,13 @@ function MeetingList() {
         {!loading && !error && filteredMeetings.length === 0 && (
           <Card className="p-12">
             <div className="text-center">
-              <div className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4">
+              <div className="mx-auto h-12 w-12 text-muted-foreground dark:text-muted-foreground mb-4">
                 <Calendar className="w-full h-full" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              <h3 className="text-lg font-medium text-foreground dark:text-foreground mb-2">
                 {searchQuery || filterStatus !== 'all' ? '没有找到匹配的会议' : '暂无会议'}
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-6">
+              <p className="text-muted-foreground dark:text-muted-foreground mb-6">
                 {searchQuery || filterStatus !== 'all' 
                   ? '尝试调整搜索条件或筛选器'
                   : '点击"创建会议"开始您的第一个会议'}

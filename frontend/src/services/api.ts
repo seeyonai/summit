@@ -1,4 +1,4 @@
-import type { Meeting, MeetingWithRecordings, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment } from '@/types';
+import type { Meeting, MeetingWithRecordings, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment, AppCustomization } from '@/types';
 import { toast } from 'sonner';
 
 type ErrorPayload = {
@@ -121,6 +121,11 @@ export async function api<T = unknown>(endpoint: string, options: RequestInit = 
     throw createApiError(payload, response.status);
   }
 
+  // Show success toast for mutations with a message
+  if (MUTATION_METHODS.has(method) && isRecord(body) && typeof body.message === 'string' && body.message.trim().length > 0) {
+    toast.success(body.message.trim());
+  }
+
   return (isJson ? body : (undefined as unknown)) as T;
 }
 
@@ -194,6 +199,11 @@ class ApiService {
     return this.get('/api/recordings');
   }
 
+  // Customization
+  async getConfig(): Promise<AppCustomization> {
+    return this.get('/api/config');
+  }
+
   async getRecording(id: string): Promise<Recording> {
     return this.get(`/api/recordings/${id}`);
   }
@@ -246,6 +256,10 @@ class ApiService {
         }
         try {
           const data = JSON.parse(xhr.responseText || '{}');
+          // Show success toast if response has a message
+          if (isRecord(data) && typeof data.message === 'string' && data.message.trim().length > 0) {
+            toast.success(data.message.trim());
+          }
           resolve(data as { message: string; recording: Recording });
         } catch (err) {
           reject(err instanceof Error ? err : new Error('Invalid server response'));
@@ -435,6 +449,11 @@ class ApiService {
       const payload = { message: 'Invalid server response' };
       toast.error(payload.message);
       throw createApiError(payload, response.status);
+    }
+
+    // Show success toast if response has a message
+    if (isRecord(data) && typeof data.message === 'string' && data.message.trim().length > 0) {
+      toast.success(data.message.trim());
     }
 
     return data as SegmentationResponse;

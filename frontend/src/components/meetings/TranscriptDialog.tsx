@@ -66,8 +66,8 @@ function TranscriptDialog({
         <DialogHeader className="flex-shrink-0 pb-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-100/20 to-blue-100/20">
-                <FileText className="w-5 h-5 text-blue-600" />
+              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/20">
+                <FileText className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <DialogTitle className="text-xl">会议完整转录</DialogTitle>
@@ -80,7 +80,7 @@ function TranscriptDialog({
               variant="outline"
               size="sm"
               onClick={handleDownload}
-              className="gap-2 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+              className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
             >
               <Download className="w-4 h-4" />
               下载
@@ -103,18 +103,18 @@ function TranscriptDialog({
                 >
                   <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
                     <h4 className="font-medium text-sm flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <div className="w-2 h-2 rounded-full bg-primary" />
                       {showCombinedRecording ? '合并录音' : recording.filename}
                     </h4>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleCopy(recording.transcription || '', index)}
-                      className="gap-1.5 text-xs hover:bg-blue-50 hover:text-blue-700"
+                      className="gap-1.5 text-xs hover:bg-primary/10 hover:text-primary"
                     >
                       {copiedIndex === index ? (
                         <>
-                          <CheckCheck className="w-3.5 h-3.5 text-green-600" />
+                          <CheckCheck className="w-3.5 h-3.5 text-success" />
                           已复制
                         </>
                       ) : (
@@ -126,10 +126,10 @@ function TranscriptDialog({
                     </Button>
                   </div>
                   <div className={cn(
-                    'p-4 rounded-lg bg-gradient-to-br from-gray-50/20 to-slate-50/20',
-                    'border border-gray-200/50 shadow-sm'
+                    'p-4 rounded-lg bg-gradient-to-br from-muted/20 to-muted/30',
+                    'border border-border/50 shadow-sm'
                   )}>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed text-gray-700">
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed text-muted-foreground">
                       {recording.transcription}
                     </p>
                   </div>

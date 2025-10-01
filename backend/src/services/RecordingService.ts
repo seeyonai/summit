@@ -294,7 +294,7 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
     id: inserted._id.toHexString(),
     filename: inserted.filename,
     filePath: inserted.filePath,
-    message: remoteResponse.message || 'Recording started',
+    message: remoteResponse.message || '录音已开始',
   };
 }
 
@@ -330,7 +330,7 @@ export async function updateRecording(recordingId: string, updateData: Recording
   }
 
   if (Object.keys(updates).length === 0) {
-    return { message: 'No changes applied' };
+    return { message: '未应用更改' };
   }
 
   if (document.externalId) {
@@ -346,7 +346,7 @@ export async function updateRecording(recordingId: string, updateData: Recording
   const collection = recordingsCollection();
   await collection.updateOne({ _id: document._id }, { $set: updates });
 
-  return { message: 'Recording updated' };
+  return { message: '录音已更新' };
 }
 
 export async function deleteRecording(recordingId: string): Promise<{ message: string }> {
@@ -369,7 +369,7 @@ export async function deleteRecording(recordingId: string): Promise<{ message: s
   await collection.deleteOne({ _id: document._id });
   await deleteRecordingFile(document).catch(() => undefined);
 
-  return { message: 'Recording deleted' };
+  return { message: '录音已删除' };
 }
 
 export async function addRecordingToMeeting(meetingId: string, recordingId: string): Promise<{ message: string }> {
@@ -384,7 +384,7 @@ export async function addRecordingToMeeting(meetingId: string, recordingId: stri
     { _id: recording._id },
     { $set: { meetingId: new ObjectId(meetingId) } },
   );
-  return { message: 'Recording attached to meeting' };
+  return { message: '录音已附加到会议' };
 }
 
 export async function transcribeRecording(recordingId: string, hotword?: string): Promise<{ message: string; transcription: string }> {
@@ -436,7 +436,7 @@ export async function transcribeRecording(recordingId: string, hotword?: string)
   }
 
   return {
-    message: 'Transcription completed',
+    message: '转录完成',
     transcription: transcriptionResponse.text,
   };
 }
@@ -493,7 +493,7 @@ export async function polishTranscription(recordingId: string): Promise<{ messag
   );
 
   return {
-    message: 'Transcription polished',
+    message: '转录优化完成',
     polishedTranscription: polished,
   };
 }

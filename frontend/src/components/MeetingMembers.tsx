@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import SearchInput from '@/components/SearchInput';
 import { searchUsers, type UserListItem } from '@/services/users';
 import { apiService, api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -108,11 +109,10 @@ function MeetingMembers({ meetingId, ownerId, members = [], onChanged }: Meeting
 
         {isOwner && (
           <div className="mt-4">
-            <input
+            <SearchInput
               placeholder="通过邮箱/姓名搜索用户并添加"
               value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="w-full border rounded px-3 py-2"
+              onChange={setQ}
             />
             {q && (
               <div className="mt-2 border rounded max-h-64 overflow-auto">

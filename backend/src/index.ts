@@ -16,6 +16,7 @@ import hotwordsRouter from './routes/hotwords';
 import segmentationRouter from './routes/segmentation';
 import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings/index';
+import configRouter from './routes/config';
 import { LiveRecorderService } from './services/LiveRecorderService';
 import { checkAllServices, generateHealthTable } from './utils/healthChecker';
 import { errorHandler } from './middleware/errorHandler';
@@ -42,6 +43,7 @@ app.use('/api/hotwords', authenticate, hotwordsRouter);
 app.use('/api/segmentation', segmentationRouter);
 app.use('/api/aligner', alignerRouter);
 app.use('/api/recordings', authenticate, recordingsRouter);
+app.use('/api/config', configRouter);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -77,28 +79,6 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     service: 'Summit API Server',
     port: PORT,
-    database: 'MongoDB',
-    endpoints: {
-      health: '/health',
-      meetings: '/api/meetings',
-      meetingsById: '/api/meetings/:id',
-      meetingsByStatus: '/api/meetings/status/:status',
-      upcomingMeetings: '/api/meetings/upcoming',
-      hotwords: '/api/hotwords',
-      hotwordsById: '/api/hotwords/:id',
-      hotwordsBatch: '/api/hotwords/batch?ids=1,2,3',
-      segmentation: '/api/segmentation',
-      segmentationModelInfo: '/api/segmentation/model-info',
-      segmentationAnalyze: '/api/segmentation/analyze',
-      segmentationUpload: '/api/segmentation/upload',
-      recordings: '/api/recordings',
-      recordingsById: '/api/recordings/:id',
-      recordingsStart: '/api/recordings/start',
-      recordingsTranscribe: '/api/recordings/:id/transcribe',
-      recordingsSegment: '/api/recordings/:id/segment',
-      recordingsPolish: '/api/recordings/:id/polish',
-      recordingsStatic: '/files/*'
-    }
   });
 });
 

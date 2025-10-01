@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
+import SearchInput from '@/components/SearchInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiService } from '@/services/api';
 import { recordingPanelBus } from '@/services/recordingPanelBus';
@@ -16,7 +16,7 @@ import RecordingListItem from '@/components/RecordingListItem';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
 import {
   MicIcon,
-  SearchIcon,
+  
   FilterIcon,
   ClockIcon,
   FileAudioIcon,
@@ -196,15 +196,14 @@ function RecordingList() {
   return (
     <div className="space-y-8">
         {/* Header Section with Stats */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/90 to-blue-600/90 p-8 text-white shadow-xl">
-          <div className="absolute inset-0 bg-black/10" />
-          <div className="relative z-10">
+        <div className="page-header">
+          <div className="page-header-content">
             <div className="flex justify-between items-start mb-6">
-              <div>
-                <h1 className="text-4xl font-bold mb-2">录音</h1>
-                <p className="text-blue-100 text-lg">智能管理和分析您的音频记录</p>
+              <div className="page-header-title">
+                <h1>录音</h1>
+                <p>智能管理和分析您的音频记录</p>
               </div>
-              <div className="flex gap-3">
+              <div className="page-header-actions">
                 <div className="relative">
                   <input
                     type="file"
@@ -218,12 +217,12 @@ function RecordingList() {
                     asChild
                     disabled={uploading || recording}
                     size="lg"
-                    className="bg-white text-blue-600 hover:bg-blue-50 transition-all duration-300 shadow-lg disabled:opacity-50"
+                    className="bg-card text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg disabled:opacity-50"
                   >
                     <label htmlFor="audio-upload" className="cursor-pointer">
                       {uploading ? (
                         <>
-                          <div className="w-3 h-3 bg-blue-600 rounded-full animate-spin mr-2" />
+                          <div className="w-3 h-3 bg-primary rounded-full animate-spin mr-2" />
                           上传中... {uploadProgress}%
                         </>
                       ) : (
@@ -239,7 +238,7 @@ function RecordingList() {
                   onClick={toggleFloatingPanel}
                   disabled={uploading}
                   size="lg"
-                  className="bg-white text-blue-600 hover:bg-blue-50 transition-all duration-300 shadow-lg disabled:opacity-50"
+                  className="bg-card text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg disabled:opacity-50"
                 >
                   <MicIcon className="w-5 h-5 mr-2" />
                   快速录音
@@ -248,108 +247,102 @@ function RecordingList() {
             </div>
             
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">总录音数</p>
-                    <p className="text-2xl font-bold">{stats.total}</p>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-info">
+                    <p className="stat-label">总录音数</p>
+                    <p className="stat-value">{stats.total}</p>
                   </div>
-                  <FileAudioIcon className="w-8 h-8 text-blue-200" />
+                  <FileAudioIcon className="stat-icon" />
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">总时长</p>
-                    <p className="text-2xl font-bold">{formatDuration(stats.totalDuration)}</p>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-info">
+                    <p className="stat-label">总时长</p>
+                    <p className="stat-value">{formatDuration(stats.totalDuration)}</p>
                   </div>
-                  <ClockIcon className="w-8 h-8 text-blue-200" />
+                  <ClockIcon className="stat-icon" />
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">转录率</p>
-                    <p className="text-2xl font-bold">{stats.transcriptionRate.toFixed(0)}%</p>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-info">
+                    <p className="stat-label">转录率</p>
+                    <p className="stat-value">{stats.transcriptionRate.toFixed(0)}%</p>
                   </div>
-                  <ActivityIcon className="w-8 h-8 text-blue-200" />
+                  <ActivityIcon className="stat-icon" />
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">存储空间</p>
-                    <p className="text-2xl font-bold">{formatFileSize(stats.totalSize)}</p>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-info">
+                    <p className="stat-label">存储空间</p>
+                    <p className="stat-value">{formatFileSize(stats.totalSize)}</p>
                   </div>
-                  <FolderOpenIcon className="w-8 h-8 text-blue-200" />
+                  <FolderOpenIcon className="stat-icon" />
                 </div>
               </div>
             </div>
           </div>
           
           {/* Decorative elements */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+          <div className="header-decoration header-decoration-top-right" />
+          <div className="header-decoration header-decoration-bottom-left" />
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="搜索录音文件或转录内容..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 h-11 border-gray-200 dark:border-gray-600 focus:border-blue-500 transition-colors"
-              />
-            </div>
+        <div className="flex flex-col lg:flex-row gap-4">
+          <SearchInput
+            className="flex-1"
+            placeholder="搜索录音文件或转录内容..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+          
+          <div className="flex gap-2 items-center">
+            <Select value={filterStatus} onValueChange={(value: 'all' | 'transcribed' | 'untranscribed') => setFilterStatus(value)}>
+              <SelectTrigger className="w-[180px] h-11">
+                <FilterIcon className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="筛选状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部录音</SelectItem>
+                <SelectItem value="transcribed">已转录</SelectItem>
+                <SelectItem value="untranscribed">未转录</SelectItem>
+              </SelectContent>
+            </Select>
             
-            <div className="flex gap-2 items-center">
-              <Select value={filterStatus} onValueChange={(value: 'all' | 'transcribed' | 'untranscribed') => setFilterStatus(value)}>
-                <SelectTrigger className="w-[180px] h-11">
-                  <FilterIcon className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="筛选状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部录音</SelectItem>
-                  <SelectItem value="transcribed">已转录</SelectItem>
-                  <SelectItem value="untranscribed">未转录</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  onClick={() => setViewMode('grid')}
-                  className="rounded-r-none"
-                >
-                  <GridIcon className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  onClick={() => setViewMode('list')}
-                  className="rounded-l-none"
-                >
-                  <ListIcon className="w-4 h-4" />
-                </Button>
-              </div>
-              
+            <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
               <Button
-                onClick={fetchRecordings}
-                variant="outline"
-                size="default"
-                className="h-11"
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('grid')}
+                className="rounded-r-none"
               >
-                <RefreshCwIcon className="w-4 h-4 mr-2" />
-                刷新
+                <GridIcon className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('list')}
+                className="rounded-l-none"
+              >
+                <ListIcon className="w-4 h-4" />
               </Button>
             </div>
+            
+            <Button
+              onClick={fetchRecordings}
+              variant="outline"
+              size="default"
+              className="h-11"
+            >
+              <RefreshCwIcon className="w-4 h-4 mr-2" />
+              刷新
+            </Button>
           </div>
         </div>
 

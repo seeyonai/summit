@@ -27,7 +27,7 @@ const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({
     <Card className={`${themeClasses.card} backdrop-blur-sm`}>
       <CardContent className="p-5">
         <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-5 h-5 text-blue-400" />
+          <FileText className="w-5 h-5 text-primary" />
           <h3 className={`text-lg font-semibold ${themeClasses.text.primary}`}>会议信息</h3>
         </div>
         <div className="space-y-3">

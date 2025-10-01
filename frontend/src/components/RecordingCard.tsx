@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import TranscriptionPreview from '@/components/TranscriptionPreview';
 import type { Recording as BaseRecording } from '@base/types';
 import type { Recording as FrontendRecording } from '@/types';
 
@@ -83,33 +84,16 @@ function RecordingCard({
     ...actions
   };
 
-  const getCardClassName = () => {
-    let baseClasses = 'overflow-hidden transition-all duration-300 hover:shadow-lg';
-    
-    if (onClick) {
-      baseClasses += ' cursor-pointer';
-    }
-    
-    switch (variant) {
-      case 'combined':
-        return `${baseClasses} border-purple-200 bg-gradient-to-br from-purple-50/20 to-blue-50/20 ${className}`;
-      case 'compact':
-        return `${baseClasses} border-gray-200 hover:border-blue-300 ${className}`;
-      default:
-        return `${baseClasses} border-gray-200 hover:border-blue-300 ${className}`;
-    }
-  };
-
   const getWaveformBars = () => {
     const barCount = variant === 'compact' ? 25 : 40;
-    const colorClasses = variant === 'combined' 
-      ? 'from-blue-400/30 to-purple-400/30'
-      : 'from-blue-400/60 to-blue-400/60';
+    const colorClasses = variant === 'combined'
+      ? 'from-primary/30 to-accent/30 dark:from-primary/40 dark:to-accent/40'
+      : 'from-primary/60 to-primary/60 dark:from-primary/70 dark:to-primary/70';
     
     return Array.from({ length: barCount }).map((_, i) => (
       <div
         key={i}
-        className={`flex-1 bg-gradient-to-t ${colorClasses} rounded-full opacity-40`}
+        className={`flex-1 bg-gradient-to-t ${colorClasses} rounded-full opacity-40 dark:opacity-50`}
         style={{
           height: `${Math.random() * 100}%`,
           animationDelay: `${i * 0.05}s`
@@ -119,38 +103,38 @@ function RecordingCard({
   };
 
   return (
-    <Card className={`${getCardClassName()} flex flex-col h-full`} onClick={handleCardClick}>
+    <Card className={`flex flex-col h-full cursor-pointer`} onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               {variant === 'combined' && (
-                <Badge className="bg-blue-600 text-white">
+                <Badge className="bg-primary text-primary-foreground">
                   合并录音
                 </Badge>
               )}
-              <CardTitle className="text-base font-semibold truncate">
+              <CardTitle className="text-base font-semibold truncate dark:text-gray-100">
                 {recording.filename}
               </CardTitle>
             </div>
-            <CardDescription className="mt-1 text-xs">
+            <CardDescription className="mt-1 text-xs dark:text-gray-400">
               {formatDate(recording.createdAt)}
             </CardDescription>
             
             {/* Meeting Information */}
             {showMeetingInfo && recording.meeting && (
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs text-gray-500">会议:</span>
-                <span className="text-xs font-medium text-gray-700 truncate">
+                <span className="text-xs text-gray-500 dark:text-gray-400">会议:</span>
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
                   {recording.meeting.title}
                 </span>
                 <Badge 
                   variant="outline"
                   className={
-                    recording.meeting.status === 'completed' ? 'bg-green-50 text-green-600 border-green-200' :
-                    recording.meeting.status === 'in_progress' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                    recording.meeting.status === 'scheduled' ? 'bg-gray-50 text-gray-600 border-gray-200' :
-                    'bg-red-50 text-red-600 border-red-200'
+                    recording.meeting.status === 'completed' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
+                    recording.meeting.status === 'in_progress' ? 'bg-primary/10 text-primary border-primary/20' :
+                    recording.meeting.status === 'scheduled' ? 'bg-muted text-muted-foreground border-border' :
+                    'bg-destructive/10 text-destructive border-destructive/20'
                   }
                 >
                   {recording.meeting.status === 'completed' ? '已完成' :
@@ -163,13 +147,13 @@ function RecordingCard({
           
           <div className="flex gap-1">
             {hasTranscription && (
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
+              <Badge variant="secondary" className="bg-badge-success">
                 <CheckCircleIcon className="w-3 h-3 mr-1" />
                 已转录
               </Badge>
             )}
             {hasSpeakers && (
-              <Badge variant="secondary" className={variant === 'combined' ? 'bg-blue-100 text-blue-700' : 'bg-blue-100 text-purple-700'}>
+              <Badge variant="secondary" className="bg-badge-info">
                 <UsersIcon className="w-3 h-3 mr-1" />
                 {numSpeakers}人
               </Badge>
@@ -181,23 +165,23 @@ function RecordingCard({
       <CardContent className="flex flex-col flex-1">
         <div className="flex-1 space-y-4">
           {/* Audio Waveform Visualization */}
-          <div className={`relative ${variant === 'compact' ? 'h-16' : 'h-20'} bg-gradient-to-r ${
+          <div className={`group relative ${variant === 'compact' ? 'h-16' : 'h-20'} bg-gradient-to-r ${
             variant === 'combined' 
-              ? 'from-blue-50/30 to-purple-50/30' 
-              : 'from-blue-50/30 to-blue-50/30'
-          } rounded-lg overflow-hidden`}>
+              ? 'from-primary/5 to-accent/5' 
+              : 'from-primary/5 to-primary/5'
+          } rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800`}>
             <div className="absolute inset-0 flex items-center justify-center gap-1 px-4">
               {getWaveformBars()}
             </div>
             <button
               onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recording.filename), e)}
-              className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/10 transition-colors"
+              className="absolute inset-0 flex items-center justify-center bg-background/0 hover:bg-background/10 dark:hover:bg-foreground/5 transition-colors opacity-0 group-hover:opacity-100 transition-opacity duration-100"
             >
-              <div className={`${variant === 'compact' ? 'w-12 h-12' : 'w-14 h-14'} bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow`}>
+              <div className={`${variant === 'compact' ? 'w-12 h-12' : 'w-14 h-14'} bg-background/70 dark:bg-background/70 backdrop-blur-sm rounded-full border border-primary/20 flex items-center justify-center shadow-lg dark:shadow-primary/20 group-hover:scale-105 transition-transform`}>
                 {playingAudio === recordingId ? (
-                  <PauseIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-blue-600' : 'text-blue-600'}`} />
+                  <PauseIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'}`} />
                 ) : (
-                  <PlayIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-blue-600' : 'text-blue-600'} ml-1`} />
+                  <PlayIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'} ml-1`} />
                 )}
               </div>
             </button>
@@ -205,15 +189,15 @@ function RecordingCard({
 
           {/* Recording Info */}
           <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="flex items-center gap-1 text-gray-600">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
               <ClockIcon className="w-3 h-3" />
               <span>{formatDuration(recording.duration || 0)}</span>
             </div>
-            <div className="flex items-center gap-1 text-gray-600">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
               <FileAudioIcon className="w-3 h-3" />
               <span>{formatFileSize(recording.fileSize || 0)}</span>
             </div>
-            <div className="flex items-center gap-1 text-gray-600">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
               <Volume2Icon className="w-3 h-3" />
               <span>{recording.format || 'WAV'}</span>
             </div>
@@ -221,11 +205,7 @@ function RecordingCard({
 
           {/* Transcription Preview */}
           {showTranscriptionPreview && recording.transcription && (
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-700 line-clamp-2">
-                {recording.transcription}
-              </p>
-            </div>
+            <TranscriptionPreview transcription={recording.transcription} />
           )}
         </div>
 
@@ -264,7 +244,7 @@ function RecordingCard({
               <Button
                 size="sm"
                 variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10 border-destructive/20"
                 onClick={handleAction(defaultActions.onDelete)}
               >
                 <TrashIcon className="w-3 h-3" />

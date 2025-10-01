@@ -53,7 +53,7 @@ export const useMeetingTheme = (initialDarkMode?: boolean) => {
       primary: isDarkMode ? 'text-white' : 'text-gray-900',
       secondary: isDarkMode ? 'text-slate-300' : 'text-gray-600',
       muted: isDarkMode ? 'text-slate-400' : 'text-gray-500',
-      accent: isDarkMode ? 'text-blue-400' : 'text-blue-600'
+      accent: isDarkMode ? 'text-accent' : 'text-accent'
     },
     transcriptArea: isDarkMode 
       ? 'bg-gradient-to-b from-slate-900/50 to-slate-950/50' 

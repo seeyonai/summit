@@ -17,7 +17,7 @@ const MinimalModeToggle: React.FC<MinimalModeToggleProps> = ({
         onClick={onExitMinimal}
         variant="outline"
         size="sm"
-        className={`${isDarkMode ? 'bg-slate-800/90 border-slate-600 text-white hover:bg-slate-700' : 'bg-white/90 border-gray-300 text-gray-900 hover:bg-gray-50'} backdrop-blur-sm shadow-lg`}
+        className={`${'bg-background/90 border-border text-foreground hover:bg-muted'} backdrop-blur-sm shadow-lg`}
         title="退出专注模式"
       >
         <Expand className="w-4 h-4 mr-2" />

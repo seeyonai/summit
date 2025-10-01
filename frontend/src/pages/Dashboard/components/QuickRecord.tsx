@@ -25,12 +25,12 @@ const QuickRecord: React.FC<QuickRecordProps> = ({ onRecordingComplete }) => {
   });
 
   return (
-    <Card className="card-hover border-l-4 border-l-red-500 dark:border-l-red-600">
+    <Card className="card-hover border-l-4 border-l-destructive">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-lg ${isRecording ? 'bg-red-100 dark:bg-red-900/20' : 'bg-blue-100 dark:bg-blue-900/20'}`}>
-              <Mic className={`w-5 h-5 ${isRecording ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`} />
+            <div className={`p-2.5 rounded-lg ${isRecording ? 'bg-destructive/10' : 'bg-primary/10'}`}>
+              <Mic className={`w-5 h-5 ${isRecording ? 'text-destructive' : 'text-primary'}`} />
             </div>
             <div>
               <CardTitle className="text-lg">快速录音</CardTitle>
@@ -40,9 +40,9 @@ const QuickRecord: React.FC<QuickRecordProps> = ({ onRecordingComplete }) => {
             </div>
           </div>
           {isRecording && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-red-100 dark:bg-red-900/20 rounded-full">
-              <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
-              <span className="text-xs font-medium text-red-700 dark:text-red-400">录音中</span>
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-destructive/10 rounded-full">
+              <div className="w-2 h-2 bg-destructive rounded-full animate-pulse"></div>
+              <span className="text-xs font-medium text-destructive">录音中</span>
             </div>
           )}
         </div>
@@ -79,28 +79,28 @@ const QuickRecord: React.FC<QuickRecordProps> = ({ onRecordingComplete }) => {
         </div>
         
         {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+          <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
+            <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
         
         {partialText && (
-          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg animate-pulse">
+          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg animate-pulse">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-400">实时转录</span>
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span className="text-xs font-medium text-primary">实时转录</span>
             </div>
-            <p className="text-sm text-blue-800 dark:text-blue-300">{partialText}</p>
+            <p className="text-sm text-foreground">{partialText}</p>
           </div>
         )}
         
         {finalText && (
-          <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg animate-slide-up">
+          <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-lg animate-slide-up">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-700 dark:text-green-400">录音完成</span>
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span className="text-sm font-medium text-green-600">录音完成</span>
             </div>
-            <p className="text-xs text-green-600 dark:text-green-400">{formatDuration(recordingTime)}</p>
+            <p className="text-xs text-green-500">{formatDuration(recordingTime)}</p>
           </div>
         )}
       </CardContent>

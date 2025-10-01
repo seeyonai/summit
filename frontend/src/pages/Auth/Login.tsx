@@ -62,17 +62,16 @@ function Login() {
             required
           />
         </div>
-        {error && <div className="text-red-600 text-sm">{error}</div>}
+        {error && <div className="text-destructive text-sm">{error}</div>}
         <Button type="submit" disabled={loading}>
           {loading ? '登录中...' : '登录'}
         </Button>
       </form>
       <p className="mt-4 text-sm">
-        还没有账号？ <Link to="/register" className="text-blue-600">注册</Link>
+        还没有账号？ <Link to="/register" className="text-primary">注册</Link>
       </p>
     </div>
   );
 }
 
 export default Login;
-

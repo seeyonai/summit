@@ -44,7 +44,7 @@ function StatCard({
             {trend && (
               <span className={cn(
                 'text-xs font-medium',
-                trend.value > 0 ? 'text-green-600' : trend.value < 0 ? 'text-red-600' : 'text-gray-600'
+                trend.value > 0 ? 'text-green-500' : trend.value < 0 ? 'text-destructive' : 'text-muted-foreground'
               )}>
                 {trend.value > 0 && '+'}
                 {trend.value}% {trend.label}

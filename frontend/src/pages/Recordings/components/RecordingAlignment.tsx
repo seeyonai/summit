@@ -100,18 +100,18 @@ function RecordingAlignment({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-card rounded-lg shadow-sm border border-border">
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">对齐</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">将转录文本与音频时间轴对齐</p>
+            <h2 className="text-xl font-semibold text-foreground">对齐</h2>
+            <p className="text-sm text-muted-foreground mt-1">将转录文本与音频时间轴对齐</p>
           </div>
           <div>
             <Button
               onClick={handleAlign}
               disabled={aligning || !recording.transcription}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
               size="sm"
             >
               {aligning ? (
@@ -130,7 +130,7 @@ function RecordingAlignment({
         </div>
 
         {!recording.transcription && (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-muted-foreground">
             需要先生成转录内容，才能进行对齐。
           </div>
         )}
@@ -145,7 +145,7 @@ function RecordingAlignment({
                 {recording.alignmentItems ? '已保存' : '未保存'}
               </Badge>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500 dark:text-gray-400">时间偏移</span>
+                <span className="text-muted-foreground">时间偏移</span>
                 <input
                   type="range"
                   min={-500}
@@ -154,15 +154,15 @@ function RecordingAlignment({
                   value={globalOffsetMs}
                   onChange={(e) => setGlobalOffsetMs(parseInt(e.target.value, 10))}
                 />
-                <span className="text-gray-500 dark:text-gray-400">{globalOffsetMs}ms</span>
+                <span className="text-muted-foreground">{globalOffsetMs}ms</span>
               </div>
             </div>
-            <div className="leading-8 bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+            <div className="leading-8 bg-muted rounded-lg p-4">
               {alignment.tokens.map((tok, idx) => (
                 <span
                   key={`${tok.startMs}-${tok.endMs}-${idx}`}
                   onClick={() => seekToToken(idx)}
-                  className={`cursor-pointer px-0.5 rounded ${activeTokenIndex === idx ? 'bg-blue-200 dark:bg-blue-800 text-black dark:text-white' : 'hover:bg-blue-50 dark:hover:bg-blue-900/30'}`}
+                  className={`cursor-pointer px-0.5 rounded ${activeTokenIndex === idx ? 'bg-primary/30 text-foreground' : 'hover:bg-primary/10'}`}
                   title={`${Math.round(tok.startMs)}ms - ${Math.round(tok.endMs)}ms`}
                 >
                   {tok.text}
@@ -178,5 +178,4 @@ function RecordingAlignment({
 }
 
 export default RecordingAlignment;
-
 

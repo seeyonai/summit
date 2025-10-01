@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { searchUsers, type UserListItem } from '@/services/users';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
+import SearchInput from '@/components/SearchInput';
 
 function AdminUsers() {
   const [q, setQ] = useState('');
@@ -22,7 +23,7 @@ function AdminUsers() {
     }
   };
 
-  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [q, load]);
+  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [q]);
 
   const updateRole = async (id: string, role: 'admin' | 'user') => {
     await api(`/api/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) });
@@ -33,14 +34,13 @@ function AdminUsers() {
     <div>
       <h1 className="text-2xl font-semibold mb-4">用户管理</h1>
       <div className="max-w-md mb-4">
-        <input
+        <SearchInput
           placeholder="搜索邮箱或姓名"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="w-full border rounded px-3 py-2"
+          onChange={setQ}
         />
       </div>
-      {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
+      {error && <div className="text-destructive text-sm mb-2">{error}</div>}
       {loading && <div className="text-sm text-muted-foreground">加载中...</div>}
       <div className="border rounded">
         <div className="grid grid-cols-5 gap-2 p-2 text-sm font-medium bg-muted/40">

@@ -144,8 +144,8 @@ function MeetingDetail() {
     return (
       <Suspense
         fallback={
-          <div className="fixed inset-0 z-50 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+          <div className="fixed inset-0 z-50 bg-gradient-to-br from-background via-primary/20 to-background flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         }
       >
@@ -161,15 +161,15 @@ function MeetingDetail() {
   const getStatusColor = (status?: string) => {
     switch (status) {
       case "scheduled":
-        return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400";
+        return "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary/80";
       case "in_progress":
-        return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400";
+        return "bg-success/10 dark:bg-success/20 text-success dark:text-success/80";
       case "completed":
-        return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300";
+        return "bg-muted text-muted-foreground";
       case "failed":
-        return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400";
+        return "bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive/80";
       default:
-        return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -203,15 +203,15 @@ function MeetingDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50/20 via-white/20 to-gray-50/20 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-muted/20 via-background/20 to-muted/20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error || !meeting) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50/20 via-white/20 to-gray-50/20">
+      <div className="min-h-screen bg-gradient-to-br from-muted/20 via-background/20 to-muted/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Alert variant="destructive">
             <AlertCircleIcon className="h-4 w-4" />
@@ -252,7 +252,7 @@ function MeetingDetail() {
         <div className="flex justify-between items-start mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-3xl font-bold text-foreground dark:text-foreground">
                 {meeting.title}
               </h1>
               <Badge
@@ -263,8 +263,8 @@ function MeetingDetail() {
                 {getStatusText(meeting.status)}
               </Badge>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">{meeting.summary || "暂无概要"}</p>
-            <div className="flex items-center gap-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground dark:text-muted-foreground">{meeting.summary || "暂无概要"}</p>
+            <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground dark:text-muted-foreground">
               <span className="flex items-center gap-1">
                 <CalendarIcon className="w-4 h-4" />
                 {formatDate(meeting.scheduledStart)}
@@ -285,7 +285,7 @@ function MeetingDetail() {
               <Button
                 onClick={handleToggleMeetingDisplay}
                 variant="outline"
-                className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 border-purple-500/30"
+                className="bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 border-primary/30"
               >
                 <MaximizeIcon className="w-4 h-4 mr-2" />
                 {showMeetingDisplay ? "退出大屏" : "会议大屏"}
@@ -301,7 +301,7 @@ function MeetingDetail() {
             <Button
               onClick={handleDeleteMeeting}
               variant="outline"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
             >
               <TrashIcon className="w-4 h-4 mr-2" />
               删除
@@ -399,7 +399,7 @@ function MeetingDetail() {
       {/* Success Message */}
       {success && (
         <div className="fixed bottom-4 right-4 z-50">
-          <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-400">
+          <Alert className="bg-success/10 dark:bg-success/20 border-success/30 dark:border-success/70 text-success dark:text-success/80">
             <AlertDescription>{success}</AlertDescription>
           </Alert>
         </div>
@@ -408,7 +408,7 @@ function MeetingDetail() {
       {/* Analysis Success Message */}
       {showAnalysisSuccess && (
         <div className="fixed bottom-4 right-4 z-50">
-          <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-400">
+          <Alert className="bg-primary/10 dark:bg-primary/20 border-primary/30 dark:border-primary/70 text-primary dark:text-primary/80">
             <BrainIcon className="h-4 w-4" />
             <AlertDescription>
               AI 分析完成！任务和争议问题已提取并保存。

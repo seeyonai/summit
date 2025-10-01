@@ -83,19 +83,19 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
         {(meeting.disputedIssues?.length || extractedDiscussionPoints.length) > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              <AlertTriangle className="w-5 h-5 text-yellow-500" />
               争论焦点 ({(meeting.disputedIssues?.length || 0) + extractedDiscussionPoints.length})
             </h3>
             
             <div className="space-y-3">
               {meeting.disputedIssues?.map((point) => (
-                <div key={point.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div key={point.id} className="p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-yellow-800">{point.title}</h4>
+                    <h4 className="font-medium text-yellow-700">{point.title}</h4>
                     <Badge 
                       variant="outline" 
                       className={`text-xs ${
-                        point.priority === 'high' ? 'border-red-500 text-red-700' :
+                        point.priority === 'high' ? 'border-destructive text-destructive' :
                         point.priority === 'medium' ? 'border-yellow-500 text-yellow-700' :
                         'border-green-500 text-green-700'
                       }`}
@@ -103,12 +103,12 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
                       {point.priority === 'high' ? '高' : point.priority === 'medium' ? '中' : '低'}优先级
                     </Badge>
                   </div>
-                  <p className="text-sm text-yellow-700 mb-2">{point.description}</p>
+                  <p className="text-sm text-yellow-600 mb-2">{point.description}</p>
                   <div className="flex items-center justify-between">
                     <span className={`text-xs px-2 py-1 rounded-full ${
-                      point.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                      point.status === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                      point.status === 'resolved' ? 'bg-green-500/10 text-green-700' :
+                      point.status === 'ongoing' ? 'bg-yellow-500/10 text-yellow-700' :
+                      'bg-muted text-muted-foreground'
                     }`}>
                       {point.status === 'resolved' ? '已解决' : point.status === 'ongoing' ? '进行中' : '待处理'}
                     </span>
@@ -117,16 +117,16 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
               ))}
               
               {extractedDiscussionPoints.map((point) => (
-                <div key={point.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div key={point.id} className="p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-yellow-800">{point.title}</h4>
+                    <h4 className="font-medium text-yellow-700">{point.title}</h4>
                     <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
                       中优先级
                     </Badge>
                   </div>
-                  <p className="text-sm text-yellow-700 mb-2">{point.description}</p>
+                  <p className="text-sm text-yellow-600 mb-2">{point.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+                    <span className="text-xs px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-700">
                       进行中
                     </span>
                   </div>
@@ -140,19 +140,19 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
         {(meeting.parsedTodos?.length || extractedTodos.length) > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Circle className="w-5 h-5 text-blue-600" />
+              <Circle className="w-5 h-5 text-primary" />
               待办事项 ({(meeting.parsedTodos?.length || 0) + extractedTodos.length})
             </h3>
             
             <div className="space-y-3">
               {meeting.parsedTodos?.map((todo) => (
-                <div key={todo.id} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div key={todo.id} className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-0.5">
                       {todo.completed ? (
                         <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : (
-                        <Circle className="w-5 h-5 text-blue-500" />
+                        <Circle className="w-5 h-5 text-primary" />
                       )}
                     </div>
                     <div className="flex-1">
@@ -162,7 +162,7 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {todo.priority && (
                           <Badge variant="outline" className={`text-xs ${
-                            todo.priority === 'high' ? 'border-red-500 text-red-700' :
+                            todo.priority === 'high' ? 'border-destructive text-destructive' :
                             todo.priority === 'medium' ? 'border-yellow-500 text-yellow-700' :
                             'border-green-500 text-green-700'
                           }`}>
@@ -182,10 +182,10 @@ const TranscriptDisplay: React.FC<TranscriptDisplayProps> = ({ meeting }) => {
               ))}
               
               {extractedTodos.map((todo) => (
-                <div key={todo.id} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div key={todo.id} className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-0.5">
-                      <Circle className="w-5 h-5 text-blue-500" />
+                      <Circle className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-900">

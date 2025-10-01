@@ -53,8 +53,8 @@ const RealTimeSpeechRecognition: React.FC<RealTimeSpeechRecognitionProps> = ({
         <div className="flex items-center space-x-2">
           {isRecording && (
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-red-600">{formatTime(recordingTime)}</span>
+              <div className="w-3 h-3 bg-destructive rounded-full animate-pulse"></div>
+              <span className="text-sm text-destructive">{formatTime(recordingTime)}</span>
             </div>
           )}
           <Button
@@ -62,10 +62,10 @@ const RealTimeSpeechRecognition: React.FC<RealTimeSpeechRecognitionProps> = ({
             disabled={isRecording && !partialText && !finalText}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               isRecording
-                ? 'bg-red-600 text-white hover:bg-red-700'
+                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                 : isConnected
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-400 text-white cursor-not-allowed'
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
             }`}
           >
             {!isConnected ? '初始化中...' : isRecording ? '停止录音' : '开始录音'}
@@ -74,10 +74,10 @@ const RealTimeSpeechRecognition: React.FC<RealTimeSpeechRecognitionProps> = ({
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+        <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-4">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-600" />
-            <p className="text-sm text-red-700">{error}</p>
+            <AlertCircle className="w-4 h-4 text-destructive" />
+            <p className="text-sm text-destructive">{error}</p>
           </div>
         </div>
       )}
@@ -85,22 +85,22 @@ const RealTimeSpeechRecognition: React.FC<RealTimeSpeechRecognitionProps> = ({
       {/* Transcription Display */}
       <div className="space-y-3">
         {partialText && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Volume2 className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-700">实时识别:</span>
+              <Volume2 className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">实时识别:</span>
             </div>
-            <p className="text-blue-900">{partialText}</p>
+            <p className="text-foreground">{partialText}</p>
           </div>
         )}
         
         {finalText && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-green-700">最终转录:</span>
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span className="text-sm font-medium text-green-600">最终转录:</span>
             </div>
-            <p className="text-green-900 whitespace-pre-wrap">{finalText}</p>
+            <p className="text-green-700 whitespace-pre-wrap">{finalText}</p>
           </div>
         )}
         
@@ -115,7 +115,7 @@ const RealTimeSpeechRecognition: React.FC<RealTimeSpeechRecognitionProps> = ({
       {/* Connection Status */}
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-destructive'}`}></div>
           <span className="text-sm text-gray-600">
             {isConnected ? '已连接到语音识别服务' : '连接断开'}
           </span>

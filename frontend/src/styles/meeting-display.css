@@ -5,17 +5,17 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: hsl(var(--muted) / 0.3);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: hsl(var(--border) / 0.5);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: hsl(var(--border) / 0.7);
 }
 
 /* Smooth animations */
@@ -65,7 +65,7 @@
 
 /* Gradient text effect */
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -74,8 +74,8 @@
 /* Glassmorphism effect enhancement */
 .glass-effect {
   backdrop-filter: blur(20px);
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: hsl(var(--background) / 0.8);
+  border: 1px solid hsl(var(--border) / 0.2);
 }
 
 /* Audio waveform animation */

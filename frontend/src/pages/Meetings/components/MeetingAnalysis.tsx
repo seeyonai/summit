@@ -73,9 +73,9 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
 
   const getSeverityColor = (severity: 'low' | 'medium' | 'high') => {
     switch (severity) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-300';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'low': return 'bg-green-100 text-green-800 border-green-300';
+      case 'high': return 'bg-badge-destructive';
+      case 'medium': return 'bg-badge-warning';
+      case 'low': return 'bg-badge-success';
     }
   };
 
@@ -89,9 +89,9 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
 
   const getPriorityColor = (priority: 'low' | 'medium' | 'high') => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-300';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'low': return 'bg-green-100 text-green-800 border-green-300';
+      case 'high': return 'bg-badge-destructive';
+      case 'medium': return 'bg-badge-warning';
+      case 'low': return 'bg-badge-success';
     }
   };
 
@@ -115,7 +115,7 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <BrainIcon className="w-5 h-5 text-blue-600" />
+                <BrainIcon className="w-5 h-5 text-primary" />
                 AI 转录分析
               </CardTitle>
               <CardDescription>
@@ -161,38 +161,38 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
           {analysisData && (
             <div className="mt-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-gradient-to-br from-blue-50/20 to-purple-50/20 rounded-lg border border-blue-200/50">
+                <div className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border border-primary/30">
                   <div className="flex items-center gap-3">
-                    <TargetIcon className="w-6 h-6 text-blue-600" />
+                    <TargetIcon className="w-6 h-6 text-primary" />
                     <div>
-                      <p className="text-sm text-gray-600">分析状态</p>
-                      <p className="font-semibold text-gray-900">已完成</p>
+                      <p className="text-sm text-muted-foreground">分析状态</p>
+                      <p className="font-semibold text-foreground">已完成</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="p-4 bg-gradient-to-br from-green-50/20 to-emerald-50/20 rounded-lg border border-green-200/50">
+                <div className="p-4 bg-gradient-to-br from-success/10 to-success/10 rounded-lg border border-success/30">
                   <div className="flex items-center gap-3">
-                    <CheckCircleIcon className="w-6 h-6 text-green-600" />
+                    <CheckCircleIcon className="w-6 h-6 text-success" />
                     <div>
-                      <p className="text-sm text-gray-600">发现问题</p>
-                      <p className="font-semibold text-gray-900">{analysisData.disputedIssues.length} 个争议</p>
+                      <p className="text-sm text-muted-foreground">发现问题</p>
+                      <p className="font-semibold text-foreground">{analysisData.disputedIssues.length} 个争议</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="p-4 bg-gradient-to-br from-blue-50/20 to-cyan-50/20 rounded-lg border border-blue-200/50">
+                <div className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border border-primary/30">
                   <div className="flex items-center gap-3">
-                    <LightbulbIcon className="w-6 h-6 text-blue-600" />
+                    <LightbulbIcon className="w-6 h-6 text-primary" />
                     <div>
-                      <p className="text-sm text-gray-600">提取任务</p>
-                      <p className="font-semibold text-gray-900">{analysisData.todos.length} 个任务</p>
+                      <p className="text-sm text-muted-foreground">提取任务</p>
+                      <p className="font-semibold text-foreground">{analysisData.todos.length} 个任务</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 <p>处理了 {analysisData.metadata.totalChunks} 个文本块，耗时 {new Date(analysisData.metadata.processingTime).toLocaleTimeString('zh-CN')}</p>
               </div>
             </div>
@@ -207,7 +207,7 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
           {hasIssues && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-700">
+                <CardTitle className="flex items-center gap-2 text-destructive">
                   <AlertTriangleIcon className="w-5 h-5" />
                   争议问题 ({analysisData.disputedIssues.length})
                 </CardTitle>
@@ -223,18 +223,18 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
                       <div
                         key={issue.id}
                         className="p-4 border-2 rounded-lg transition-all duration-200 hover:shadow-md"
-                        style={{ borderColor: issue.severity === 'high' ? '#ef4444' : issue.severity === 'medium' ? '#f59e0b' : '#10b981' }}
+                        style={{ borderColor: issue.severity === 'high' ? 'hsl(var(--destructive))' : issue.severity === 'medium' ? 'hsl(var(--warning))' : 'hsl(var(--success))' }}
                       >
                         <div className="flex items-start gap-3">
                           <div className={`p-2 rounded-lg ${
-                            issue.severity === 'high' ? 'bg-red-100' :
-                            issue.severity === 'medium' ? 'bg-yellow-100' : 'bg-green-100'
+                            issue.severity === 'high' ? 'bg-destructive/10' :
+                            issue.severity === 'medium' ? 'bg-warning/10' : 'bg-success/10'
                           }`}>
                             <SeverityIcon className="w-5 h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
-                              <p className="font-medium text-gray-900">{issue.text}</p>
+                              <p className="font-medium text-foreground">{issue.text}</p>
                               <Badge 
                                 variant="outline" 
                                 className={getSeverityColor(issue.severity)}
@@ -247,8 +247,8 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
                             
                             {issue.parties.length > 0 && (
                               <div className="flex items-center gap-2 mt-2">
-                                <UsersIcon className="w-4 h-4 text-gray-500" />
-                                <p className="text-sm text-gray-600">
+                                <UsersIcon className="w-4 h-4 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
                                   涉及方: {issue.parties.join(', ')}
                                 </p>
                               </div>
@@ -267,7 +267,7 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
           {hasTodos && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-blue-700">
+                <CardTitle className="flex items-center gap-2 text-primary">
                   <LightbulbIcon className="w-5 h-5" />
                   提取的任务 ({analysisData.todos.length})
                 </CardTitle>
@@ -282,15 +282,15 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
                     return (
                       <div
                         key={todo.id}
-                        className="p-4 bg-white border-2 border-gray-200 rounded-lg hover:shadow-md transition-all duration-200"
+                        className="p-4 bg-background border-2 border-border rounded-lg hover:shadow-md transition-all duration-200"
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex items-center justify-center w-6 h-6 mt-1">
-                            <TargetIcon className="w-4 h-4 text-blue-600" />
+                            <TargetIcon className="w-4 h-4 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
-                              <p className="font-medium text-gray-900">{todo.text}</p>
+                              <p className="font-medium text-foreground">{todo.text}</p>
                               {todo.priority && (
                                 <Badge 
                                   variant="outline" 
@@ -303,7 +303,7 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
                               )}
                             </div>
                             
-                            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                               {todo.assignee && (
                                 <div className="flex items-center gap-1">
                                   <UsersIcon className="w-4 h-4" />
@@ -339,13 +339,13 @@ function MeetingAnalysis({ meeting, onAnalysisComplete }: MeetingAnalysisProps) 
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <BrainIcon className="w-8 h-8 text-gray-400" />
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BrainIcon className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-500 mb-2">
+                  <p className="text-muted-foreground mb-2">
                     暂未发现争议问题或任务
                   </p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     可能转录内容中未包含明显的争议点或行动项
                   </p>
                 </div>

@@ -43,6 +43,9 @@ npm test
 #### Health Check
 - `GET /health` - Health check
 
+#### Config
+- `GET /api/config` - Global customization config (reads `backend/customization.json`)
+
 #### Meetings
 - `GET /api/meetings` - Get all meetings
 - `GET /api/meetings/:id` - Get meeting by ID

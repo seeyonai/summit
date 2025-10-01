@@ -53,16 +53,16 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
 
     const maxTime = Math.max(...recording.speakerSegments.map(s => s.endTime));
     const speakerColors = [
-      'bg-gradient-to-r from-primary/30 to-blue-600/30',
-      'bg-gradient-to-r from-green-500/30 to-green-600/30',
-      'bg-gradient-to-r from-yellow-500/30 to-yellow-600/30',
-      'bg-gradient-to-r from-purple-500/30 to-purple-600/30',
-      'bg-gradient-to-r from-pink-500/30 to-pink-600/30'
+      'bg-gradient-to-r from-primary/30 to-accent/30',
+      'bg-gradient-to-r from-success/30 to-success/30',
+      'bg-gradient-to-r from-warning/30 to-warning/30',
+      'bg-gradient-to-r from-chart-4/30 to-chart-4/30',
+      'bg-gradient-to-r from-chart-5/30 to-chart-5/30'
     ];
     
     return (
       <div className="space-y-4">
-        <div className="relative h-24 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
+        <div className="relative h-24 bg-muted rounded-xl overflow-hidden">
           {recording.speakerSegments.map((segment, index) => {
             const left = (segment.startTime / maxTime) * 100;
             const width = ((segment.endTime - segment.startTime) / maxTime) * 100;
@@ -81,8 +81,8 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
             );
           })}
           <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 px-2 py-1 rounded">0:00</span>
-            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 px-2 py-1 rounded">{formatTime(maxTime)}</span>
+            <span className="text-xs text-muted-foreground bg-card/80 px-2 py-1 rounded">0:00</span>
+            <span className="text-xs text-muted-foreground bg-card/80 px-2 py-1 rounded">{formatTime(maxTime)}</span>
           </div>
         </div>
         
@@ -137,11 +137,11 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                   const totalTime = segments.reduce((acc, s) => acc + (s.endTime - s.startTime), 0);
                   const percentage = (totalTime / (recording.duration || 1)) * 100;
                   const speakerColors = [
-                    'from-primary/30 to-blue-600/30',
-                    'from-green-500/30 to-green-600/30',
-                    'from-yellow-500/30 to-yellow-600/30',
-                    'from-purple-500/30 to-purple-600/30',
-                    'from-pink-500/30 to-pink-600/30'
+                    'from-primary/30 to-accent/30',
+                    'from-success/30 to-success/30',
+                    'from-warning/30 to-warning/30',
+                    'from-chart-4/30 to-chart-4/30',
+                    'from-chart-5/30 to-chart-5/30'
                   ];
                   
                   return (
@@ -155,11 +155,11 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                         <Progress value={percentage} className="mb-3" />
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div>
-                            <p className="text-gray-500">发言时长</p>
+                            <p className="text-muted-foreground">发言时长</p>
                             <p className="font-medium">{formatTime(totalTime)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">占比</p>
+                            <p className="text-muted-foreground">占比</p>
                             <p className="font-medium">{percentage.toFixed(1)}%</p>
                           </div>
                         </div>
@@ -178,29 +178,29 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {recording.speakerSegments.map((segment, index) => {
                       const speakerColors = [
-                        'border-blue-500',
-                        'border-green-500',
-                        'border-yellow-500',
-                        'border-purple-500',
-                        'border-pink-500'
+                        'border-primary',
+                        'border-success',
+                        'border-warning',
+                        'border-chart-4',
+                        'border-chart-5'
                       ];
                       return (
                         <div 
                           key={index} 
-                          className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 ${speakerColors[segment.speakerIndex % speakerColors.length]}`}
+                          className={`flex items-center gap-3 p-3 bg-muted rounded-lg border-l-4 ${speakerColors[segment.speakerIndex % speakerColors.length]}`}
                         >
                           <div className="flex-shrink-0">
-                            <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center">
-                              <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{segment.speakerIndex + 1}</span>
+                            <div className="w-10 h-10 bg-gradient-to-br from-muted to-card rounded-full flex items-center justify-center">
+                              <span className="text-sm font-bold text-foreground">{segment.speakerIndex + 1}</span>
                             </div>
                           </div>
                           <div className="flex-grow">
                             <div className="flex items-center gap-2 text-sm">
-                              <ClockIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                              <ClockIcon className="w-3 h-3 text-muted-foreground" />
                               <span className="font-medium">
                                 {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
                               </span>
-                              <span className="text-gray-500 dark:text-gray-400">
+                              <span className="text-muted-foreground">
                                 ({formatTime(segment.endTime - segment.startTime)})
                               </span>
                             </div>
@@ -237,8 +237,8 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
             </div>
           ) : (
             <div className="text-center py-12">
-              <UsersIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400 mb-4">暂无说话人分析结果</p>
+              <UsersIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">暂无说话人分析结果</p>
               <div className="space-y-3">
                 <Button
                   onClick={() => runSpeakerSegmentation()}
@@ -287,30 +287,30 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50/20 dark:bg-blue-900/10 rounded-lg">
-                <MessageSquareIcon className="w-8 h-8 text-blue-500 dark:text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+              <div className="text-center p-4 bg-primary/5 dark:bg-primary/10 rounded-lg">
+                <MessageSquareIcon className="w-8 h-8 text-primary dark:text-primary mx-auto mb-2" />
+                <p className="text-2xl font-bold text-foreground">
                   {recording.speakerSegments.length}
                 </p>
-                <p className="text-sm text-blue-700 dark:text-blue-300">总发言次数</p>
+                <p className="text-sm text-muted-foreground">总发言次数</p>
               </div>
               
-              <div className="text-center p-4 bg-green-50/20 dark:bg-green-900/10 rounded-lg">
-                <TrendingUpIcon className="w-8 h-8 text-green-500 dark:text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+              <div className="text-center p-4 bg-success/10 dark:bg-success/20 rounded-lg">
+                <TrendingUpIcon className="w-8 h-8 text-success mx-auto mb-2" />
+                <p className="text-2xl font-bold text-foreground">
                   {Math.round((recording.speakerSegments.length / (recording.duration || 1)) * 60)}
                 </p>
-                <p className="text-sm text-green-700 dark:text-green-300">每分钟切换</p>
+                <p className="text-sm text-muted-foreground">每分钟切换</p>
               </div>
               
-              <div className="text-center p-4 bg-blue-50/20 dark:bg-blue-900/10 rounded-lg">
-                <ClockIcon className="w-8 h-8 text-purple-500 dark:text-purple-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+              <div className="text-center p-4 bg-accent/5 dark:bg-accent/10 rounded-lg">
+                <ClockIcon className="w-8 h-8 text-accent dark:text-accent mx-auto mb-2" />
+                <p className="text-2xl font-bold text-foreground">
                   {formatTime(
                     recording.speakerSegments.reduce((acc, s) => acc + (s.endTime - s.startTime), 0) / recording.speakerSegments.length
                   )}
                 </p>
-                <p className="text-sm text-purple-700 dark:text-purple-300">平均发言时长</p>
+                <p className="text-sm text-muted-foreground">平均发言时长</p>
               </div>
             </div>
           </CardContent>

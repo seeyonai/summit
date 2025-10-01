@@ -145,3 +145,12 @@ export type MeetingCreate = Pick<
 >;
 
 export type MeetingUpdate = Partial<Meeting> & Pick<Meeting, '_id'>;
+
+// App customization config
+export interface AppCustomization {
+  appName: string;
+  shortName?: string;
+  logoUrl?: string | null;
+  logoDarkUrl?: string | null;
+  faviconUrl?: string | null;
+}

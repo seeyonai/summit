@@ -30,10 +30,10 @@ function LiveTranscript({ transcriptSegments, partialSegment, isRecording }: Liv
 
   const getSpeakerColor = (speaker?: string) => {
     const colors = [
-      'from-purple-500/20 to-blue-500/20 border-purple-500/30',
-      'from-green-500/20 to-teal-500/20 border-green-500/30',
-      'from-orange-500/20 to-red-500/20 border-orange-500/30',
-      'from-pink-500/20 to-rose-500/20 border-pink-500/30',
+      'from-accent/20 to-primary/20 border-accent/30',
+      'from-success/20 to-success/20 border-success/30',
+      'from-warning/20 to-destructive/20 border-warning/30',
+      'from-accent/20 to-accent/20 border-accent/30',
     ];
     
     if (!speaker) return colors[0];
@@ -44,19 +44,19 @@ function LiveTranscript({ transcriptSegments, partialSegment, isRecording }: Liv
   };
 
   return (
-    <Card className="bg-black/40 backdrop-blur-xl border-white/10 flex-1 flex flex-col">
+    <Card className="bg-background/40 backdrop-blur-xl border-border/10 flex-1 flex flex-col">
       <CardContent className="p-6 flex flex-col h-full">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-semibold text-white">实时语音识别</h2>
             {isRecording && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-red-500/20 rounded-full">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-red-400 text-xs font-medium">LIVE</span>
+              <div className="flex items-center gap-2 px-3 py-1 bg-destructive/20 rounded-full">
+                <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                <span className="text-destructive text-xs font-medium">LIVE</span>
               </div>
             )}
           </div>
-          <MessageSquare className="w-5 h-5 text-blue-400" />
+          <MessageSquare className="w-5 h-5 text-primary" />
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
@@ -64,21 +64,21 @@ function LiveTranscript({ transcriptSegments, partialSegment, isRecording }: Liv
           {partialSegment && (
             <div className="sticky top-0 z-10">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl blur-xl animate-pulse" />
-                <div className="relative bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl p-4 border border-yellow-500/30">
+                <div className="absolute inset-0 bg-gradient-to-r from-warning/20 to-destructive/20 rounded-xl blur-xl animate-pulse" />
+                <div className="relative bg-gradient-to-r from-warning/10 to-destructive/10 rounded-xl p-4 border border-warning/30">
                   <div className="flex items-start gap-3">
                     <div className="mt-1">
-                      <Volume2 className="w-5 h-5 text-yellow-400 animate-pulse" />
+                      <Volume2 className="w-5 h-5 text-warning animate-pulse" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-yellow-400">
+                          <span className="text-xs font-medium text-warning">
                             {partialSegment.speaker || 'Speaker'}
                           </span>
-                          <Sparkles className="w-3 h-3 text-yellow-400 animate-pulse" />
+                          <Sparkles className="w-3 h-3 text-warning animate-pulse" />
                         </div>
-                        <span className="text-xs text-yellow-400/70">
+                        <span className="text-xs text-warning/70">
                           {formatSegmentTimestamp(partialSegment.startTime)}
                         </span>
                       </div>

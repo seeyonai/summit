@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 /* card imports removed */
 import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
+import SearchInput from '@/components/SearchInput';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 /* tooltip and tabs imports removed */
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { apiService } from '@/services/api';
 import type { Recording } from '@/types';
-import { MicIcon, CopyIcon, DownloadIcon, SearchIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon, EditIcon, XIcon } from 'lucide-react';
+import { MicIcon, CopyIcon, DownloadIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon, EditIcon, XIcon } from 'lucide-react';
 
 interface RecordingTranscriptionProps {
   recording: Recording;
@@ -180,7 +180,7 @@ function RecordingTranscription({
     
     return parts.map((part, index) => 
       regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 text-black px-1 rounded">
+        <mark key={index} className="bg-warning/30 text-foreground px-1 rounded">
           {part}
         </mark>
       ) : part
@@ -240,19 +240,19 @@ function RecordingTranscription({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-card rounded-lg shadow-sm border border-border">
       <div className="p-6">
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-start">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <FileTextIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-xl font-semibold text-foreground">
                   转录内容
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   音频的文字转录结果
                 </p>
               </div>
@@ -297,15 +297,12 @@ function RecordingTranscription({
           {/* Action Bar */}
           <div className="flex flex-wrap gap-2 items-center">
             {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-              <Input
-                placeholder="搜索转录内容..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+            <SearchInput
+              className="flex-1 min-w-[200px]"
+              placeholder="搜索转录内容..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
 
             {/* View Controls */}
             <Button
@@ -321,7 +318,7 @@ function RecordingTranscription({
             <select
               value={fontSize}
               onChange={(e) => setFontSize(e.target.value as 'sm' | 'base' | 'lg')}
-              className="px-2 py-1 border border-gray-200 dark:border-gray-600 rounded-md text-sm"
+              className="px-2 py-1 border border-border rounded-md text-sm"
             >
               <option value="sm">小</option>
               <option value="base">中</option>
@@ -451,44 +448,44 @@ function RecordingTranscription({
                 )}
                 
                 {/* Word Statistics */}
-                <div className="grid grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="grid grid-cols-4 gap-3 p-3 bg-muted rounded-lg">
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg font-semibold text-foreground">
                       {getWordStats(recording.transcription).characters.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">字符</p>
+                    <p className="text-xs text-muted-foreground">字符</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg font-semibold text-foreground">
                       {getWordStats(recording.transcription).words.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">词数</p>
+                    <p className="text-xs text-muted-foreground">词数</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg font-semibold text-foreground">
                       {getWordStats(recording.transcription).sentences.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">句数</p>
+                    <p className="text-xs text-muted-foreground">句数</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg font-semibold text-foreground">
                       {getWordStats(recording.transcription).paragraphs.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">段落</p>
+                    <p className="text-xs text-muted-foreground">段落</p>
                   </div>
                 </div>
               </>
             ) : (
               <div className="text-center py-12">
-                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MicIcon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MicIcon className="w-6 h-6 text-muted-foreground" />
                 </div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">暂无转录内容</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">点击下方按钮开始转录</p>
+                <h3 className="text-sm font-medium text-foreground mb-1">暂无转录内容</h3>
+                <p className="text-sm text-muted-foreground mb-4">点击下方按钮开始转录</p>
                 <Button
                   onClick={generateTranscription}
                   disabled={transcribing}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {transcribing ? (
                     <>

@@ -48,8 +48,8 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
     <Card className={className}>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-blue-100 dark:bg-blue-900/20">
-            <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="p-2.5 rounded-lg bg-primary/10 dark:bg-primary/20">
+            <Calendar className="w-5 h-5 text-primary dark:text-primary/80" />
           </div>
           <div>
             <CardTitle className="text-lg">即将到来的会议</CardTitle>
@@ -70,7 +70,7 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
           <div className="space-y-4">
             {meetings.map((meeting) => (
               <Link key={meeting.id} to={`/meetings/${meeting.id}`}>
-                <div className="group p-4 rounded-lg border border-border/50 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200 cursor-pointer">
+                <div className="group p-4 rounded-lg border border-border/50 hover:bg-primary/10 dark:hover:bg-primary/20 hover:border-primary/30 dark:hover:border-primary/70 transition-all duration-200 cursor-pointer">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">

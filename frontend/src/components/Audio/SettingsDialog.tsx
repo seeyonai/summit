@@ -55,20 +55,20 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gradient-to-b from-slate-800/90 to-slate-900/90 border-slate-700/50 max-w-md backdrop-blur-xl">
+      <DialogContent className="bg-gradient-to-b from-background/90 to-background/90 border-border/50 max-w-md backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-3">
-            <Settings className="w-5 h-5 text-slate-400" />
+          <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-3">
+            <Settings className="w-5 h-5 text-muted-foreground" />
             显示设置
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-6 mt-6">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label htmlFor="agenda-toggle" className="text-sm font-medium text-white">
+              <Label htmlFor="agenda-toggle" className="text-sm font-medium text-foreground">
                 显示议程
               </Label>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 在左侧面板中显示会议议程信息
               </p>
             </div>
@@ -81,10 +81,10 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
           
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label htmlFor="chat-toggle" className="text-sm font-medium text-white">
+              <Label htmlFor="chat-toggle" className="text-sm font-medium text-foreground">
                 显示群聊
               </Label>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 显示群聊消息面板（开发中）
               </p>
             </div>
@@ -95,7 +95,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             />
           </div>
           
-          <Separator className="bg-slate-700" />
+          <Separator className="bg-border" />
           
           <div className="flex items-center justify-between">
             <div className="space-y-1">
@@ -107,13 +107,13 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Sun className={`w-4 h-4 ${!isDarkMode ? 'text-yellow-500' : themeClasses.text.muted}`} />
+              <Sun className={`w-4 h-4 ${!isDarkMode ? 'text-warning' : themeClasses.text.muted}`} />
               <Switch
                 id="theme-toggle"
                 checked={isDarkMode}
                 onCheckedChange={onToggleTheme}
               />
-              <Moon className={`w-4 h-4 ${isDarkMode ? 'text-blue-400' : themeClasses.text.muted}`} />
+              <Moon className={`w-4 h-4 ${isDarkMode ? 'text-primary' : themeClasses.text.muted}`} />
             </div>
           </div>
           
@@ -133,7 +133,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             />
           </div>
           
-          <Separator className="bg-slate-700" />
+          <Separator className="bg-border" />
           
           <div className="space-y-3">
             <Label className={`text-sm font-medium ${themeClasses.text.primary}`}>
@@ -144,20 +144,20 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 onClick={onZoomOut}
                 variant="outline"
                 size="sm"
-                className={`${isDarkMode ? 'bg-slate-700 border-slate-600 text-white hover:bg-slate-600' : 'bg-gray-200 border-gray-300 text-gray-900 hover:bg-gray-300'}`}
+                className={`${isDarkMode ? 'bg-card border-border text-foreground hover:bg-muted' : 'bg-muted border-border text-foreground hover:bg-muted/80'}`}
                 disabled={zoomLevel <= 50}
               >
                 <ZoomOut className="w-4 h-4 mr-1" />
                 缩小
               </Button>
-              <span className={`${themeClasses.text.primary} font-mono text-sm px-3 py-1 ${isDarkMode ? 'bg-slate-700' : 'bg-gray-200'} rounded`}>
+              <span className={`${themeClasses.text.primary} font-mono text-sm px-3 py-1 ${isDarkMode ? 'bg-card' : 'bg-muted'} rounded`}>
                 {zoomLevel}%
               </span>
               <Button
                 onClick={onZoomIn}
                 variant="outline"
                 size="sm"
-                className={`${isDarkMode ? 'bg-slate-700 border-slate-600 text-white hover:bg-slate-600' : 'bg-gray-200 border-gray-300 text-gray-900 hover:bg-gray-300'}`}
+                className={`${isDarkMode ? 'bg-card border-border text-foreground hover:bg-muted' : 'bg-muted border-border text-foreground hover:bg-muted/80'}`}
                 disabled={zoomLevel >= 200}
               >
                 <ZoomIn className="w-4 h-4 mr-1" />
@@ -168,7 +168,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
               onClick={onResetZoom}
               variant="ghost"
               size="sm"
-              className={`w-full ${themeClasses.text.secondary} hover:${themeClasses.text.primary} ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
+              className={`w-full ${themeClasses.text.secondary} hover:${themeClasses.text.primary} ${isDarkMode ? 'hover:bg-muted' : 'hover:bg-muted'}`}
             >
               重置缩放
             </Button>
@@ -178,7 +178,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         <DialogFooter className="mt-6">
           <Button 
             onClick={() => onOpenChange(false)}
-            className={`${isDarkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-900'}`}
+            className={`${isDarkMode ? 'bg-card hover:bg-muted text-foreground' : 'bg-muted hover:bg-muted/80 text-foreground'}`}
           >
             完成
           </Button>

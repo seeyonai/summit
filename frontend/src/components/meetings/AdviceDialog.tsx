@@ -40,10 +40,10 @@ function AdviceDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-purple-50/20 to-pink-50/20 -m-6 mb-0 p-6 rounded-t-lg">
+        <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-purple-500/5 to-pink-500/5 -m-6 mb-0 p-6 rounded-t-lg">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-100/20 to-pink-100/20 shadow-sm">
-              <Sparkles className="w-6 h-6 text-purple-600" />
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 shadow-sm">
+              <Sparkles className="w-6 h-6 text-purple-500" />
             </div>
             <div className="flex-1">
               <DialogTitle className="text-xl font-semibold">AI 智能建议</DialogTitle>
@@ -61,7 +61,7 @@ function AdviceDialog({
                 <Lightbulb className="w-4 h-4" />
                 原始任务
               </div>
-              <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50/20 to-blue-50/20 border border-blue-200/50">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/5 border border-primary/20">
                 <p className="text-sm text-gray-700">{todoText}</p>
               </div>
             </div>
@@ -70,8 +70,8 @@ function AdviceDialog({
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full border-4 border-purple-200 animate-pulse" />
-                <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-t-purple-600 animate-spin" />
+                <div className="w-16 h-16 rounded-full border-4 border-purple-500/20 animate-pulse" />
+                <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-t-purple-500 animate-spin" />
               </div>
               <p className="text-sm text-muted-foreground animate-pulse">
                 AI 正在分析并生成建议...
@@ -81,7 +81,7 @@ function AdviceDialog({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <Sparkles className="w-4 h-4 text-purple-500" />
                   AI 建议
                 </div>
                 <div className="flex items-center gap-2">
@@ -89,11 +89,11 @@ function AdviceDialog({
                     variant="ghost"
                     size="sm"
                     onClick={handleCopy}
-                    className="gap-1.5 text-xs hover:bg-blue-50 hover:text-purple-700"
+                    className="gap-1.5 text-xs hover:bg-primary/5 hover:text-purple-700"
                   >
                     {copied ? (
                       <>
-                        <CheckCheck className="w-3.5 h-3.5 text-green-600" />
+                        <CheckCheck className="w-3.5 h-3.5 text-green-500" />
                         已复制
                       </>
                     ) : (
@@ -108,7 +108,7 @@ function AdviceDialog({
                       variant="ghost"
                       size="sm"
                       onClick={onRegenerate}
-                      className="gap-1.5 text-xs hover:bg-blue-50 hover:text-purple-700"
+                      className="gap-1.5 text-xs hover:bg-primary/5 hover:text-purple-700"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       重新生成
@@ -117,8 +117,8 @@ function AdviceDialog({
                 </div>
               </div>
               <div className={cn(
-                'p-4 rounded-lg bg-gradient-to-br from-purple-50/20 to-pink-50/20',
-                'border border-purple-200/50 shadow-sm'
+                'p-4 rounded-lg bg-gradient-to-br from-purple-500/5 to-pink-500/5',
+                'border border-purple-500/20 shadow-sm'
               )}>
                 <div className="prose prose-sm max-w-none">
                   <p className="text-sm whitespace-pre-wrap leading-relaxed text-gray-700">
@@ -126,12 +126,12 @@ function AdviceDialog({
                   </p>
                 </div>
               </div>
-              <div className="p-3 rounded-lg bg-gradient-to-r from-amber-50/20 to-yellow-50/20 border border-amber-200/50">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-amber-500/5 to-yellow-500/5 border border-amber-500/20">
                 <div className="flex items-start gap-2">
-                  <Lightbulb className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <div className="text-xs text-amber-800 space-y-1">
+                  <Lightbulb className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-amber-700 space-y-1">
                     <p className="font-medium">提示：</p>
-                    <ul className="list-disc list-inside space-y-0.5 text-amber-700">
+                    <ul className="list-disc list-inside space-y-0.5 text-amber-600">
                       <li>建议仅供参考，请根据实际情况调整</li>
                       <li>可以点击"重新生成"获取不同角度的建议</li>
                       <li>复制建议后可以在其他地方使用</li>
@@ -142,7 +142,7 @@ function AdviceDialog({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="p-4 rounded-full bg-gradient-to-br from-gray-50/20 to-slate-50/20 mb-4">
+              <div className="p-4 rounded-full bg-gradient-to-br from-muted/20 to-muted/20 mb-4">
                 <Sparkles className="w-8 h-8 text-gray-400" />
               </div>
               <p className="text-sm text-muted-foreground">暂无建议内容</p>

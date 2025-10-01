@@ -29,11 +29,11 @@ function AgendaList({ items, className }: AgendaListProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'resolved':
-        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+        return <CheckCircle2 className="w-4 h-4 text-success" />;
       case 'ongoing':
-        return <Clock className="w-4 h-4 text-blue-600 animate-pulse" />;
+        return <Clock className="w-4 h-4 text-primary animate-pulse" />;
       default:
-        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
+        return <AlertCircle className="w-4 h-4 text-warning" />;
     }
   };
 

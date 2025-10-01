@@ -63,7 +63,7 @@ function RecordingListItem({
 
   return (
     <div 
-      className={`group bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 p-4 ${
+      className={`group bg-card rounded-lg border border-border hover:border-primary hover:shadow-md dark:hover:shadow-primary/10 transition-all duration-300 p-4 ${
         onClick ? 'cursor-pointer' : ''
       } ${className}`}
       onClick={handleCardClick}
@@ -72,7 +72,7 @@ function RecordingListItem({
         {/* Play Button */}
         <button
           onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recording.filename), e)}
-          className="w-12 h-12 bg-gradient-to-r from-primary/80 to-blue-500/80 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform"
+          className="w-12 h-12 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center text-primary-foreground shadow-lg dark:shadow-primary/20 hover:scale-105 transition-transform"
         >
           {playingAudio === recordingId ? (
             <PauseIcon className="w-5 h-5" />
@@ -84,14 +84,14 @@ function RecordingListItem({
         {/* Recording Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-gray-900 truncate">{recording.filename}</h3>
+            <h3 className="font-semibold text-foreground truncate">{recording.filename}</h3>
             {recording.transcription && (
-              <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+              <Badge variant="secondary" className="bg-success/10 text-success border-success/20 text-xs">
                 已转录
               </Badge>
             )}
             {recording.speakerSegments && recording.speakerSegments.length > 0 && (
-              <Badge variant="secondary" className="bg-blue-100 text-purple-700 text-xs">
+              <Badge variant="secondary" className="bg-chart-4/10 text-chart-4 border-chart-4/20 text-xs">
                 {recording.numSpeakers || '多'}人对话
               </Badge>
             )}
@@ -100,10 +100,10 @@ function RecordingListItem({
               <Badge 
                 variant="outline"
                 className={
-                  recording.meeting.status === 'completed' ? 'bg-green-50 text-green-600 border-green-200' :
-                  recording.meeting.status === 'in_progress' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                  recording.meeting.status === 'scheduled' ? 'bg-gray-50 text-gray-600 border-gray-200' :
-                  'bg-red-50 text-red-600 border-red-200'
+                  recording.meeting.status === 'completed' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
+                  recording.meeting.status === 'in_progress' ? 'bg-primary/10 text-primary border-primary/20' :
+                  recording.meeting.status === 'scheduled' ? 'bg-muted text-muted-foreground border-border' :
+                  'bg-destructive/10 text-destructive border-destructive/20'
                 }
               >
                 {recording.meeting.status === 'completed' ? '已完成' :
@@ -116,12 +116,12 @@ function RecordingListItem({
           {/* Meeting Title */}
           {recording.meeting && (
             <div className="mb-1">
-              <span className="text-sm text-gray-500">会议: </span>
-              <span className="text-sm font-medium text-gray-700">{recording.meeting.title}</span>
+              <span className="text-sm text-muted-foreground">会议: </span>
+              <span className="text-sm font-medium text-foreground">{recording.meeting.title}</span>
             </div>
           )}
           
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <CalendarIcon className="w-3 h-3" />
               {formatDate(recording.createdAt)}
@@ -137,7 +137,7 @@ function RecordingListItem({
           </div>
           
           {recording.transcription && (
-            <p className="mt-2 text-sm text-gray-600 line-clamp-1">
+            <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
               {recording.transcription}
             </p>
           )}
@@ -167,7 +167,7 @@ function RecordingListItem({
             <Button
               size="sm"
               variant="ghost"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
               onClick={handleAction(defaultActions.onDelete)}
             >
               <TrashIcon className="w-4 h-4" />

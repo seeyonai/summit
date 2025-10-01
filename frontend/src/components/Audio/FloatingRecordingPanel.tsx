@@ -105,9 +105,9 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
         style={{ 
           transform: 'translate(0, 0)',
           transition: isDragging ? 'none' : 'all 0.3s ease',
-          background: 'linear-gradient(135deg, #1f1f1f 0%, #242424 100%)',
+          background: 'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%)',
           backdropFilter: 'blur(10px)',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3)'
+          boxShadow: '0 20px 25px -5px hsl(var(--foreground) / 0.1), 0 10px 10px -5px hsl(var(--foreground) / 0.05)'
         }}
         onMouseDown={handleMouseDown}
       >
@@ -123,7 +123,7 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
         <div className="flex items-center gap-2 px-2 py-1 min-w-[200px]">
           {isRecording ? (
             <>
-              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-destructive rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-white">录音中</span>
               <span className="text-xs text-white/60">{formatTime(recordingTime)}</span>
             </>
@@ -136,7 +136,7 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
         </div>
         
         <div className="flex items-center gap-1">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-destructive'}`}></div>
           <Button size="sm" variant="ghost" onClick={startRecording} disabled={isRecording} className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/10">
             <Mic className="w-4 h-4" />
           </Button>
@@ -158,9 +158,9 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
         cursor: isDragging ? 'grabbing' : 'grab',
         transform: 'translate(0, 0)',
         transition: isDragging ? 'none' : 'all 0.3s ease',
-        background: 'linear-gradient(135deg, #1f1f1f 0%, #242424 100%)',
+        background: 'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%)',
         backdropFilter: 'blur(10px)',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3)'
+        boxShadow: '0 20px 25px -5px hsl(var(--foreground) / 0.1), 0 10px 10px -5px hsl(var(--foreground) / 0.05)'
       }}
       onMouseDown={handleMouseDown}
     >
@@ -168,8 +168,8 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={`p-1.5 rounded-lg ${isRecording ? 'bg-red-500/20 border border-red-500/50' : 'bg-blue-500/20 border border-blue-500/50'}`}>
-                <Mic className={`w-4 h-4 ${isRecording ? 'text-red-400' : 'text-blue-400'}`} />
+              <div className={`p-1.5 rounded-lg ${isRecording ? 'bg-destructive/20 border border-destructive/50' : 'bg-primary/20 border border-primary/50'}`}>
+                <Mic className={`w-4 h-4 ${isRecording ? 'text-destructive' : 'text-primary'}`} />
               </div>
               <CardTitle className="text-sm font-medium text-white">录音控制面板</CardTitle>
             </div>
@@ -207,13 +207,13 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
               <div className="flex items-center gap-1">
                 {isConnected ? (
                   <>
-                    <Wifi className="w-3 h-3 text-green-400" />
-                    <span className="text-green-400">已连接</span>
+                    <Wifi className="w-3 h-3 text-green-500" />
+                    <span className="text-green-500">已连接</span>
                   </>
                 ) : (
                   <>
-                    <WifiOff className="w-3 h-3 text-red-400" />
-                    <span className="text-red-400">未连接</span>
+                    <WifiOff className="w-3 h-3 text-destructive" />
+                    <span className="text-destructive">未连接</span>
                   </>
                 )}
               </div>
@@ -222,7 +222,7 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
                 <span className="text-white/80">{formatTime(recordingTime)}</span>
               </div>
             </div>
-            <Badge variant={isRecording ? "destructive" : "secondary"} className={`text-xs font-bold ${isRecording ? 'bg-red-500 text-white' : 'bg-gray-600 text-white'}`}>
+            <Badge variant={isRecording ? "destructive" : "secondary"} className={`text-xs font-bold ${isRecording ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-muted-foreground'}`}>
               {isRecording ? "录音中" : "待机"}
             </Badge>
           </div>
@@ -230,7 +230,7 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
         
         <CardContent className="space-y-3 pt-0">
           <div className="flex gap-2">
-            <Button onClick={startRecording} disabled={isRecording} size="sm" className={`flex-1 font-bold ${isRecording ? 'bg-gray-600 text-white' : 'bg-blue-500 hover:bg-blue-400 text-white'}`}>
+            <Button onClick={startRecording} disabled={isRecording} size="sm" className={`flex-1 font-bold ${isRecording ? 'bg-muted text-muted-foreground' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}>
               {isRecording ? (
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
@@ -248,19 +248,19 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
               disabled={!isRecording}
               variant="destructive"
               size="sm"
-              className="bg-red-500 hover:bg-red-400 text-white font-bold"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
             >
               <X className="w-3 h-3" />
             </Button>
           </div>
           
           {partialText && (
-            <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg backdrop-blur-sm">
+            <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg backdrop-blur-sm">
               <div className="flex items-center gap-1 mb-1">
-                <Volume2 className="w-3 h-3 text-blue-400" />
-                <span className="text-xs font-bold text-blue-400">实时转录</span>
+                <Volume2 className="w-3 h-3 text-primary" />
+                <span className="text-xs font-bold text-primary">实时转录</span>
               </div>
-              <p className="text-xs text-blue-100 leading-relaxed">{partialText}</p>
+              <p className="text-xs text-foreground/80 leading-relaxed">{partialText}</p>
             </div>
           )}
           
@@ -275,12 +275,12 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
           )}
           
           {!isConnected && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg backdrop-blur-sm">
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg backdrop-blur-sm">
               <div className="flex items-center gap-1">
-                <AlertCircle className="w-3 h-3 text-red-400" />
-                <span className="text-xs font-bold text-red-400">连接断开</span>
+                <AlertCircle className="w-3 h-3 text-destructive" />
+                <span className="text-xs font-bold text-destructive">连接断开</span>
               </div>
-              <p className="text-xs text-red-200 mt-1">请检查网络连接并重试</p>
+              <p className="text-xs text-destructive/80 mt-1">请检查网络连接并重试</p>
             </div>
           )}
         </CardContent>

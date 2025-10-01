@@ -79,15 +79,15 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
   return (
     <div 
       ref={containerRef}
-      className={`fixed overflow-y-auto inset-0 z-50 bg-gradient-to-br from-slate-900 via-primary-900/90 to-slate-900 ${
+      className={`fixed overflow-y-auto inset-0 z-50 bg-gradient-to-br from-background via-primary/90 to-background ${
         isFullscreen ? '' : 'p-4'
       }`}
     >
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-700" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/20 rounded-full blur-3xl animate-pulse delay-700" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
       {/* Main Content */}
@@ -96,14 +96,14 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-6">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl blur-xl opacity-50 animate-pulse" />
-              <Card className="relative bg-black/40 backdrop-blur-xl border-white/10">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-2xl blur-xl opacity-50 animate-pulse" />
+              <Card className="relative bg-background/40 backdrop-blur-xl border-border/10">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                      isRecording 
-                        ? 'bg-red-500 animate-pulse' 
-                        : 'bg-gradient-to-br from-purple-500 to-blue-500'
+                      isRecording
+                        ? 'bg-destructive animate-pulse'
+                        : 'bg-gradient-to-br from-primary to-accent'
                     }`}>
                       {isRecording ? (
                         <Activity className="w-8 h-8 text-white animate-pulse" />
@@ -131,10 +131,10 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
 
             {/* Recording Timer */}
             {isRecording && (
-              <div className="bg-red-500/20 backdrop-blur-xl rounded-2xl px-6 py-4 border border-red-500/30">
+              <div className="bg-destructive/20 backdrop-blur-xl rounded-2xl px-6 py-4 border border-destructive/30">
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-red-400 text-sm font-medium">RECORDING</span>
+                  <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                  <span className="text-destructive text-sm font-medium">RECORDING</span>
                   <span className="text-white text-2xl font-mono font-bold">{formatTime(recordingTime)}</span>
                 </div>
               </div>
@@ -148,8 +148,8 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
                 variant="outline" 
                 className={`px-3 py-1 ${
                   isConnected 
-                    ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                    : 'bg-red-500/20 text-red-400 border-red-500/30'
+                    ? 'bg-success/20 text-success border-success/30' 
+                    : 'bg-destructive/20 text-destructive border-destructive/30'
                 }`}
               >
                 {isConnected ? (
@@ -167,9 +167,9 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
               <Badge 
                 variant="outline" 
                 className={`px-3 py-1 ${
-                  isTranscriptionConnected 
-                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
-                    : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                  isTranscriptionConnected
+                    ? 'bg-primary/20 text-primary border-primary/30'
+                    : 'bg-muted/20 text-muted-foreground border-border/30'
                 }`}
               >
                 {isTranscriptionConnected ? (

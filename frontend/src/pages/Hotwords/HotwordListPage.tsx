@@ -14,7 +14,6 @@ import HotwordCreateModal from '@/pages/Hotwords/components/HotwordCreateModal';
 import HotwordEditModal from '@/pages/Hotwords/components/HotwordEditModal';
 import HotwordBulkActions from '@/pages/Hotwords/components/HotwordBulkActions';
 import HotwordListItem from '@/pages/Hotwords/components/HotwordListItem';
-import HotwordStats from '@/pages/Hotwords/components/HotwordStats';
 import HotwordCards from '@/pages/Hotwords/components/HotwordList';
 
 function HotwordListPage() {
@@ -208,8 +207,6 @@ function HotwordListPage() {
         </Card>
       )}
 
-      {/* Bulk actions & insights */}
-      <HotwordStats analytics={stats} />
       <HotwordBulkActions hotwords={hotwords} onImport={handleImport} onExport={handleExport} isLoading={loading} />
 
       {/* Modals */}

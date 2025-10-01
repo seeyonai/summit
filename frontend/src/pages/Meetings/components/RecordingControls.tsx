@@ -36,14 +36,14 @@ export function RecordingControls({
         {message && (
           <div className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
             status === 'error' 
-              ? 'bg-red-500/20 border border-red-500/30' 
-              : 'bg-blue-500/20 border border-blue-500/30'
+              ? 'bg-destructive/20 border border-destructive/30' 
+              : 'bg-primary/20 border border-primary/30'
           }`}>
             <AlertCircle className={`w-4 h-4 mt-0.5 ${
-              status === 'error' ? 'text-red-400' : 'text-blue-400'
+              status === 'error' ? 'text-destructive' : 'text-primary'
             }`} />
             <p className={`text-sm ${
-              status === 'error' ? 'text-red-300' : 'text-blue-300'
+              status === 'error' ? 'text-destructive' : 'text-primary'
             }`}>
               {message}
             </p>
@@ -54,7 +54,7 @@ export function RecordingControls({
           {!isConnected ? (
             <Button 
               onClick={onConnect}
-              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
+              className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white"
             >
               <Wifi className="w-4 h-4 mr-2" />
               连接录制系统
@@ -63,7 +63,7 @@ export function RecordingControls({
             <Button 
               onClick={onStartRecording}
               disabled={status !== 'ready'}
-              className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white"
+              className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               <Mic className="w-4 h-4 mr-2" />
               开始录制
@@ -71,7 +71,7 @@ export function RecordingControls({
           ) : (
             <Button 
               onClick={onStopRecording}
-              className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white"
+              className="w-full bg-muted-foreground hover:bg-muted-foreground/90 text-background"
             >
               <Square className="w-4 h-4 mr-2" />
               停止录制

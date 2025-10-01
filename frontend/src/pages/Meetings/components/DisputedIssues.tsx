@@ -41,13 +41,13 @@ function DisputedIssues({ meetingId, onAnalysisComplete }: DisputedIssuesProps) 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'high':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+        return 'bg-destructive/10 text-destructive border border-destructive/30';
       case 'medium':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+        return 'bg-warning/10 text-warning border border-warning/30';
       case 'low':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
+        return 'bg-info/10 text-info border border-info/30';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
+        return 'bg-muted text-muted-foreground border border-border';
     }
   };
 
@@ -120,7 +120,7 @@ function DisputedIssues({ meetingId, onAnalysisComplete }: DisputedIssuesProps) 
           <Button
             onClick={handleExtractAnalysis}
             size="sm"
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+            className="flex items-center gap-2 bg-gradient-to-r from-chart-4 to-primary hover:from-chart-4/90 hover:to-primary/90 text-white"
           >
             <BrainIcon className="w-4 h-4" />
             分析争论焦点
@@ -128,11 +128,11 @@ function DisputedIssues({ meetingId, onAnalysisComplete }: DisputedIssuesProps) 
         </div>
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <TargetIcon className="w-12 h-12 text-gray-400 mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+            <TargetIcon className="w-12 h-12 text-muted-foreground mb-4" />
+            <h4 className="text-lg font-medium text-foreground mb-2">
               暂无争论焦点
             </h4>
-            <p className="text-gray-600 dark:text-gray-400 max-w-md">
+            <p className="text-muted-foreground max-w-md">
               点击"分析争论焦点"按钮，AI 将从会议记录中提取和分析争论焦点，帮助您了解会议中的关键分歧点。
             </p>
           </CardContent>
@@ -151,7 +151,7 @@ function DisputedIssues({ meetingId, onAnalysisComplete }: DisputedIssuesProps) 
         </h3>
         <div className="flex gap-2">
           {analysisMetadata && (
-            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <ClockIcon className="w-4 h-4" />
               {analysisMetadata.processingTime}
             </div>
@@ -169,7 +169,7 @@ function DisputedIssues({ meetingId, onAnalysisComplete }: DisputedIssuesProps) 
             onClick={clearAnalysis}
             size="sm"
             variant="ghost"
-            className="text-red-600 hover:text-red-700"
+            className="text-destructive hover:text-destructive"
           >
             清除
           </Button>
@@ -191,7 +191,7 @@ function DisputedIssues({ meetingId, onAnalysisComplete }: DisputedIssuesProps) 
             </CardHeader>
             <CardContent className="pt-0">
               {issue.parties.length > 0 && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <UsersIcon className="w-4 h-4" />
                   <span>涉及方:</span>
                   <div className="flex gap-1 flex-wrap">

@@ -15,10 +15,6 @@
 - Mirror REST resources in backend route filenames (e.g. `src/routes/recordings.ts`) and colocate helpers near their consumers to avoid long relatives; prefer the `@/` alias in the frontend.
 - Prefer functions for pure logic, utilities, and stateless operations. Use classes only when you actually need object instances with state/behavior. Default to functions.
 
-## Testing Guidelines
-- Backend specs belong in `src/__tests__/` or alongside code as `*.test.ts`; stub MongoDB (e.g. via MongoMemoryServer) so `npm test` runs offline and covers routes, services, and serializers.
-- Frontend automation is not yet scaffolded—document manual verification in PRs, and if you introduce Vitest or React Testing Library, colocate `*.test.tsx` under `src/` and wire the command into `package.json`.
-
 ## Commit & Pull Request Guidelines
 - Use Conventional Commit subjects (`feat:`, `refactor:`, `docs:`) with imperative, lower-case wording consistent with the current history.
 - PRs should describe behaviour changes, list commands you ran, link tracking issues, and include UI screenshots when altering visible flows; keep scope narrow and flag any seeding or data migrations.

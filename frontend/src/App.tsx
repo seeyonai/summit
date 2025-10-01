@@ -23,6 +23,7 @@ import Register from '@/pages/Auth/Register';
 import AdminRoute from '@/components/AdminRoute';
 import AdminUsers from '@/pages/Admin/Users';
 import Profile from '@/pages/Profile';
+import { ConfigProvider } from '@/contexts/ConfigContext';
 
 function AppContent() {
   const { isRecording } = useAudioRecording();
@@ -95,7 +96,9 @@ function App() {
   return (
     <RecordingPanelProvider>
       <AuthProvider>
-        <AppContent />
+        <ConfigProvider>
+          <AppContent />
+        </ConfigProvider>
       </AuthProvider>
     </RecordingPanelProvider>
   );

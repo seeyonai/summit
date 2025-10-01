@@ -53,12 +53,12 @@ function TodoList({ todos, onGenerateAdvice, generatingAdvice = {}, className }:
 
   return (
     <Card className={cn('overflow-hidden', className)}>
-      <CardHeader className="bg-gradient-to-r from-blue-50/20 to-blue-50/20 border-b">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/10 border-b">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-100/20 to-blue-100/20">
-                <Target className="w-5 h-5 text-blue-600" />
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/20">
+                <Target className="w-5 h-5 text-primary" />
               </div>
               待办事项
               <span className="ml-2 text-sm font-normal text-muted-foreground">
@@ -68,9 +68,9 @@ function TodoList({ todos, onGenerateAdvice, generatingAdvice = {}, className }:
           </div>
           <CardDescription>从会议转录中提取的待办事项</CardDescription>
           {/* Progress bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-blue-500/30 to-blue-500/30 transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-primary/30 to-primary/30 transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
@@ -89,8 +89,8 @@ function TodoList({ todos, onGenerateAdvice, generatingAdvice = {}, className }:
                 className={cn(
                   'group transition-all',
                   todo.completed 
-                    ? 'bg-gray-50/30 hover:bg-gray-100/30' 
-                    : 'hover:bg-gradient-to-r hover:from-blue-50/10 hover:to-blue-50/10'
+                    ? 'bg-muted/30 hover:bg-muted/50' 
+                    : 'hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/10'
                 )}
               >
                 <div className="p-4">
@@ -100,15 +100,15 @@ function TodoList({ todos, onGenerateAdvice, generatingAdvice = {}, className }:
                       className="flex-shrink-0 mt-0.5 transition-transform hover:scale-110"
                     >
                       {todo.completed ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 text-success" />
                       ) : (
-                        <Circle className="w-5 h-5 text-gray-400 hover:text-blue-500" />
+                        <Circle className="w-5 h-5 text-muted-foreground hover:text-primary" />
                       )}
                     </button>
                     <div className="flex-1 min-w-0">
                       <p className={cn(
                         'text-sm leading-relaxed break-words',
-                        todo.completed && 'line-through text-gray-500'
+                        todo.completed && 'line-through text-muted-foreground'
                       )}>
                         {todo.text}
                       </p>
@@ -131,11 +131,11 @@ function TodoList({ todos, onGenerateAdvice, generatingAdvice = {}, className }:
                           size="icon"
                           onClick={() => onGenerateAdvice(todo)}
                           disabled={isGenerating || todo.completed}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100 hover:text-blue-700"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary"
                           title="生成AI建议"
                         >
                           {isGenerating ? (
-                            <div className="w-4 h-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                            <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                           ) : (
                             <Sparkles className="w-4 h-4" />
                           )}
@@ -148,13 +148,13 @@ function TodoList({ todos, onGenerateAdvice, generatingAdvice = {}, className }:
                           isExpanded && 'rotate-90'
                         )}
                       >
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       </button>
                     </div>
                   </div>
                   {isExpanded && (
                     <div className="mt-3 pl-8 space-y-2">
-                      <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50/20 to-blue-50/20 border border-blue-100/50">
+                      <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/10 border border-primary/30">
                         <p className="text-xs text-muted-foreground mb-1">任务详情</p>
                         <p className="text-sm">{todo.text}</p>
                         {onGenerateAdvice && !todo.completed && (
@@ -163,7 +163,7 @@ function TodoList({ todos, onGenerateAdvice, generatingAdvice = {}, className }:
                             size="sm"
                             onClick={() => onGenerateAdvice(todo)}
                             disabled={isGenerating}
-                            className="mt-2 gap-1.5 text-xs hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300"
+                            className="mt-2 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary hover:border-primary"
                           >
                             <Sparkles className="w-3.5 h-3.5" />
                             获取AI建议

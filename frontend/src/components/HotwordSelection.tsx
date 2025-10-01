@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import SearchInput from '@/components/SearchInput';
 import type { Hotword } from '@/types';
 import { api } from '@/services/api';
 
@@ -94,17 +95,17 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-border">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-foreground">
               选择热词
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -114,30 +115,27 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
         </div>
 
         {/* Controls */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-border">
           <div className="flex flex-wrap gap-4 items-center">
             {/* Search */}
-            <div className="flex-1 min-w-[200px]">
-              <input
-                type="text"
-                placeholder="搜索热词..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <SearchInput
+              className="flex-1 min-w-[200px]"
+              placeholder="搜索热词..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
 
             {/* Quick Actions */}
             <div className="flex gap-2">
               <button
                 onClick={handleSelectAll}
-                className="px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
               >
                 全选
               </button>
               <button
                 onClick={handleClearAll}
-                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-3 py-2 text-sm bg-muted text-foreground rounded-lg hover:bg-muted/60 transition-colors"
               >
                 清除
               </button>
@@ -153,7 +151,7 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
               onChange={(e) => setUseAllHotwords(e.target.checked)}
               className="mr-2"
             />
-            <label htmlFor="useAllHotwords" className="text-sm font-medium text-gray-700">
+            <label htmlFor="useAllHotwords" className="text-sm font-medium text-foreground">
               使用所有热词 ({hotwords.length} 个)
             </label>
           </div>
@@ -172,8 +170,8 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
                   key={hotword._id}
                   className={`flex items-center p-2 border rounded-lg cursor-pointer transition-colors ${
                     selectedHotwords.has(hotword._id) || useAllHotwords
-                      ? 'border-blue-300 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-primary/40 bg-primary/10'
+                      : 'border-border hover:border-primary/40'
                   }`}
                 >
                   <input
@@ -183,7 +181,7 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
                     disabled={useAllHotwords}
                     className="mr-2"
                   />
-                  <span className={`text-sm ${useAllHotwords ? 'text-blue-700' : 'text-gray-900'}`}>
+                  <span className={`text-sm ${useAllHotwords ? 'text-primary' : 'text-foreground'}`}>
                     {hotword.word}
                   </span>
                 </label>
@@ -193,22 +191,22 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200">
+        <div className="px-6 py-4 border-t border-border">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               已选择 {useAllHotwords ? hotwords.length : selectedHotwords.size} 个热词
             </div>
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-foreground bg-muted rounded-lg hover:bg-muted/60 transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={handleApply}
                 disabled={selectedHotwords.size === 0 && !useAllHotwords}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 应用
               </button>

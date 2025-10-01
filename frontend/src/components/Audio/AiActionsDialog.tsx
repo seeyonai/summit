@@ -43,7 +43,7 @@ const AiActionsDialog: React.FC<AiActionsDialogProps> = ({
     
     switch (color) {
       case 'blue':
-        return `${baseClasses} from-primary/10 to-blue-700/10 border-blue-500/20 ${hoverShadowClasses}`;
+        return `${baseClasses} from-primary/10 to-accent/10 border-primary/20 ${hoverShadowClasses}`;
       case 'emerald':
         return `${baseClasses} from-emerald-600/10 to-emerald-700/10 border-emerald-500/20 ${hoverShadowClasses}`;
       case 'purple':
@@ -55,14 +55,14 @@ const AiActionsDialog: React.FC<AiActionsDialogProps> = ({
       case 'cyan':
         return `${baseClasses} from-cyan-600/10 to-cyan-700/10 border-cyan-500/20 ${hoverShadowClasses}`;
       default:
-        return `${baseClasses} from-primary/10 to-blue-700/10 border-blue-500/20 ${hoverShadowClasses}`;
+        return `${baseClasses} from-primary/10 to-accent/10 border-primary/20 ${hoverShadowClasses}`;
     }
   };
 
   const getIconClasses = (color: string) => {
     switch (color) {
       case 'blue':
-        return "w-8 h-8 text-blue-400";
+        return "w-8 h-8 text-primary";
       case 'emerald':
         return "w-8 h-8 text-emerald-400";
       case 'purple':
@@ -74,18 +74,18 @@ const AiActionsDialog: React.FC<AiActionsDialogProps> = ({
       case 'cyan':
         return "w-8 h-8 text-cyan-400";
       default:
-        return "w-8 h-8 text-blue-400";
+        return "w-8 h-8 text-primary";
     }
   };
 
   const getBackgroundClasses = (color: string) => {
     switch (color) {
       case 'blue':
-        return "p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors";
+        return "p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors";
       case 'emerald':
         return "p-3 bg-emerald-500/10 rounded-xl group-hover:bg-emerald-500/20 transition-colors";
       case 'purple':
-        return "p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors";
+        return "p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors";
       case 'orange':
         return "p-3 bg-orange-500/10 rounded-xl group-hover:bg-orange-500/20 transition-colors";
       case 'pink':
@@ -93,7 +93,7 @@ const AiActionsDialog: React.FC<AiActionsDialogProps> = ({
       case 'cyan':
         return "p-3 bg-cyan-500/10 rounded-xl group-hover:bg-cyan-500/20 transition-colors";
       default:
-        return "p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors";
+        return "p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors";
     }
   };
 

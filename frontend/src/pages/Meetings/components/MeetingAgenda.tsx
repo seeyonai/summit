@@ -28,7 +28,7 @@ export function MeetingAgenda({ agenda, recordingTime }: MeetingAgendaProps) {
       <CardContent className="p-6 flex flex-col h-full">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">议题</h2>
-          <Target className="w-5 h-5 text-purple-400" />
+          <Target className="w-5 h-5 text-accent" />
         </div>
         
         <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
@@ -40,20 +40,20 @@ export function MeetingAgenda({ agenda, recordingTime }: MeetingAgendaProps) {
                   key={index}
                   className={`p-4 rounded-xl border transition-all duration-300 ${
                     status === 'active'
-                      ? 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-purple-500/30 scale-105'
+                      ? 'bg-gradient-to-r from-chart-4/20 to-primary/20 border-chart-4/30 scale-105'
                       : status === 'completed'
-                      ? 'bg-green-500/10 border-green-500/20'
+                      ? 'bg-success/10 border-success/20'
                       : 'bg-white/5 border-white/10'
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="mt-1">
                       {status === 'completed' ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-400" />
+                        <CheckCircle2 className="w-5 h-5 text-success" />
                       ) : status === 'active' ? (
                         <div className="relative">
-                          <Circle className="w-5 h-5 text-purple-400" />
-                          <div className="absolute inset-0 w-5 h-5 bg-blue-400 rounded-full animate-ping" />
+                          <Circle className="w-5 h-5 text-accent" />
+                          <div className="absolute inset-0 w-5 h-5 bg-primary rounded-full animate-ping" />
                         </div>
                       ) : (
                         <Circle className="w-5 h-5 text-white/30" />
@@ -72,10 +72,10 @@ export function MeetingAgenda({ agenda, recordingTime }: MeetingAgendaProps) {
                       <div className="flex items-center gap-3 text-xs mt-1">
                         <span className={`px-2 py-0.5 rounded-full ${
                           item.status === 'resolved' 
-                            ? 'bg-green-500/20 text-green-400'
+                            ? 'bg-success/20 text-success'
                             : item.status === 'ongoing'
-                            ? 'bg-yellow-500/20 text-yellow-400'
-                            : 'bg-gray-500/20 text-gray-400'
+                            ? 'bg-warning/20 text-warning'
+                            : 'bg-muted/20 text-muted-foreground'
                         }`}>
                           {item.status}
                         </span>

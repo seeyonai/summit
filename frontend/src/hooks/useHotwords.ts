@@ -111,7 +111,7 @@ export const useHotwords = (hotwordService: HotwordService) => {
 
   useEffect(() => {
     fetchHotwords();
-  }, [fetchHotwords]);
+  }, []);
 
   return {
     hotwords,

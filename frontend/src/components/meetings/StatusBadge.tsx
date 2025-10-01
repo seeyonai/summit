@@ -16,56 +16,56 @@ const statusConfig = {
   meeting: {
     in_progress: {
       label: '进行中',
-      className: 'bg-gradient-to-r from-green-50/20 to-emerald-50/20 text-green-700 border-green-200/50 shadow-sm',
-      dotClass: 'bg-green-500 animate-pulse',
+      className: 'bg-badge-success shadow-sm',
+      dotClass: 'bg-success animate-pulse',
     },
     completed: {
       label: '已完成',
-      className: 'bg-gradient-to-r from-gray-50/20 to-slate-50/20 text-gray-700 border-gray-200/50',
-      dotClass: 'bg-gray-400',
+      className: 'bg-badge-muted',
+      dotClass: 'bg-muted-foreground',
     },
     scheduled: {
       label: '已排期',
-      className: 'bg-gradient-to-r from-blue-50/20 to-sky-50/20 text-blue-700 border-blue-200/50',
-      dotClass: 'bg-blue-500',
+      className: 'bg-badge-info',
+      dotClass: 'bg-primary',
     },
     failed: {
       label: '失败',
-      className: 'bg-gradient-to-r from-red-50/20 to-rose-50/20 text-red-700 border-red-200/50',
-      dotClass: 'bg-red-500',
+      className: 'bg-badge-destructive',
+      dotClass: 'bg-destructive',
     },
   },
   agenda: {
     resolved: {
       label: '已完成',
-      className: 'bg-gradient-to-r from-green-50/20 to-emerald-50/20 text-green-700 border-green-200/50',
+      className: 'bg-gradient-to-r from-green-500/5 to-emerald-500/5 text-green-700 border-green-500/20',
       dotClass: 'bg-green-500',
     },
     ongoing: {
       label: '进行中',
-      className: 'bg-gradient-to-r from-blue-50/20 to-sky-50/20 text-blue-700 border-blue-200/50',
-      dotClass: 'bg-blue-500 animate-pulse',
+      className: 'bg-gradient-to-r from-primary/5 to-accent/5 text-primary border-primary/20',
+      dotClass: 'bg-primary animate-pulse',
     },
     pending: {
       label: '待处理',
-      className: 'bg-gradient-to-r from-yellow-50/20 to-amber-50/20 text-yellow-700 border-yellow-200/50',
+      className: 'bg-gradient-to-r from-yellow-500/5 to-amber-500/5 text-yellow-700 border-yellow-500/20',
       dotClass: 'bg-yellow-500',
     },
   },
   priority: {
     high: {
       label: '高优先级',
-      className: 'bg-gradient-to-r from-red-50/20 to-rose-50/20 text-red-700 border-red-300/50',
-      dotClass: 'bg-red-500',
+      className: 'bg-gradient-to-r from-destructive/5 to-rose-500/5 text-destructive border-destructive/30',
+      dotClass: 'bg-destructive',
     },
     medium: {
       label: '中优先级',
-      className: 'bg-gradient-to-r from-yellow-50/20 to-amber-50/20 text-yellow-700 border-yellow-300/50',
+      className: 'bg-gradient-to-r from-yellow-500/5 to-amber-500/5 text-yellow-700 border-yellow-500/30',
       dotClass: 'bg-yellow-500',
     },
     low: {
       label: '低优先级',
-      className: 'bg-gradient-to-r from-green-50/20 to-emerald-50/20 text-green-700 border-green-300/50',
+      className: 'bg-gradient-to-r from-green-500/5 to-emerald-500/5 text-green-700 border-green-500/30',
       dotClass: 'bg-green-500',
     },
   },

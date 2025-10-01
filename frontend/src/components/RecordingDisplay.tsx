@@ -49,17 +49,17 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
     return (
       <div className="space-y-2">
         {recording.speakerSegments.map((segment, index) => (
-          <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+          <div key={index} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
                 {segment.speakerIndex + 1}
               </div>
             </div>
             <div className="flex-grow">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-muted-foreground">
                 时长: {formatTime(segment.endTime - segment.startTime)}
               </div>
             </div>
@@ -70,12 +70,12 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-6">
       {/* Recording Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{recording.filename}</h3>
-          <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+          <h3 className="text-lg font-semibold text-foreground">{recording.filename}</h3>
+          <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
             {recording.duration && (
               <span>时长: {formatTime(recording.duration)}</span>
             )}
@@ -104,7 +104,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
           <button
             onClick={() => onGenerateVerbatim(recording._id)}
             disabled={isGeneratingVerbatim}
-            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isGeneratingVerbatim ? '生成中...' : '生成逐字稿'}
           </button>
@@ -122,7 +122,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
           <button
             onClick={() => onOfflineTranscribe(recording._id, recording.transcription ? [recording.transcription] : [])}
             disabled={isOfflineTranscribing}
-            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isOfflineTranscribing ? '离线转录中...' : '离线转录'}
           </button>
@@ -130,14 +130,14 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-4">
+      <div className="border-b border-border mb-4">
         <nav className="flex space-x-8">
           <button
             onClick={() => setActiveTab('transcript')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'transcript'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
             }`}
           >
             转录文本
@@ -147,8 +147,8 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
             disabled={!recording.verbatimTranscript}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'verbatim'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
             } ${!recording.verbatimTranscript ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             逐字稿
@@ -158,8 +158,8 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
             disabled={!recording.speakerSegments}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'segments'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
             } ${!recording.speakerSegments ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             说话人分离
@@ -170,20 +170,20 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
       {/* Tab Content */}
       <div className="space-y-4">
         {activeTab === 'transcript' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-blue-800 mb-2">转录文本</h4>
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-primary mb-2">转录文本</h4>
             {recording.transcription ? (
-              <p className="text-blue-900 whitespace-pre-wrap">{recording.transcription}</p>
+              <p className="text-foreground whitespace-pre-wrap">{recording.transcription}</p>
             ) : (
-              <p className="text-blue-700 italic">暂无转录文本</p>
+              <p className="text-muted-foreground italic">暂无转录文本</p>
             )}
           </div>
         )}
 
         {activeTab === 'verbatim' && recording.verbatimTranscript && (
-          <div className="bg-blue-50 border border-purple-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-purple-800 mb-2">逐字稿</h4>
-            <p className="text-purple-900 whitespace-pre-wrap">{recording.verbatimTranscript}</p>
+          <div className="bg-accent/5 border border-accent/20 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-accent mb-2">逐字稿</h4>
+            <p className="text-foreground whitespace-pre-wrap">{recording.verbatimTranscript}</p>
           </div>
         )}
 

@@ -67,8 +67,8 @@ const PendingMeetings: React.FC<PendingMeetingsProps> = ({ className }) => {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-orange-100 dark:bg-orange-900/20">
-              <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            <div className="p-2.5 rounded-lg bg-warning/10 dark:bg-warning/20">
+              <Clock className="w-5 h-5 text-warning dark:text-warning/80" />
             </div>
             <div>
               <CardTitle className="text-lg">待处理事项</CardTitle>
@@ -92,7 +92,7 @@ const PendingMeetings: React.FC<PendingMeetingsProps> = ({ className }) => {
         ) : (
           <div className="space-y-4">
             {pendingItems.map((item) => (
-              <div key={item.id} className="group p-4 rounded-lg border border-border/50 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-300 dark:hover:border-orange-700 transition-all duration-200">
+              <div key={item.id} className="group p-4 rounded-lg border border-border/50 hover:bg-warning/10 dark:hover:bg-warning/20 hover:border-warning/30 dark:hover:border-warning/70 transition-all duration-200">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">

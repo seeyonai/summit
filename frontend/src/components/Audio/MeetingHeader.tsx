@@ -77,12 +77,12 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className={`w-4 h-4 rounded-full ${
-                  isRecording && !isPaused ? 'bg-red-500' : 
-                  isPaused ? 'bg-yellow-500' : 
-                  'bg-gray-500'
+                  isRecording && !isPaused ? 'bg-destructive' : 
+                  isPaused ? 'bg-warning' : 
+                  'bg-muted-foreground'
                 }`}>
                   {isRecording && !isPaused && (
-                    <div className="absolute inset-0 rounded-full bg-red-500 animate-ping"></div>
+                    <div className="absolute inset-0 rounded-full bg-destructive animate-ping"></div>
                   )}
                 </div>
               </div>
@@ -105,30 +105,30 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
               </div>
             </div>
 
-            <Separator orientation="vertical" className="h-10 bg-slate-700" />
+            <Separator orientation="vertical" className="h-10 bg-border" />
 
             {/* Connection Status */}
             <div className="flex items-center gap-2">
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
                 isConnected 
-                  ? 'bg-green-500/10 border border-green-500/30' 
-                  : 'bg-red-500/10 border border-red-500/30'
+                  ? 'bg-success/10 border border-success/30' 
+                  : 'bg-destructive/10 border border-destructive/30'
               }`}>
                 {isConnected ? (
                   <>
-                    <Wifi className="w-4 h-4 text-green-400" />
-                    <span className="text-sm font-medium text-green-500">连接正常</span>
+                    <Wifi className="w-4 h-4 text-success" />
+                    <span className="text-sm font-medium text-success">连接正常</span>
                   </>
                 ) : (
                   <>
-                    <WifiOff className="w-4 h-4 text-red-400" />
-                    <span className="text-sm font-medium text-red-500">连接断开</span>
+                    <WifiOff className="w-4 h-4 text-destructive" />
+                    <span className="text-sm font-medium text-destructive">连接断开</span>
                   </>
                 )}
               </div>
             </div>
 
-            <Separator orientation="vertical" className="h-10 bg-slate-700" />
+            <Separator orientation="vertical" className="h-10 bg-border" />
 
             {/* Transcript Toggle */}
             <div className="flex items-center gap-2">
@@ -138,8 +138,8 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
                 size="sm"
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
                   showTranscript 
-                    ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20' 
-                    : 'bg-slate-800/50 border border-slate-600/30 text-slate-400 hover:bg-slate-700/50'
+                    ? 'bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20'
+                    : 'bg-muted/50 border border-border/30 text-muted-foreground hover:bg-muted/70'
                 }`}
               >
                 {showTranscript ? (
@@ -156,12 +156,12 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
           
           <div className="flex items-center gap-2">
             {/* Zoom Controls */}
-            <div className="flex items-center gap-1 bg-slate-800/50 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
               <Button
                 onClick={onZoomOut}
                 variant="ghost"
                 size="sm"
-                className="text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors h-8 w-8 p-0"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors h-8 w-8 p-0"
                 disabled={zoomLevel <= 50}
               >
                 <ZoomOut className="w-4 h-4" />
@@ -170,7 +170,7 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
                 onClick={onResetZoom}
                 variant="ghost"
                 size="sm"
-                className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:bg-opacity-10 hover:bg-gray-500 transition-colors px-2 h-8 text-xs font-mono`}
+                className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:bg-muted transition-colors px-2 h-8 text-xs font-mono`}
               >
                 {zoomLevel}%
               </Button>
@@ -178,7 +178,7 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
                 onClick={onZoomIn}
                 variant="ghost"
                 size="sm"
-                className="text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors h-8 w-8 p-0"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors h-8 w-8 p-0"
                 disabled={zoomLevel >= 200}
               >
                 <ZoomIn className="w-4 h-4" />
@@ -190,7 +190,7 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
               onClick={onEnterMinimal}
               variant="ghost"
               size="icon"
-              className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:bg-opacity-10 hover:bg-gray-500 transition-colors`}
+              className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:bg-muted transition-colors`}
               title="进入专注模式"
             >
               <Minimize2 className="w-5 h-5" />
@@ -201,7 +201,7 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
               onClick={onOpenSettings}
               variant="ghost"
               size="icon"
-              className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:bg-opacity-10 hover:bg-gray-500 transition-colors`}
+              className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:bg-muted transition-colors`}
             >
               <Settings className="w-5 h-5" />
             </Button>
@@ -210,7 +210,7 @@ const MeetingHeader: React.FC<MeetingHeaderProps> = ({
               onClick={onExitFullscreen}
               variant="ghost"
               size="icon"
-              className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:bg-opacity-10 hover:bg-gray-500 transition-colors`}
+              className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} hover:bg-muted transition-colors`}
             >
               <Fullscreen className="w-5 h-5" />
             </Button>

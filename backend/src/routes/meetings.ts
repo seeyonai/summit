@@ -371,7 +371,7 @@ router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) 
         todos: formattedAnalysis.todos,
         metadata: formattedAnalysis.metadata
       },
-      message: 'Transcript analysis completed successfully',
+      message: '转录分析完成',
       meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null
     });
   } catch (error) {

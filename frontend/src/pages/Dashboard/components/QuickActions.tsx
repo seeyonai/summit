@@ -15,14 +15,14 @@ const QuickActions: React.FC<QuickActionsProps> = ({ className }) => {
       label: '创建会议',
       description: '创建新的会议记录',
       to: '/meetings',
-      color: 'bg-blue-100 text-blue-800 border-blue-300'
+      color: 'bg-badge-info'
     },
     {
       icon: Flame,
       label: '热词',
       description: '管理语音识别热词',
       to: '/hotwords',
-      color: 'bg-orange-100 text-orange-800 border-orange-300'
+      color: 'bg-badge-warning'
     },
   ];
 
@@ -30,7 +30,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ className }) => {
     <Card className={cn("card-hover border-l-4 border-l-purple-500 dark:border-l-purple-600", className)}>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-gradient-to-r from-primary/30 to-purple-500/30">
+          <div className="p-2.5 rounded-lg bg-gradient-to-r from-primary/30 to-accent/30">
             <div className="w-5 h-5 bg-white rounded"></div>
           </div>
           <div>
