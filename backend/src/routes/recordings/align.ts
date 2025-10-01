@@ -6,6 +6,7 @@ import { sanitizeTranscript } from '../../utils/textUtils';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { requireRecordingWriteAccess } from '../../middleware/auth';
 import { badRequest } from '../../utils/errors';
+import { getPreferredLang } from '../../utils/lang';
 
 const router = Router({ mergeParams: true });
 
@@ -38,7 +39,8 @@ router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request
     await recordingService.updateRecording(recordingId, updateData);
   }
 
-  res.json(result);
+  const lang = getPreferredLang(req);
+  res.json({ ...result, message: lang === 'en' ? 'Alignment completed' : '对齐完成' });
 }));
 
 export default router;

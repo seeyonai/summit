@@ -8,6 +8,7 @@ import { asyncHandler } from '../../middleware/errorHandler';
 import { badRequest, internal, forbidden } from '../../utils/errors';
 import type { RequestWithUser } from '../../types/auth';
 import { isOwner as isMeetingOwner } from '../../services/MeetingService';
+import { getPreferredLang } from '../../utils/lang';
 
 // Ensure files directory exists (storage for uploaded audio)
 // Note: __dirname here is backend/src/routes/recordings; we need repo-root /files
@@ -144,8 +145,9 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
 
     const result = await recordingService.createRecording(recordingData);
 
+    const lang = getPreferredLang(req);
     res.status(201).json({
-      message: '文件上传成功',
+      message: lang === 'en' ? 'File uploaded successfully' : '文件上传成功',
       recording: result
     });
   } catch (error) {

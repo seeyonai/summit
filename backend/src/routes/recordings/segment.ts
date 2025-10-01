@@ -3,6 +3,7 @@ import recordingService from '../../services/RecordingService';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { requireRecordingWriteAccess } from '../../middleware/auth';
 import { badRequest } from '../../utils/errors';
+import { getPreferredLang } from '../../utils/lang';
 
 const router = Router({ mergeParams: true });
 
@@ -23,7 +24,8 @@ router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request
     recordingId,
     typeof parsedValue === 'number' ? parsedValue : undefined
   );
-  res.json(result);
+  const lang = getPreferredLang(req);
+  res.json({ ...result, message: lang === 'en' ? 'Segmentation completed' : '分段完成' });
 }));
 
 export default router;
