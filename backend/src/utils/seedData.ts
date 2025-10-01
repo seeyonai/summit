@@ -1,4 +1,3 @@
-// @ts-expect-error - Seed data file may have type issues that are acceptable for data seeding
 import { ObjectId } from 'mongodb';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument, HotwordDocument, RecordingDocument } from '../types/documents';
@@ -26,9 +25,6 @@ export class DataSeeder {
         scheduledStart: new Date('2024-01-15T09:00:00'),
         recordings: [
           {
-            _id: new ObjectId().toHexString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
             filePath: '/files/product-meeting.wav',
             filename: 'product-meeting.wav',
             duration: 6400,

@@ -47,7 +47,7 @@ export const getMeetingById = async (id: string, options: { includeRecordings?: 
   return meetingDocumentToMeeting({ ...meeting, recordings: recordingDocs as any });
 };
 
-export const createMeeting = async (request: MeetingCreate, ownerId: string): Promise<Meeting> => {
+export const createMeeting = async (request: MeetingCreate, ownerId?: string): Promise<Meeting> => {
   const collection = getMeetingsCollection();
   const now = new Date();
 
@@ -61,7 +61,7 @@ export const createMeeting = async (request: MeetingCreate, ownerId: string): Pr
     recordings: [],
     finalTranscript: undefined,
     participants: request.participants,
-    ownerId: new ObjectId(ownerId),
+    ownerId: ownerId && ObjectId.isValid(ownerId) ? new ObjectId(ownerId) : undefined,
     members: [],
   };
 
@@ -183,7 +183,8 @@ export async function removeMember(meetingId: string, userId: string): Promise<M
   const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(meetingId) },
     {
-      $pull: { members: new ObjectId(userId) },
+      // Mongo types can be overly strict here; the runtime accepts this shape
+      $pull: { members: new ObjectId(userId) } as any,
       $set: { updatedAt: new Date() },
     },
     { returnDocument: 'after' }

@@ -128,7 +128,7 @@ export interface SpeechModelInfo {
 }
 
 // Hotword management types
-export type Hotword = baseTypes.Hotword & Timestamp & Id & {
+export type Hotword = Omit<baseTypes.Hotword, 'ownerId' | 'isPublic'> & Timestamp & Id & {
   isPublic: boolean;
   ownerId?: ObjectId;
 };

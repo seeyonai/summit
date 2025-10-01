@@ -16,6 +16,7 @@ import AdviceDialog from "@/components/meetings/AdviceDialog";
 import MeetingMembers from "@/components/MeetingMembers";
 import {
   ArrowLeftIcon,
+  EditIcon,
   TrashIcon,
   CalendarIcon,
   ClockIcon,

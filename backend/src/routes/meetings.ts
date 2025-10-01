@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import meetingService from '../services/MeetingService';
 import transcriptExtractionService from '../services/TranscriptExtractionService';
-import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse } from '../types';
+import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse, Recording } from '../types';
 import recordingService from '../services/RecordingService';
 
 const router = Router();
@@ -20,15 +20,15 @@ const serializeRecording = (recording: Recording) => ({
   updatedAt: toIsoString(recording.updatedAt),
 });
 
-const serializeMeeting = (meeting: Meeting) => ({
+type MeetingWithRecordings = Meeting & { recordings?: Recording[] };
+
+const serializeMeeting = (meeting: MeetingWithRecordings) => ({
   ...meeting,
   _id: meeting._id.toString(),
   createdAt: toIsoString(meeting.createdAt),
   updatedAt: toIsoString(meeting.updatedAt),
   scheduledStart: toIsoString(meeting.scheduledStart),
-  // @ts-expect-error - Type mismatch between expected and actual recording type
   recordings: meeting.recordings?.map(serializeRecording) || [],
-  // @ts-expect-error - Type mismatch between expected and actual recording type
   combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
 });
 
@@ -188,7 +188,7 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request,
       return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
     }
     
-    const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
+    const recordings = await recordingService.getRecordingsByMeetingId(meetingId, true);
     const recording = recordings.find((r) => r._id.toString() === recordingId);
     if (!recording) {
       return res.status(404).json({ error: 'Recording not found' });
@@ -226,7 +226,7 @@ router.post('/:meetingId/final-transcript', async (req: Request, res: Response) 
       return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
     }
     
-    const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
+    const recordings = await recordingService.getRecordingsByMeetingId(meetingId, true);
 
     const transcripts = recordings
       .filter((r: RecordingResponse) => r.transcription)
