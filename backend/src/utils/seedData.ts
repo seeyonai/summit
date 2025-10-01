@@ -320,6 +320,7 @@ export class DataSeeder {
         _id: new ObjectId(hotwordIds[this.mockData.hotwords.indexOf(hotword)]),
         createdAt: new Date(),
         updatedAt: new Date(),
+        isPublic: true,
       };
       await collection.deleteOne({ word: hotword.word });
       await collection.insertOne(hotwordData);
