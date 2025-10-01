@@ -6,6 +6,7 @@ import type { CreateUserDto, LoginDto } from '../types/users';
 import type { AuthResponseUser, RequestWithUser } from '../types/auth';
 import { signJwt } from '../utils/jwt';
 import { authenticate } from '../middleware/auth';
+import { getPreferredLang } from '../utils/lang';
 
 const router = Router();
 
@@ -71,7 +72,8 @@ router.put('/password', authenticate, asyncHandler(async (req, res) => {
     throw badRequest('Current and new passwords are required', 'auth.invalid_payload');
   }
   await userService.updatePassword(r.user.userId, currentPassword, newPassword);
-  res.json({ message: 'Password updated' });
+  const lang = getPreferredLang(req);
+  res.json({ message: lang === 'en' ? 'Password updated' : '密码已更新' });
 }));
 
 export default router;

@@ -20,6 +20,7 @@ import { LiveRecorderService } from './services/LiveRecorderService';
 import { checkAllServices, generateHealthTable } from './utils/healthChecker';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
+import { getPreferredLang } from './utils/lang';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 2591;
@@ -36,7 +37,7 @@ app.use('/files', filesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', authenticate, usersRouter);
 app.use('/api/meetings', authenticate, meetingsRouter);
-app.use('/api/hotwords', hotwordsRouter);
+app.use('/api/hotwords', authenticate, hotwordsRouter);
 app.use('/api/segmentation', segmentationRouter);
 app.use('/api/aligner', alignerRouter);
 app.use('/api/recordings', authenticate, recordingsRouter);
@@ -68,8 +69,9 @@ app.get('/health', async (req, res) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
+  const lang = getPreferredLang(req);
   res.json({
-    message: 'Summit AI 后端 API',
+    message: lang === 'en' ? 'Summit API' : 'Summit 接口',
     version: '1.0.0',
     service: 'Summit API Server',
     port: PORT,

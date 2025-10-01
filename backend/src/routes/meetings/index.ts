@@ -7,6 +7,7 @@ import { asyncHandler } from '../../middleware/errorHandler';
 import { badRequest, notFound, internal } from '../../utils/errors';
 import type { RequestWithUser } from '../../types/auth';
 import { requireMemberOrOwner, requireOwner } from '../../middleware/auth';
+import { getPreferredLang } from '../../utils/lang';
 
 const router = Router();
 
@@ -118,7 +119,8 @@ router.delete('/:id', requireOwner(), asyncHandler(async (req: Request, res: Res
     throw notFound(`Meeting not found (ID: ${id})`, 'meeting.not_found');
   }
 
-  res.json({ message: '会议删除成功' });
+  const lang = getPreferredLang(req);
+  res.json({ message: lang === 'en' ? 'Meeting deleted successfully' : '会议删除成功' });
 }));
 
 // Add recording to meeting
@@ -202,12 +204,15 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', requireOwner(), asyn
 
   const updatedMeeting = await meetingService.updateMeeting(meetingId, { _id: meeting._id } as any);
 
-  res.json({
+  {
+    const lang = getPreferredLang(req);
+    res.json({
     success: true,
     verbatimTranscript: recording.verbatimTranscript,
-    message: '逐字稿生成成功',
+    message: lang === 'en' ? 'Verbatim transcript generated' : '逐字稿生成成功',
     meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null
-  });
+    });
+  }
 }));
 
 // Generate final polished transcript for meeting
@@ -252,11 +257,14 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
     finalTranscript: meeting.finalTranscript
   } as any);
 
-  res.json({
+  {
+    const lang = getPreferredLang(req);
+    res.json({
     success: true,
     finalTranscript: meeting.finalTranscript,
-    message: '最终纪要生成成功',
-  });
+    message: lang === 'en' ? 'Final transcript generated' : '最终纪要生成成功',
+    });
+  }
 }));
 
 // Generate AI advice for a todo item
@@ -295,11 +303,14 @@ router.post('/:meetingId/todo-advice', requireMemberOrOwner(), asyncHandler(asyn
    - 每天分配1-2小时专门处理此任务
    - 预留时间用于意外情况处理`;
 
-  res.json({
+  {
+    const lang = getPreferredLang(req);
+    res.json({
     success: true,
     advice,
-    message: 'AI建议生成成功'
-  });
+    message: lang === 'en' ? 'AI suggestion generated' : 'AI建议生成成功'
+    });
+  }
 }));
 
 // Extract disputed issues and todos from meeting transcript
