@@ -49,16 +49,22 @@ const serializeMeeting = (meeting: Meeting) => ({
 // (Removed meetings-specific health check; root /health covers this)
 
 // Get meetings for current user (owner or member)
+// Get meetings for current user (default limit 100; use ?all=true to fetch all)
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const r = req as RequestWithUser;
   const userId = r.user?.userId;
   if (!userId) {
     throw badRequest('Unauthorized', 'auth.unauthorized');
   }
-  const meetings = r.user?.role === 'admin'
-    ? await meetingService.getAllMeetings()
-    : await meetingService.getMeetingsForUser(userId);
-  res.json(meetings.map(serializeMeeting));
+  const all = typeof req.query.all === 'string' && ['true', '1', 'yes'].includes(req.query.all.toLowerCase());
+  const desired = all ? 'all' : 101;
+  const list = r.user?.role === 'admin'
+    ? await meetingService.getAllMeetings(desired as any)
+    : await meetingService.getMeetingsForUser(userId, desired as any);
+  const overLimit = !all && list.length > 100;
+  const meetings = overLimit ? list.slice(0, 100) : list;
+  const fetchedAll = all || !overLimit;
+  res.json({ meetings: meetings.map(serializeMeeting), fetchedAll });
 }));
 
 // Get meeting by ID (owner or member only)
@@ -157,8 +163,8 @@ router.get('/status/:status', asyncHandler(async (req: Request, res: Response) =
     throw badRequest('Unauthorized', 'auth.unauthorized');
   }
   const base = r.user?.role === 'admin'
-    ? await meetingService.getAllMeetings()
-    : await meetingService.getMeetingsForUser(userId);
+    ? await meetingService.getAllMeetings('all')
+    : await meetingService.getMeetingsForUser(userId, 'all');
   const meetings = base.filter((m) => m.status === status as any);
   res.json(meetings.map(serializeMeeting));
 }));
@@ -175,7 +181,7 @@ router.get('/upcoming', asyncHandler(async (req: Request, res: Response) => {
     res.json(meetings.map(serializeMeeting));
     return;
   }
-  const accessible = new Set((await meetingService.getMeetingsForUser(userId)).map((m) => m._id.toString()));
+  const accessible = new Set((await meetingService.getMeetingsForUser(userId, 'all')).map((m) => m._id.toString()));
   res.json(meetings.filter((m) => accessible.has(m._id.toString())).map(serializeMeeting));
 }));
 

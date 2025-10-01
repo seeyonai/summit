@@ -46,7 +46,7 @@ export const Navigation: React.FC = () => {
               "flex items-center space-x-2 group",
               isActive 
                 ? 'bg-accent text-accent-foreground shadow-sm rounded-full' 
-                : 'bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-none'
+                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-none'
             )}
           >
             <Icon className={cn(
@@ -54,9 +54,6 @@ export const Navigation: React.FC = () => {
               isActive ? 'scale-110' : 'group-hover:scale-105'
             )} />
             <span className="font-medium">{item.label}</span>
-            {isActive && (
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-lg opacity-30" />
-            )}
           </Link>
         );
       })}

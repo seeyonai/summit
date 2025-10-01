@@ -8,19 +8,38 @@ import { internal } from '../utils/errors';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
 
-export const getMeetingsForUser = async (userId: string): Promise<Meeting[]> => {
+export const getMeetingsForUser = async (
+  userId: string,
+  limit?: number | 'all',
+): Promise<Meeting[]> => {
   const collection = getMeetingsCollection();
   const uid = new ObjectId(userId);
-  const meetings = await collection.find({ $or: [
-    { ownerId: uid },
-    { members: { $elemMatch: { $eq: uid } } },
-  ] }).toArray();
+  const cursor = collection
+    .find({ $or: [
+      { ownerId: uid },
+      { members: { $elemMatch: { $eq: uid } } },
+    ] })
+    .sort({ createdAt: -1 });
+
+  if (limit !== 'all') {
+    cursor.limit(typeof limit === 'number' ? limit : 100);
+  }
+
+  const meetings = await cursor.toArray();
   return meetings.map(meetingDocumentToMeeting);
 };
 
-export const getAllMeetings = async (): Promise<Meeting[]> => {
+export const getAllMeetings = async (limit?: number | 'all'): Promise<Meeting[]> => {
   const collection = getMeetingsCollection();
-  const meetings = await collection.find({}).toArray();
+  const cursor = collection
+    .find({})
+    .sort({ createdAt: -1 });
+
+  if (limit !== 'all') {
+    cursor.limit(typeof limit === 'number' ? limit : 100);
+  }
+
+  const meetings = await cursor.toArray();
   return meetings.map(meetingDocumentToMeeting);
 };
 

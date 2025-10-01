@@ -37,11 +37,16 @@ router.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy' });
 });
 
-// Get all meetings
+// Get meetings (default limit 100; use ?all=true to fetch all)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const meetings = await meetingService.getAllMeetings();
-    res.json(meetings.map(serializeMeeting));
+    const all = typeof req.query.all === 'string' && ['true', '1', 'yes'].includes(req.query.all.toLowerCase());
+    const desired = all ? 'all' : 101;
+    const list = await meetingService.getAllMeetings(desired as any);
+    const overLimit = !all && list.length > 100;
+    const meetings = overLimit ? list.slice(0, 100) : list;
+    const fetchedAll = all || !overLimit;
+    res.json({ meetings: meetings.map(serializeMeeting), fetchedAll });
   } catch (error) {
     console.error('Error getting meetings:', error);
     res.status(500).json({ error: 'Internal server error' });

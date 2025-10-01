@@ -22,7 +22,6 @@ function MeetingMembers({ meetingId, ownerId, members = [], onChanged }: Meeting
   const isOwner = !!currentUser && ownerId === currentUser._id;
 
   const memberIds = useMemo(() => new Set(members.map((m) => m)), [members]);
-  const membersString = useMemo(() => members.join(','), [members]);
 
   useEffect(() => {
     // Fetch owner + members basic info
@@ -45,7 +44,7 @@ function MeetingMembers({ meetingId, ownerId, members = [], onChanged }: Meeting
         setMemberUsers(membersOnly);
       })
       .finally(() => setLoading(false));
-  }, [meetingId, ownerId, members, membersString]);
+  }, [meetingId, ownerId, members]);
 
   useEffect(() => {
     let active = true;

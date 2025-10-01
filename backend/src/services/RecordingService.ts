@@ -154,13 +154,21 @@ async function callLiveService<T>(pathname: string, options: JsonRequestOptions)
 }
 
 // Service API (functions over classes)
-export async function getAllRecordings(): Promise<RecordingResponse[]> {
+export async function getAllRecordings(limit?: number | 'all'): Promise<RecordingResponse[]> {
   const collection = recordingsCollection();
-  const documents = await collection.find({}).sort({ createdAt: -1 }).toArray();
+  const cursor = collection.find({}).sort({ createdAt: -1 });
+  if (limit !== 'all') {
+    cursor.limit(typeof limit === 'number' ? limit : 100);
+  }
+  const documents = await cursor.toArray();
   return Promise.all(documents.map((doc) => buildRecordingResponse(doc, MEETING_LOOKUP_FIELDS)));
 }
 
-export async function getRecordingsForUser(userId: string, includeMeeting: boolean = true): Promise<RecordingResponse[]> {
+export async function getRecordingsForUser(
+  userId: string,
+  includeMeeting: boolean = true,
+  limit?: number | 'all',
+): Promise<RecordingResponse[]> {
   const meetingsCol = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
   const uid = new ObjectId(userId);
   const accessibleMeetingIds = await meetingsCol
@@ -172,10 +180,15 @@ export async function getRecordingsForUser(userId: string, includeMeeting: boole
   if (ids.length > 0) {
     query.$or.push({ meetingId: { $in: ids } });
   }
-  const documents = await collection
+  const cursor = collection
     .find(query)
-    .sort({ createdAt: -1 })
-    .toArray();
+    .sort({ createdAt: -1 });
+
+  if (limit !== 'all') {
+    cursor.limit(typeof limit === 'number' ? limit : 100);
+  }
+
+  const documents = await cursor.toArray();
   const meetingFields = includeMeeting ? MEETING_LOOKUP_FIELDS : undefined;
   return Promise.all(documents.map((doc) => buildRecordingResponse(doc, meetingFields)));
 }

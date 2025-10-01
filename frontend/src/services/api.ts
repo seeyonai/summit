@@ -194,9 +194,30 @@ class ApiService {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
-  // Recordings
-  async getRecordings(): Promise<Recording[]> {
-    return this.get('/api/recordings');
+  // Recordings (adopt backend list envelope)
+  async getRecordings(options: { all?: boolean } = {}): Promise<Recording[]> {
+    const endpoint = options.all ? '/api/recordings?all=true' : '/api/recordings';
+    const data = await this.get<unknown>(endpoint);
+    if (Array.isArray(data)) {
+      return data as Recording[];
+    }
+    if (isRecord(data) && Array.isArray((data as any).recordings)) {
+      return (data as { recordings: Recording[] }).recordings;
+    }
+    return [];
+  }
+
+  async getRecordingsResponse(options: { all?: boolean } = {}): Promise<{ recordings: Recording[]; fetchedAll?: boolean }> {
+    const endpoint = options.all ? '/api/recordings?all=true' : '/api/recordings';
+    const data = await this.get<unknown>(endpoint);
+    if (Array.isArray(data)) {
+      return { recordings: data as Recording[] };
+    }
+    if (isRecord(data) && Array.isArray((data as any).recordings)) {
+      const fetchedAll = typeof (data as any).fetchedAll === 'boolean' ? (data as any).fetchedAll : undefined;
+      return { recordings: (data as any).recordings as Recording[], fetchedAll };
+    }
+    return { recordings: [] };
   }
 
   // Customization
@@ -346,9 +367,30 @@ class ApiService {
     return this.post(`/api/recordings/${id}/align`, { text });
   }
 
-  // Meetings
-  async getMeetings(): Promise<Meeting[]> {
-    return this.get('/api/meetings');
+  // Meetings (adopt backend list envelope)
+  async getMeetings(options: { all?: boolean } = {}): Promise<Meeting[]> {
+    const endpoint = options.all ? '/api/meetings?all=true' : '/api/meetings';
+    const data = await this.get<unknown>(endpoint);
+    if (Array.isArray(data)) {
+      return data as Meeting[];
+    }
+    if (isRecord(data) && Array.isArray((data as any).meetings)) {
+      return (data as { meetings: Meeting[] }).meetings;
+    }
+    return [];
+  }
+
+  async getMeetingsResponse(options: { all?: boolean } = {}): Promise<{ meetings: Meeting[]; fetchedAll?: boolean }> {
+    const endpoint = options.all ? '/api/meetings?all=true' : '/api/meetings';
+    const data = await this.get<unknown>(endpoint);
+    if (Array.isArray(data)) {
+      return { meetings: data as Meeting[] };
+    }
+    if (isRecord(data) && Array.isArray((data as any).meetings)) {
+      const fetchedAll = typeof (data as any).fetchedAll === 'boolean' ? (data as any).fetchedAll : undefined;
+      return { meetings: (data as any).meetings as Meeting[], fetchedAll };
+    }
+    return { meetings: [] };
   }
 
   async getMeeting(id: string): Promise<MeetingWithRecordings> {

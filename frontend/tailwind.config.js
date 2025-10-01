@@ -68,16 +68,20 @@ export default {
           "5": "hsl(var(--chart-5))",
         },
         success: {
-          DEFAULT: "hsl(142 76% 36%)",
-          foreground: "hsl(210 40% 98%)",
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
         },
         warning: {
-          DEFAULT: "hsl(38 92% 50%)",
-          foreground: "hsl(210 40% 98%)",
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
         },
         info: {
-          DEFAULT: "hsl(199 89% 48%)",
-          foreground: "hsl(210 40% 98%)",
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        completed: {
+          DEFAULT: "hsl(var(--completed))",
+          foreground: "hsl(var(--completed-foreground))",
         },
       },
       boxShadow: {

@@ -1,45 +1,37 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import SearchInput from '@/components/SearchInput';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiService } from '@/services/api';
-import { formatDate } from '@/utils/date';
-import type { Meeting, MeetingStatus, MeetingCreate } from '@/types';
+import type { MeetingCreate } from '@/types';
 import { useMeetings } from '@/hooks/useMeetings';
+import MeetingCard from './components/MeetingCard';
+import MeetingListItem from './components/MeetingListItem';
 import {
-  Users,
   Mic,
   Calendar,
-  Clock,
   CheckCircle,
   PlusIcon,
-  
   FilterIcon,
   RefreshCwIcon,
   GridIcon,
   ListIcon,
-  ChevronRightIcon,
   AlertCircleIcon,
-  FileTextIcon,
   ActivityIcon,
   FolderOpenIcon,
-  TrashIcon,
-  PlayIcon,
-  EyeIcon,
   TargetIcon
 } from 'lucide-react';
 
 function MeetingList() {
   const navigate = useNavigate();
-  const { meetings, loading, error, refetch } = useMeetings();
+  const { meetings, loading, error, refetch, fetchedAll, loadAll } = useMeetings();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -146,219 +138,6 @@ function MeetingList() {
     };
   }, [meetings]);
 
-  const getStatusColor = (status: MeetingStatus) => {
-    switch (status) {
-      case 'scheduled': return 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary/80';
-      case 'in_progress': return 'bg-success/10 dark:bg-success/20 text-success dark:text-success/80';
-      case 'completed': return 'bg-muted text-muted-foreground';
-      case 'failed': return 'bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive/80';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
-
-  const getStatusText = (status: MeetingStatus) => {
-    switch (status) {
-      case 'scheduled': return '已排期';
-      case 'in_progress': return '进行中';
-      case 'completed': return '已完成';
-      case 'failed': return '失败';
-      default: return status;
-    }
-  };
-
-  const getStatusIcon = (status: MeetingStatus) => {
-    switch (status) {
-      case 'scheduled': return Calendar;
-      case 'in_progress': return PlayIcon;
-      case 'completed': return CheckCircle;
-      default: return Clock;
-    }
-  };
-
-  const MeetingCard = ({ meeting }: { meeting: Meeting }) => {
-    const StatusIcon = getStatusIcon(meeting.status);
-    const totalTodos = meeting.parsedTodos?.length || 0;
-
-    return (
-      <Card 
-        className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-border hover:border-primary dark:border-border dark:hover:border-primary overflow-hidden"
-        onClick={() => navigate(`/meetings/${meeting._id}`)}
-      >
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-start">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-semibold truncate">
-                {meeting.title}
-              </CardTitle>
-              <CardDescription className="mt-1 text-xs">
-                {formatDate(meeting.scheduledStart)}
-              </CardDescription>
-            </div>
-            <Badge variant="outline" className={getStatusColor(meeting.status)}>
-              <StatusIcon className="w-3 h-3 mr-1" />
-              {getStatusText(meeting.status)}
-            </Badge>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          {/* Meeting Summary */}
-          {meeting.summary && (
-            <div className="p-3 bg-muted dark:bg-muted rounded-lg">
-              <p className="text-xs text-foreground dark:text-foreground line-clamp-2">
-                {meeting.summary}
-              </p>
-            </div>
-          )}
-
-  
-          {/* Meeting Info */}
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
-              <Users className="w-3 h-3" />
-              <span>{meeting.participants || 0} 人</span>
-            </div>
-            <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
-              <Mic className="w-3 h-3" />
-              <span>{meeting.recordings?.length || 0} 录音</span>
-            </div>
-            {totalTodos > 0 ? (
-              <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
-                <TargetIcon className="w-3 h-3" />
-                <span>{totalTodos} 任务</span>
-              </div>
-            ) : meeting.agenda && meeting.agenda.length > 0 ? (
-              <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
-                <FileTextIcon className="w-3 h-3" />
-                <span>{meeting.agenda.length} 议程</span>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/meetings/${meeting._id}`);
-              }}
-            >
-              <EyeIcon className="w-3 h-3 mr-1" />
-              查看详情
-            </Button>
-            {meeting.status === 'in_progress' && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-success/10 hover:bg-success/20 text-success dark:bg-success/20 dark:hover:bg-success/30 dark:text-success/80"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/meetings/${meeting._id}`);
-                }}
-              >
-                <Mic className="w-3 h-3" />
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 dark:hover:bg-destructive/20"
-              onClick={(e) => deleteMeeting(meeting._id, e)}
-            >
-              <TrashIcon className="w-3 h-3" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const MeetingListItem = ({ meeting }: { meeting: Meeting }) => {
-    const StatusIcon = getStatusIcon(meeting.status);
-    const completedTodos = meeting.parsedTodos?.filter(t => t.completed).length || 0;
-    const totalTodos = meeting.parsedTodos?.length || 0;
-
-    return (
-      <div 
-        className="group bg-background dark:bg-background rounded-lg border border-border hover:border-primary dark:border-border dark:hover:border-primary hover:shadow-md transition-all duration-300 p-4 cursor-pointer"
-        onClick={() => navigate(`/meetings/${meeting._id}`)}
-      >
-        <div className="flex items-center gap-4">
-          {/* Status Icon */}
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-            meeting.status === 'in_progress' ? 'bg-gradient-to-r from-success/80 to-success/90' :
-            meeting.status === 'completed' ? 'bg-gradient-to-r from-muted/80 to-muted/90' :
-            'bg-gradient-to-r from-primary/80 to-primary/90'
-          } text-white`}>
-            <StatusIcon className="w-5 h-5" />
-          </div>
-
-          {/* Meeting Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-foreground dark:text-foreground truncate">{meeting.title}</h3>
-              <Badge variant="outline" className={getStatusColor(meeting.status)}>
-                {getStatusText(meeting.status)}
-              </Badge>
-              {totalTodos > 0 && (
-                <Badge variant="secondary" className="bg-success/10 text-success text-xs dark:bg-success/20 dark:text-success/80">
-                  {completedTodos}/{totalTodos} 任务
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {formatDate(meeting.scheduledStart)}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                {meeting.participants || 0} 人
-              </span>
-              <span className="flex items-center gap-1">
-                <Mic className="w-3 h-3" />
-                {meeting.recordings?.length || 0} 录音
-              </span>
-            </div>
-            {meeting.summary && (
-              <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground line-clamp-1">
-                {meeting.summary}
-              </p>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            {meeting.status === 'in_progress' && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-success hover:text-success/80 hover:bg-success/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/meetings/${meeting._id}`);
-                }}
-              >
-                <Mic className="w-4 h-4" />
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 dark:hover:bg-destructive/20"
-              onClick={(e) => deleteMeeting(meeting._id, e)}
-            >
-              <TrashIcon className="w-4 h-4" />
-            </Button>
-            <ChevronRightIcon className="w-4 h-4 text-muted-foreground dark:text-muted-foreground" />
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-8">
@@ -481,6 +260,19 @@ function MeetingList() {
           </div>
         </div>
 
+        {/* Truncation hint */}
+        {!loading && !error && fetchedAll === false && (
+          <Alert>
+            <AlertCircleIcon className="h-4 w-4" />
+            <AlertTitle>显示最新 100 条会议</AlertTitle>
+            <AlertDescription>
+              为提升性能，仅展示最近创建的 100 条会议。您可以
+              <Button variant="link" className="px-1" onClick={() => loadAll()}>点击这里加载全部</Button>
+              。
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Loading State */}
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -513,13 +305,13 @@ function MeetingList() {
           viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredMeetings.map((meeting) => (
-                <MeetingCard key={meeting._id} meeting={meeting} />
+                <MeetingCard key={meeting._id} meeting={meeting} onDelete={deleteMeeting} />
               ))}
             </div>
           ) : (
             <div className="space-y-3">
               {filteredMeetings.map((meeting) => (
-                <MeetingListItem key={meeting._id} meeting={meeting} />
+                <MeetingListItem key={meeting._id} meeting={meeting} onDelete={deleteMeeting} />
               ))}
             </div>
           )

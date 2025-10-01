@@ -12,16 +12,21 @@ import { getPreferredLang } from '../../utils/lang';
 
 const router = Router();
 
-// Get all recordings
+// Get recordings (default limit 100; use ?all=true to fetch all)
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const r = req as RequestWithUser;
   if (!r.user) {
     throw badRequest('Unauthorized', 'auth.unauthorized');
   }
-  const recordings = r.user.role === 'admin'
-    ? await recordingService.getAllRecordings()
-    : await recordingService.getRecordingsForUser(r.user.userId);
-  res.json(recordings);
+  const all = typeof req.query.all === 'string' && ['true', '1', 'yes'].includes(req.query.all.toLowerCase());
+  const desired = all ? 'all' : 101;
+  const list = r.user.role === 'admin'
+    ? await recordingService.getAllRecordings(desired as any)
+    : await recordingService.getRecordingsForUser(r.user.userId, true, desired as any);
+  const overLimit = !all && list.length > 100;
+  const recordings = overLimit ? list.slice(0, 100) : list;
+  const fetchedAll = all || !overLimit;
+  res.json({ recordings, fetchedAll });
 }));
 
 // Get a specific recording by ID

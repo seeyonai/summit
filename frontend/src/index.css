@@ -21,10 +21,18 @@
     --secondary-foreground: 222 84% 4.9%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 212 50% 50%;
+    --accent: 208 50% 50%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 98%;
+    --completed: 217 91% 60%;
+    --completed-foreground: 0 0% 98%;
     --border: 214 12% 91%;
     --input: 214 12% 91%;
     --ring: 221 83% 53%;
@@ -52,10 +60,18 @@
     --secondary-foreground: 210 40% 98%;
     --muted: 222 84% 4.9%;
     --muted-foreground: 215 20% 65%;
-    --accent: 212 50% 50%;
+    --accent: 208 50% 50%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 86% 97%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 98%;
+    --completed: 217 91% 70%;
+    --completed-foreground: 222 84% 4.9%;
     --border: 217 13% 17%;
     --input: 217 13% 17%;
     --ring: 217 91% 60%;
@@ -137,7 +153,7 @@
 
   /* Page Header Components */
   .page-header {
-    @apply relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/90 to-accent/90 p-8 text-white shadow-xl;
+    @apply relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/90 to-accent/90 p-8 text-white;
     @apply dark:from-primary/50 dark:to-accent/50;
   }
 
@@ -226,6 +242,10 @@
 
   .bg-badge-info {
     @apply bg-primary/10 text-primary border border-primary/30 dark:bg-primary/20 dark:text-primary/80 dark:border-primary/50;
+  }
+
+  .bg-badge-completed {
+    @apply bg-completed/10 text-completed border border-completed/30 dark:bg-completed/20 dark:text-completed/80 dark:border-completed/50;
   }
 
   .bg-badge-accent {

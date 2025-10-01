@@ -35,6 +35,7 @@ function RecordingList() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fetchedAll, setFetchedAll] = useState<boolean | undefined>(undefined);
   const [recording, setRecording] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showAssociationModal, setShowAssociationModal] = useState(false);
@@ -48,8 +49,23 @@ function RecordingList() {
   const fetchRecordings = async () => {
     try {
       setLoading(true);
-      const data = await apiService.getRecordings();
-      setRecordings(data);
+      const resp = await apiService.getRecordingsResponse();
+      setRecordings(resp.recordings);
+      setFetchedAll(resp.fetchedAll);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAll = async () => {
+    try {
+      setLoading(true);
+      const resp = await apiService.getRecordingsResponse({ all: true });
+      setRecordings(resp.recordings);
+      setFetchedAll(resp.fetchedAll);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -345,6 +361,19 @@ function RecordingList() {
             </Button>
           </div>
         </div>
+
+        {/* Truncation hint */}
+        {!loading && !error && fetchedAll === false && (
+          <Alert>
+            <AlertCircleIcon className="h-4 w-4" />
+            <AlertTitle>显示最新 100 条录音</AlertTitle>
+            <AlertDescription>
+              为提升性能，仅展示最近创建的 100 条录音。您可以
+              <Button variant="link" className="px-1" onClick={loadAll}>点击这里加载全部</Button>
+              。
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Loading State */}
         {loading && (

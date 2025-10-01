@@ -6,13 +6,15 @@ export function useMeetings() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fetchedAll, setFetchedAll] = useState<boolean | undefined>(undefined);
 
   const fetchMeetings = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiService.getMeetings();
-      setMeetings(data);
+      const resp = await apiService.getMeetingsResponse();
+      setMeetings(resp.meetings);
+      setFetchedAll(resp.fetchedAll);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch meetings';
       setError(errorMessage);
@@ -36,6 +38,17 @@ export function useMeetings() {
     loading,
     error,
     refetch,
+    fetchedAll,
+    loadAll: async () => {
+      try {
+        setLoading(true);
+        const resp = await apiService.getMeetingsResponse({ all: true });
+        setMeetings(resp.meetings);
+        setFetchedAll(resp.fetchedAll);
+      } finally {
+        setLoading(false);
+      }
+    },
     isEmpty: meetings.length === 0 && !loading && !error
   };
 }
