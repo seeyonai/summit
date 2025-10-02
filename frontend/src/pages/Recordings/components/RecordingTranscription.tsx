@@ -18,6 +18,7 @@ import {
 import { apiService } from '@/services/api';
 import type { Recording } from '@/types';
 import { MicIcon, CopyIcon, DownloadIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon, EditIcon, XIcon } from 'lucide-react';
+import PipelineStageCard from './PipelineStageCard';
 
 interface RecordingTranscriptionProps {
   recording: Recording;
@@ -240,63 +241,62 @@ function RecordingTranscription({
     setHotwords(prev => prev.filter(w => w !== word));
   };
 
-  return (
-    <div className="bg-card rounded-lg shadow-sm border border-border">
-      <div className="p-6">
-        <div className="flex flex-col space-y-4">
-          <div className="flex justify-between items-start">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <FileTextIcon className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">
-                  转录内容
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  音频的文字转录结果
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {isEditing ? (
-                <>
-                  <Badge variant={autoSaveStatus === 'saved' ? 'default' : autoSaveStatus === 'saving' ? 'secondary' : 'destructive'}>
-                    {autoSaveStatus === 'saved' ? '已保存' : autoSaveStatus === 'saving' ? '保存中...' : '未保存'}
-                  </Badge>
-                  <Button
-                    onClick={handleAutoSave}
-                    variant="outline"
-                    size="sm"
-                    disabled={autoSaveStatus === 'saving'}
-                  >
-                    <SaveIcon className="w-4 h-4 mr-2" />
-                    手动保存
-                  </Button>
-                  <Button
-                    onClick={onEditToggle}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <XIcon className="w-4 h-4 mr-2" />
-                    完成
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={onEditToggle}
-                  variant="outline"
-                  size="sm"
-                >
-                  <EditIcon className="w-4 h-4 mr-2" />
-                  编辑
-                </Button>
-              )}
-            </div>
-          </div>
+  const headerButtons = isEditing ? (
+    <>
+      <Badge variant={autoSaveStatus === 'saved' ? 'default' : autoSaveStatus === 'saving' ? 'secondary' : 'destructive'}>
+        {autoSaveStatus === 'saved' ? '已保存' : autoSaveStatus === 'saving' ? '保存中...' : '未保存'}
+      </Badge>
+      <Button onClick={handleAutoSave} variant="outline" size="sm" disabled={autoSaveStatus === 'saving'}>
+        <SaveIcon className="w-4 h-4 mr-2" />
+        手动保存
+      </Button>
+      <Button onClick={onEditToggle} variant="outline" size="sm">
+        <XIcon className="w-4 h-4 mr-2" />
+        完成
+      </Button>
+    </>
+  ) : (
+    <Button onClick={onEditToggle} variant="outline" size="sm">
+      <EditIcon className="w-4 h-4 mr-2" />
+      编辑
+    </Button>
+  );
 
-          {/* Action Bar */}
-          <div className="flex flex-wrap gap-2 items-center">
+  const primaryButton = !recording.transcription ? (
+    <Button
+      onClick={generateTranscription}
+      disabled={transcribing}
+      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+    >
+      {transcribing ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          转录中...
+        </>
+      ) : (
+        <>
+          <MicIcon className="w-4 h-4 mr-2" />
+          开始转录
+        </>
+      )}
+    </Button>
+  ) : null;
+
+  return (
+    <>
+      <PipelineStageCard
+        icon={<FileTextIcon className="w-5 h-5 text-white" />}
+        iconBgColor="bg-primary"
+        title="转录内容"
+        description="音频的文字转录结果"
+        primaryButton={primaryButton || headerButtons}
+        isEmpty={!recording.transcription}
+        emptyIcon={<MicIcon className="w-12 h-12" />}
+        emptyMessage="暂无转录内容"
+      >
+      <div className="space-y-4">
+        {/* Action Bar */}
+        <div className="flex flex-wrap gap-2 items-center">
             {/* Search */}
             <SearchInput
               className="flex-1 min-w-[200px]"
@@ -374,10 +374,8 @@ function RecordingTranscription({
                 </Button>
               </>
             )}
-          </div>
         </div>
 
-        <Separator className="my-4" />
         {/* Transcription Progress */}
         {transcribing && (
           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -390,7 +388,7 @@ function RecordingTranscription({
         )}
 
         {isEditing ? (
-          <div className="space-y-4">
+          <div className="space-y-4 mt-4">
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">转录文本</label>
@@ -426,16 +424,14 @@ function RecordingTranscription({
             )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {recording.transcription ? (
-              <>
+          <div className="space-y-4 mt-4">
                 {/* Transcription Display */}
                 <div className={`bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-gray-800 dark:text-gray-200 whitespace-pre-wrap 
                   ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}>
-                  {searchTerm
+                  {recording.transcription && (searchTerm
                     ? highlightSearchTerm(formatText(recording.transcription))
                     : formatText(recording.transcription)
-                  }
+                  )}
                 </div>
                 
                 {recording.verbatimTranscript && (
@@ -449,63 +445,40 @@ function RecordingTranscription({
                 )}
                 
                 {/* Word Statistics */}
-                <div className="grid grid-cols-4 gap-3 p-3 bg-muted rounded-lg">
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-foreground">
-                      {getWordStats(recording.transcription).characters.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">字符</p>
+                {recording.transcription && (
+                  <div className="grid grid-cols-4 gap-3 p-3 bg-muted rounded-lg">
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-foreground">
+                        {getWordStats(recording.transcription).characters.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">字符</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-foreground">
+                        {getWordStats(recording.transcription).words.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">词数</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-foreground">
+                        {getWordStats(recording.transcription).sentences.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">句数</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-foreground">
+                        {getWordStats(recording.transcription).paragraphs.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">段落</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-foreground">
-                      {getWordStats(recording.transcription).words.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">词数</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-foreground">
-                      {getWordStats(recording.transcription).sentences.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">句数</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-foreground">
-                      {getWordStats(recording.transcription).paragraphs.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">段落</p>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MicIcon className="w-6 h-6 text-muted-foreground" />
-                </div>
-                <h3 className="text-sm font-medium text-foreground mb-1">暂无转录内容</h3>
-                <p className="text-sm text-muted-foreground mb-4">点击下方按钮开始转录</p>
-                <Button
-                  onClick={generateTranscription}
-                  disabled={transcribing}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  {transcribing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      转录中...
-                    </>
-                  ) : (
-                    <>
-                      <MicIcon className="w-4 h-4 mr-2" />
-                      开始转录
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
+                )}
           </div>
         )}
       </div>
-        
+    </PipelineStageCard>
+
+      {/* Dialogs outside the card */}
       {/* Redo Transcript Confirmation Dialog */}
       <Dialog open={showRedoConfirm} onOpenChange={setShowRedoConfirm}>
         <DialogContent>
@@ -609,7 +582,7 @@ function RecordingTranscription({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
 

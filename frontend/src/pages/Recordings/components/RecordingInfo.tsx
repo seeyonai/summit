@@ -76,14 +76,6 @@ function RecordingInfo({ recording }: RecordingInfoProps) {
               </div>
               
               <div className="flex items-start gap-3">
-                <HashIcon className="w-5 h-5 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">文件路径</p>
-                  <p className="font-medium text-sm break-all">{recording.filePath}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
                 <HardDriveIcon className="w-5 h-5 text-muted-foreground mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">文件大小</p>

@@ -87,7 +87,7 @@ function RecordingDetailRedesign() {
   // Toggle editing
   const toggleEditing = () => {
     if (!recording) return;
-    
+
     if (isEditing) {
       setIsEditing(false);
       setEditForm({});
@@ -170,24 +170,24 @@ function RecordingDetailRedesign() {
   // Download recording
   const handleDownloadRecording = async () => {
     if (!recording) return;
-    
+
     const fileUrl = recording.filePath || recording.filename;
     if (!fileUrl) {
       setError('无法获取录音文件路径');
       return;
     }
-    
+
     try {
       const downloadUrl = `${apiUrl(fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`)}`;
-      
+
       // Fetch the file as a blob
       const response = await fetch(downloadUrl);
       if (!response.ok) {
         throw new Error('下载失败');
       }
-      
+
       const blob = await response.blob();
-      
+
       // Create a blob URL and trigger download
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -196,20 +196,20 @@ function RecordingDetailRedesign() {
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      
+
       // Clean up
       setTimeout(() => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
       }, 100);
-      
+
       setSuccess('录音文件下载完成');
     } catch (error) {
       setError(error instanceof Error ? error.message : '下载失败');
     }
   };
 
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -242,7 +242,7 @@ function RecordingDetailRedesign() {
 
   return (
     <div className="min-h-screen">
-      <div className="">
+      <div className="space-y-6">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -262,199 +262,180 @@ function RecordingDetailRedesign() {
                   <TooltipContent>下载录音</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              
-              {!recording.meeting && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={openAssociateModal}
-                      >
-                        <Link2Icon className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>关联到会议</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={openAssociateModal}
+                    >
+                      <Link2Icon className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>关联到会议</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
-          
-          {/* Main Content */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex-1">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <HeadphonesIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                        {recording.filename}
-                      </h1>
-                        
-                      {/* Meeting Information */}
-                      {recording.meeting && (
-                        <div className="mb-3">
-                          <div className="inline-flex items-center gap-2 text-sm">
-                            <LinkIcon className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-600 dark:text-gray-400">关联会议:</span>
-                            <span className="font-medium text-gray-900 dark:text-gray-100">{recording.meeting.title}</span>
-                            <Badge 
-                              variant={recording.meeting.status === 'completed' ? 'default' : 
-                                      recording.meeting.status === 'in_progress' ? 'secondary' : 
-                                      recording.meeting.status === 'scheduled' ? 'outline' : 'destructive'}
-                              className={
-                                recording.meeting.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                                recording.meeting.status === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
-                                recording.meeting.status === 'scheduled' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' :
-                                'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                              }
-                            >
-                              {recording.meeting.status === 'completed' ? '已完成' :
-                               recording.meeting.status === 'in_progress' ? '进行中' :
-                               recording.meeting.status === 'scheduled' ? '已排期' : '失败'}
-                            </Badge>
-                          </div>
+
+          {/* Main Header Content */}
+          <div className="">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    <HeadphonesIcon className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <h1 className="text-xl font-bold text-foreground mb-2">
+                      {recording.filename}
+                    </h1>
+
+                    {/* Meeting Information */}
+                    {recording.meeting && (
+                      <div className="mb-2">
+                        <div className="inline-flex items-center gap-2 text-sm">
+                          <LinkIcon className="w-4 h-4" />
+                          <span className="">关联会议:</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{recording.meeting.title}</span>
+                          <Badge
+                            variant={recording.meeting.status === 'completed' ? 'default' :
+                              recording.meeting.status === 'in_progress' ? 'secondary' :
+                                recording.meeting.status === 'scheduled' ? 'outline' : 'destructive'}
+                            className={
+                              recording.meeting.status === 'completed' ? 'bg-completed' :
+                                recording.meeting.status === 'in_progress' ? 'bg-success' :
+                                  recording.meeting.status === 'scheduled' ? 'bg-info' :
+                                    'bg-destructive'
+                            }
+                          >
+                            {recording.meeting.status === 'completed' ? '已完成' :
+                              recording.meeting.status === 'in_progress' ? '进行中' :
+                                recording.meeting.status === 'scheduled' ? '已排期' : '失败'}
+                          </Badge>
                         </div>
-                      )}
-                        
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="w-4 h-4" />
-                          <span>{formatDate(recording.createdAt)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <ClockIcon className="w-4 h-4" />
-                          <span>{recording.duration ? formatTime(recording.duration) : '未知'}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <FileAudioIcon className="w-4 h-4" />
-                          <span>{formatFileSize(recording.fileSize)}</span>
-                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-baseline gap-4 text-sm font-mono">
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon className="w-4 h-4" />
+                        <span className="text-muted-foreground ml-1 mr-2">{formatDate(recording.createdAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ClockIcon className="w-4 h-4" />
+                        <span className="text-muted-foreground ml-1 mr-2">{recording.duration ? formatTime(recording.duration) : '未知'}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <FileAudioIcon className="w-4 h-4" />
+                        <span className="text-muted-foreground ml-1 mr-2">{formatFileSize(recording.fileSize)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              
-                <div className="flex gap-2">
-                  {isEditing ? (
+              </div>
+
+              <div className="flex gap-2">
+                {isEditing ? (
+                  <Button
+                    onClick={updateRecording}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <SaveIcon className="w-4 h-4 mr-2" />
+                    保存更改
+                  </Button>
+                ) : (
+                  <>
                     <Button
-                      onClick={updateRecording}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => setShowInfoModal(true)}
+                      variant="outline"
+                      aria-label="查看录音信息"
                     >
-                      <SaveIcon className="w-4 h-4 mr-2" />
-                      保存更改
+                      <InfoIcon className="w-4 h-4" />
+                      查看录音信息
                     </Button>
-                  ) : (
-                    <>
-                      <Button
-                        onClick={() => setShowInfoModal(true)}
-                        variant="outline"
-                        size="icon"
-                        aria-label="查看录音信息"
-                      >
-                        <InfoIcon className="w-4 h-4" />
-                      </Button>
-                      </>
-                  )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 mb-6">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <ActivityIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">比特率</span>
                 </div>
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {recording.metadata?.bitrate || (recording.fileSize && recording.duration ? Math.round((recording.fileSize / recording.duration) * 8 / 1000) : '-')} kbps
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">
+                  {recording.metadata?.codec || recording.format || 'WAV'}
+                </p>
               </div>
 
-              {/* Statistics Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 mb-6">
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <ActivityIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">比特率</span>
-                  </div>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {recording.metadata?.bitrate || (recording.fileSize && recording.duration ? Math.round((recording.fileSize / recording.duration) * 8 / 1000) : '-')} kbps
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    {recording.metadata?.codec || recording.format || 'WAV'}
-                  </p>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <BarChart3Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">转录进度</span>
                 </div>
-                
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <BarChart3Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">转录进度</span>
-                  </div>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {recording.transcription ? '100%' : '0%'}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    {recording.transcription ? '已完成' : '待处理'}
-                  </p>
-                </div>
-                
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FileTextIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">字数统计</span>
-                  </div>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {recording.transcription ? recording.transcription.length.toLocaleString() : 0}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">总字符</p>
-                </div>
-                
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <UsersIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">说话人数</span>
-                  </div>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map(s => s.speakerIndex)).size : 0)}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    声道数: {recording.metadata?.channels || recording.channels || '-'}
-                  </p>
-                </div>
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {recording.transcription ? '100%' : '0%'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">
+                  {recording.transcription ? '已完成' : '待处理'}
+                </p>
               </div>
 
-              {/* Audio Player */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <HeadphonesIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">音频播放器</h3>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <FileTextIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">字数统计</span>
                 </div>
-                <AudioPlayer 
-                  recording={recording} 
-                  timestamps={recording.speakerSegments?.map(segment => ({
-                    time: segment.startTime,
-                    label: `说话人 ${segment.speakerIndex + 1}`
-                  })) || []}
-                />
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {recording.transcription ? recording.transcription.length.toLocaleString() : 0}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">总字符</p>
               </div>
+
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <UsersIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">说话人数</span>
+                </div>
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map(s => s.speakerIndex)).size : 0)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">
+                  声道数: {recording.metadata?.channels || recording.channels || '-'}
+                </p>
+              </div>
+            </div>
+
+            {/* Audio Player */}
+            <div className="pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <HeadphonesIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">音频播放器</h3>
+              </div>
+              <AudioPlayer
+                showFilename={false}
+                recording={recording}
+                timestamps={recording.speakerSegments?.map(segment => ({
+                  time: segment.startTime,
+                  label: `说话人 ${segment.speakerIndex + 1}`
+                })) || []}
+              />
             </div>
           </div>
         </div>
 
-  
-        {/* Speaker Timeline moved to RecordingAnalysis to avoid duplication */}
-
-        {/* Main Content Tabs */}
-        <Tabs 
-          value={activeTab} 
-          onValueChange={(value) => {
-            setActiveTab(value);
-            setSearchParams({ tab: value });
-          }} 
-          className="mt-6"
-        >
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="transcription">转录</TabsTrigger>
-            <TabsTrigger value="alignment">对齐</TabsTrigger>
-            <TabsTrigger value="analysis">分割</TabsTrigger>
-            <TabsTrigger value="organize">整理</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="transcription">
+        {/* Pipeline Stages Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Stage 1: Transcription - Full Width */}
+          <div className="lg:col-span-2">
             <RecordingTranscription
               recording={recording}
               isEditing={isEditing}
@@ -465,36 +446,34 @@ function RecordingDetailRedesign() {
               setError={setError}
               onEditToggle={toggleEditing}
             />
-          </TabsContent>
+          </div>
 
-          <TabsContent value="alignment">
-            <RecordingAlignment
-              recording={recording}
-              isEditing={isEditing}
-              editForm={editForm}
-              setSuccess={setSuccess}
-              setError={setError}
-            />
-          </TabsContent>
+          {/* Stage 2: Alignment and Analysis - Side by Side on lg */}
+          <RecordingAlignment
+            recording={recording}
+            isEditing={isEditing}
+            editForm={editForm}
+            setSuccess={setSuccess}
+            setError={setError}
+          />
 
-          <TabsContent value="analysis">
-            <RecordingAnalysis
-              recording={recording}
-              onRefresh={fetchRecording}
-              setSuccess={setSuccess}
-              setError={setError}
-            />
-          </TabsContent>
+          <RecordingAnalysis
+            recording={recording}
+            onRefresh={fetchRecording}
+            setSuccess={setSuccess}
+            setError={setError}
+          />
 
-          <TabsContent value="organize">
+          {/* Stage 3: Organize - Full Width */}
+          <div className="lg:col-span-2">
             <RecordingOrganize
               recording={recording}
               setSuccess={setSuccess}
               setError={setError}
               onRefresh={fetchRecording}
             />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         {/* Success/Error Messages */}
         {success && (
@@ -551,7 +530,7 @@ function RecordingDetailRedesign() {
           />
         )}
       </div>
-    </div>
+    </div >
   );
 }
 

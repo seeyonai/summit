@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import type { Recording, OrganizedSpeech } from '@/types';
 import { apiService } from '@/services/api';
 import { UsersIcon, ClockIcon, SparklesIcon } from 'lucide-react';
+import PipelineStageCard from './PipelineStageCard';
 
 interface RecordingOrganizeProps {
   recording: Recording;
@@ -66,58 +68,59 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
     }
   }, [recording?._id, recording?.organizedSpeeches]);
 
+  const primaryButton = (
+    <Button onClick={load} disabled={loading} className="bg-primary hover:bg-primary/90 text-primary-foreground" size="sm">
+      {loading ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          整理中...
+        </>
+      ) : (
+        <>
+          <SparklesIcon className="w-4 h-4 mr-2" />
+          开始整理
+        </>
+      )}
+    </Button>
+  );
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>整理发言</CardTitle>
-              <CardDescription>将说话人分段与文本对齐并润色，生成结构化对话</CardDescription>
-            </div>
-            <Button onClick={load} disabled={loading} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-              {loading ? '整理中...' : (
-                <>
-                  <SparklesIcon className="w-4 h-4 mr-2" />
-                  重新整理
-                </>
-              )}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!speeches || speeches.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">{loading ? '请稍候...' : '暂无整理结果'}</div>
-          ) : (
-            <div className="space-y-4">
-              {speeches.map((s, idx) => {
-                const colorIdx = Math.abs(s.speakerIndex) % borderColors.length;
-                const borderClass = borderColors[colorIdx];
-                const badgeClass = badgeColors[colorIdx];
-                return (
-                  <div key={`${s.speakerIndex}-${s.startTime}-${idx}`} className={`p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 ${borderClass}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge className={badgeClass}>
-                        <UsersIcon className="w-3 h-3 mr-1" /> 说话人 {s.speakerIndex + 1}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
-                        <ClockIcon className="w-3 h-3" />
-                        <span>{formatTime(s.startTime)} - {formatTime(s.endTime)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-gray-900 dark:text-gray-100 leading-7">
-                    {s.polishedText}
+    <PipelineStageCard
+      icon={<SparklesIcon className="w-5 h-5 text-white" />}
+      iconBgColor="bg-chart-4"
+      title="整理发言"
+      description="将说话人分段与文本对齐并润色，生成结构化对话"
+      primaryButton={primaryButton}
+      isEmpty={!speeches || speeches.length === 0}
+      emptyIcon={<SparklesIcon className="w-12 h-12" />}
+      emptyMessage={loading ? '请稍候...' : '暂无整理结果'}
+    >
+      <div className="space-y-4">
+        {speeches?.map((s, idx) => {
+          const colorIdx = Math.abs(s.speakerIndex) % borderColors.length;
+          const borderClass = borderColors[colorIdx];
+          const badgeClass = badgeColors[colorIdx];
+          return (
+            <div key={`${s.speakerIndex}-${s.startTime}-${idx}`} className={`p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 ${borderClass}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Badge className={badgeClass}>
+                    <UsersIcon className="w-3 h-3 mr-1" /> 说话人 {s.speakerIndex + 1}
+                  </Badge>
+                  <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                    <ClockIcon className="w-3 h-3" />
+                    <span>{formatTime(s.startTime)} - {formatTime(s.endTime)}</span>
                   </div>
                 </div>
-                );
-              })}
+              </div>
+              <div className="text-gray-900 dark:text-gray-100 leading-7">
+                {s.polishedText}
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          );
+        })}
+      </div>
+    </PipelineStageCard>
   );
 }
 

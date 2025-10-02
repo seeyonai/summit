@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import type { Recording } from '@/types';
 import { AlignLeftIcon } from 'lucide-react';
 import { apiService } from '@/services/api';
+import PipelineStageCard from './PipelineStageCard';
 
 interface RecordingAlignmentProps {
   recording: Recording;
@@ -99,43 +101,39 @@ function RecordingAlignment({
     audio.play();
   };
 
+  const primaryButton = (
+    <Button
+      onClick={handleAlign}
+      disabled={aligning || !recording.transcription}
+      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+      size="sm"
+    >
+      {aligning ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          对齐中...
+        </>
+      ) : (
+        <>
+          <AlignLeftIcon className="w-4 h-4 mr-2" />
+          开始对齐
+        </>
+      )}
+    </Button>
+  );
+
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border">
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">对齐</h2>
-            <p className="text-sm text-muted-foreground mt-1">将转录文本与音频时间轴对齐</p>
-          </div>
-          <div>
-            <Button
-              onClick={handleAlign}
-              disabled={aligning || !recording.transcription}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              size="sm"
-            >
-              {aligning ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  对齐中...
-                </>
-              ) : (
-                <>
-                  <AlignLeftIcon className="w-4 h-4 mr-2" />
-                  对齐文本与音频
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {!recording.transcription && (
-          <div className="text-sm text-muted-foreground">
-            需要先生成转录内容，才能进行对齐。
-          </div>
-        )}
-
-        {alignment && (
+    <PipelineStageCard
+      icon={<AlignLeftIcon className="w-5 h-5 text-white" />}
+      iconBgColor="bg-success"
+      title="对齐"
+      description="将转录文本与音频时间轴对齐"
+      primaryButton={primaryButton}
+      isEmpty={!recording.transcription || !alignment}
+      emptyIcon={<AlignLeftIcon className="w-12 h-12" />}
+      emptyMessage={!recording.transcription ? "需要先生成转录内容，才能进行对齐。" : undefined}
+    >
+      {alignment && (
           <div className="space-y-4 mt-4">
             <div className="flex items-center gap-2 text-sm">
               <Badge variant={alignment.coverage >= 80 ? 'default' : alignment.coverage >= 50 ? 'secondary' : 'destructive'}>
@@ -172,8 +170,7 @@ function RecordingAlignment({
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </PipelineStageCard>
   );
 }
 

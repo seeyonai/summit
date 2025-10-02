@@ -23,7 +23,7 @@ function BackButton({ url, className, variant = 'ghost', size = 'default', child
 
   return (
     <Button variant={variant} size={size} onClick={handleClick} className={className}>
-      <ArrowLeftIcon className="w-4 h-4 mr-2" />
+      <ArrowLeftIcon className="w-4 h-4 -ml-2 mr-2" />
       {children || 'Back'}
     </Button>
   );

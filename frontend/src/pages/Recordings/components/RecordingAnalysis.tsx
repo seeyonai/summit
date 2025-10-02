@@ -10,8 +10,10 @@ import {
   UsersIcon,
   ClockIcon,
   MessageSquareIcon,
-  TrendingUpIcon
+  TrendingUpIcon,
+  BarChart3Icon
 } from 'lucide-react';
+import PipelineStageCard from './PipelineStageCard';
 
 interface RecordingAnalysisProps {
   recording: Recording;
@@ -101,32 +103,41 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
     );
   };
 
+  const primaryButton = (
+    <Button
+      onClick={() => runSpeakerSegmentation()}
+      disabled={segmenting}
+      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+      size="sm"
+    >
+      {segmenting ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          分析中...
+        </>
+      ) : (
+        <>
+          <UsersIcon className="w-4 h-4 mr-2" />
+          开始分析
+        </>
+      )}
+    </Button>
+  );
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>说话人分割</CardTitle>
-              <CardDescription>识别和分析录音中的不同说话人</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => runSpeakerSegmentation()}
-                disabled={segmenting}
-                variant="outline"
-                size="sm"
-              >
-                <UsersIcon className="w-4 h-4 mr-2" />
-                {segmenting ? '分割中...' : '自动分割'}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {recording.speakerSegments && recording.speakerSegments.length > 0 ? (
-            <div className="space-y-6">
-              {renderSpeakerTimeline()}
+    <PipelineStageCard
+      icon={<BarChart3Icon className="w-5 h-5 text-white" />}
+      iconBgColor="bg-accent"
+      title="说话人分析"
+      description="识别和分析录音中的不同说话人"
+      primaryButton={primaryButton}
+      isEmpty={!recording.speakerSegments || recording.speakerSegments.length === 0}
+      emptyIcon={<UsersIcon className="w-12 h-12" />}
+      emptyMessage="暂无说话人分析结果"
+    >
+      {recording.speakerSegments && recording.speakerSegments.length > 0 && (
+        <div className="space-y-6">
+          {renderSpeakerTimeline()}
               
               <Separator />
               
@@ -234,58 +245,14 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <UsersIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">暂无说话人分析结果</p>
-              <div className="space-y-3">
-                <Button
-                  onClick={() => runSpeakerSegmentation()}
-                  disabled={segmenting}
-                >
-                  {segmenting ? '分析中...' : '开始分析'}
-                </Button>
-                <div className="flex justify-center gap-2">
-                  <Button
-                    onClick={() => runSpeakerSegmentation(2)}
-                    disabled={segmenting}
-                    variant="outline"
-                    size="sm"
-                  >
-                    2人对话
-                  </Button>
-                  <Button
-                    onClick={() => runSpeakerSegmentation(3)}
-                    disabled={segmenting}
-                    variant="outline"
-                    size="sm"
-                  >
-                    3人会议
-                  </Button>
-                  <Button
-                    onClick={() => runSpeakerSegmentation(4)}
-                    disabled={segmenting}
-                    variant="outline"
-                    size="sm"
-                  >
-                    4人讨论
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Conversation Insights */}
-      {recording.speakerSegments && recording.speakerSegments.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>对话洞察</CardTitle>
-            <CardDescription>基于说话人分析的对话模式</CardDescription>
-          </CardHeader>
-          <CardContent>
+          {/* Conversation Insights */}
+          <Separator className="my-6" />
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">对话洞察</h3>
+              <p className="text-sm text-muted-foreground">基于说话人分析的对话模式</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-primary/5 dark:bg-primary/10 rounded-lg">
                 <MessageSquareIcon className="w-8 h-8 text-primary dark:text-primary mx-auto mb-2" />
@@ -313,10 +280,10 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                 <p className="text-sm text-muted-foreground">平均发言时长</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
-    </div>
+    </PipelineStageCard>
   );
 }
 

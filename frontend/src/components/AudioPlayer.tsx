@@ -3,13 +3,14 @@ import type { Recording as BaseRecording } from '@base/types';
 import { fileUrlFor } from '@/services/api';
 
 interface AudioPlayerProps {
+  showFilename?: boolean;
   recording: BaseRecording;
   timestamps?: { time: number; label: string }[];
   onTimestampClick?: (time: number) => void;
 }
 
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ recording, onTimestampClick }) => {
+function AudioPlayer({ recording, onTimestampClick, showFilename = true }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const formatTime = (seconds: number) => {
@@ -28,18 +29,18 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ recording, onTimestampClick }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">{recording.filename}</h2>
+    <div className="">
+      {showFilename && <h2 className="text-lg font-semibold text-gray-900 mb-4">{recording.filename}</h2>}
       <div className="space-y-4">
-        <audio 
+        <audio
           ref={audioRef}
-          controls 
+          controls
           className="w-full"
         >
           <source src={fileUrlFor(recording.filename)} type="audio/wav" />
           您的浏览器不支持音频播放
         </audio>
-        
+
         {/* Speaker Segments */}
         {recording.speakerSegments && recording.speakerSegments.length > 0 && (
           <div className="space-y-2">
@@ -77,10 +78,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ recording, onTimestampClick }
             </div>
           </div>
         )}
-        
+
       </div>
     </div>
   );
-};
+}
 
 export default AudioPlayer;
