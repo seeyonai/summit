@@ -28,7 +28,7 @@ FROM docker.m.daocloud.io/library/node:20 AS runtime
 WORKDIR /usr/src/app
 ENV NODE_ENV=production \
     PORT=2591 \
-    FILE_BASE_PATH=/usr/src/app/files
+    RECORDING_FILE_DIR=/usr/src/app/files
 
 # Install nginx and prepare directories
 RUN apt-get update \

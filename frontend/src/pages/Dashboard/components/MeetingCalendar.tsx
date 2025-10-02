@@ -83,7 +83,7 @@ function MeetingCalendar({ meetings, loading }: MeetingCalendarProps) {
       scheduled: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200/50 dark:border-blue-800/50',
       in_progress: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200/50 dark:border-green-800/50',
       completed: 'bg-gray-50 dark:bg-gray-900/20 text-gray-600 dark:text-gray-400 border-gray-200/50 dark:border-gray-800/50',
-      failed: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200/50 dark:border-red-800/50'
+      failed: 'bg-destructive dark:bg-destructive/20 text-red-700 dark:text-red-300 border-red-200/50 dark:border-red-800/50'
     };
     return colors[status as keyof typeof colors] || colors.scheduled;
   };

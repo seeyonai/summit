@@ -2,10 +2,11 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export function getFilesBaseDir(): string {
-  const envBase = process.env.FILE_BASE_PATH;
+  const envBase = process.env.RECORDING_FILE_DIR || process.env.FILE_BASE_PATH;
   if (envBase && envBase.trim().length > 0) {
     return path.isAbsolute(envBase) ? envBase : path.resolve(envBase);
   }
+  // Default to repository-level /files directory for development
   return path.resolve(process.cwd(), '..', 'files');
 }
 

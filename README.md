@@ -71,17 +71,17 @@ Override the API base URL by setting `VITE_API_BASE_URL` in the frontend's `.env
 Start the backend first (port 2591), then the frontend (port 2590). The UI calls the API via hard-coded `http://localhost:2591` endpoints; set up a proxy or expose a `VITE_` env var if you need a different origin.
 
 ## Environment Configuration
-- Backend honors `MONGODB_URI`, `DB_NAME`, `FILE_BASE_PATH`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
-  - `FILE_BASE_PATH` sets the filesystem base directory for audio files. If unset, it defaults to the repository root `files/` during development. The Docker runtime sets it to `/usr/src/app/files`.
+- Backend honors `MONGODB_URI`, `DB_NAME`, `RECORDING_FILE_DIR`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
+  - `RECORDING_FILE_DIR` sets the filesystem base directory for audio files. If unset, uploads default to the repository-level `files/` directory. Docker images set it to `/usr/src/app/files`.
     - `SEGMENTATION_SERVICE_URL` sets the URL for the speaker segmentation service (default: `http://localhost:2593`).
   - `TRANSCRIBE_SERVICE_URL` sets the URL for the transcription service (default: `http://localhost:2594`).
-  - Static URLs continue to use `/files/<filename>`; the server maps these to the configured base directory.
+  - Static URLs stream audio at `/files/<recordingId>`; the server maps these to the configured base directory and resolves the file by `<_id>.<ext>` on disk.
   - `SUMMIT_OPENAI_API_KEY`, `SUMMIT_OPENAI_BASE_URL`, `SUMMIT_OPENAI_MODEL` are used for the OpenAI API. If not set, the backend will fall back to `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL`.
 - Frontend consumes `VITE_`-prefixed env vars via `import.meta.env`. Create `frontend/.env` to override defaults (e.g., `VITE_API_BASE_URL`).
   - Store large or generated audio under the configured base directory. By default this is the repo `files/` directory; it is served at `/files/*`.
 
 ### Files & Paths
-- Public paths stored in the database (e.g., `/files/example.wav`) are resolved to disk under `FILE_BASE_PATH`.
+- Audio files are stored on disk as `<recordingId>.<ext>` within `RECORDING_FILE_DIR` (default `files/`). The original filename is stored only as metadata (`originalFileName`).
 - The server prevents path traversal and will only read/write inside the configured base directory.
 - In Docker, the image ensures `/usr/src/app/files` exists. You can mount a volume there to persist uploads.
 
@@ -93,7 +93,7 @@ Base URL: `http://localhost:2591`
 - **Recordings** (`/api/recordings`): list, detail, mock start, delete, transcription (`/transcribe`), diarization (`/segment`), and transcription polishing (`/polish`).
 - **Hotwords** (`/api/hotwords`): create, update, delete, batch fetch.
 - **Segmentation** (`/api/segmentation`): model metadata, diarization by stored path (`/analyze`), upload-and-analyze (`/upload`).
-- Static audio files are available at `/files/<filename>`.
+- Static audio files are available at `/files/<recordingId>`.
 
 OpenAPI draft specs for offline transcription live under `backend/openapi/`.
 

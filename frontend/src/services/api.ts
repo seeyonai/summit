@@ -134,11 +134,9 @@ export function apiUrl(endpoint: string): string {
   return `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 }
 
-export function fileUrlFor(pathOrFilename: string): string {
-  // Accept either 'foo.wav' or '/files/foo.wav' or 'files/foo.wav'
-  const raw = (pathOrFilename || '').replace(/\\/g, '/');
-  const filename = raw.replace(/^\/?files\//, '').replace(/^\//, '');
-  const base = apiUrl(`/files/${filename}`);
+export function fileUrlFor(id: string): string {
+  const cleanId = String(id || '').replace(/\//g, '');
+  const base = apiUrl(`/files/${cleanId}`);
   try {
     const token = localStorage.getItem('auth_token');
     if (token) {
@@ -152,7 +150,6 @@ export function fileUrlFor(pathOrFilename: string): string {
 }
 
 interface RecordingUpdatePayload {
-  filename?: string;
   transcription?: string;
   verbatimTranscript?: string;
   organizedSpeeches?: Array<{

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import recordingService from '../../services/RecordingService';
 import path from 'path';
 import fs from 'fs';
+import { getFilesBaseDir, resolveExistingPathFromCandidate } from '../../utils/filePaths';
 import { parseFile } from 'music-metadata';
 import { RecordingUpdate } from '../../types';
 import { asyncHandler } from '../../middleware/errorHandler';
@@ -48,9 +49,11 @@ router.get('/:recordingId', requireRecordingReadAccess(), asyncHandler(async (re
     genre?: string[] | null;
   } = {};
 
-  if (recording.filePath) {
+  if (recording._id) {
     try {
-      const absolutePath = path.join(__dirname, '..', '..', recording.filePath);
+      const baseDir = getFilesBaseDir();
+      const ext = recording.format || 'wav';
+      const absolutePath = await resolveExistingPathFromCandidate(baseDir, `${recording._id}.${ext}`);
 
       if (fs.existsSync(absolutePath)) {
         const audioMetadata = await parseFile(absolutePath);

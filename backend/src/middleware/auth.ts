@@ -115,8 +115,7 @@ async function findRecordingByIdentifier(recordingId: string): Promise<Recording
     const byId = await col.findOne({ _id: new ObjectId(recordingId) } as any);
     if (byId) return byId;
   }
-  // externalId fallback
-  return col.findOne({ externalId: recordingId } as any);
+  return null;
 }
 
 async function hasMeetingReadAccess(meeting: MeetingDocument | null, userId: string): Promise<boolean> {

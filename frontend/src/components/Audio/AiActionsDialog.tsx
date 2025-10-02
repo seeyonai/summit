@@ -66,11 +66,11 @@ const AiActionsDialog: React.FC<AiActionsDialogProps> = ({
       case 'emerald':
         return "w-8 h-8 text-emerald-400";
       case 'purple':
-        return "w-8 h-8 text-purple-400";
+        return "w-8 h-8 text-accent";
       case 'orange':
         return "w-8 h-8 text-orange-400";
       case 'pink':
-        return "w-8 h-8 text-pink-400";
+        return "w-8 h-8 text-accent";
       case 'cyan':
         return "w-8 h-8 text-cyan-400";
       default:
@@ -102,7 +102,7 @@ const AiActionsDialog: React.FC<AiActionsDialogProps> = ({
       <DialogContent className="bg-gradient-to-b from-slate-800/90 to-slate-900/90 border-slate-700/50 max-w-2xl backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
-            <Sparkles className="w-6 h-6 text-purple-400" />
+            <Sparkles className="w-6 h-6 text-accent" />
             AI 助手功能
           </DialogTitle>
         </DialogHeader>

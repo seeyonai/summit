@@ -25,8 +25,7 @@ export class DataSeeder {
         scheduledStart: new Date('2024-01-15T09:00:00'),
         recordings: [
           {
-            filePath: '/files/product-meeting.wav',
-            filename: 'product-meeting.wav',
+            originalFileName: 'product-meeting.wav',
             duration: 6400,
             fileSize: 1024000,
             transcription: '会议记录：讨论了Q2产品功能优先级，确定了用户界面改进计划。',
@@ -46,8 +45,7 @@ export class DataSeeder {
             format: 'wav',
           },
           {
-            filePath: '/files/product-meeting-2.wav',
-            filename: 'product-meeting-2.wav',
+            originalFileName: 'product-meeting-2.wav',
             duration: 4800,
             fileSize: 768000,
             transcription: '后续会议记录：进一步讨论了产品需求文档的细节和实施计划。',
@@ -111,8 +109,7 @@ export class DataSeeder {
         scheduledStart: new Date('2024-01-16T14:00:00'),
         recordings: [
           {
-            filePath: '/files/tech-review.wav',
-            filename: 'tech-review.wav',
+            originalFileName: 'tech-review.wav',
             duration: 3200,
             fileSize: 512000,
             transcription: '技术架构评审会议记录...',
@@ -197,8 +194,7 @@ export class DataSeeder {
     ],
     recordings: [
       {
-        filePath: '/files/meeting1.wav',
-        filename: 'meeting1.wav',
+        originalFileName: 'meeting1.wav',
         duration: 5400,
         fileSize: 43200000,
         transcription: '今天我们讨论了第四季度的产品策略...',
@@ -263,7 +259,7 @@ export class DataSeeder {
         const meetingId = result.insertedId;
         const recordingCollection = getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
         for (const recording of recordings) {
-          await recordingCollection.deleteMany({ filename: recording.filename });
+          await recordingCollection.deleteMany({ originalFileName: (recording as any).originalFileName });
           const recordingIds = [
             '507f1f77bcf86cd799439014', // Product meeting recording 1
             '507f1f77bcf86cd799439015', // Product meeting recording 2
@@ -279,16 +275,16 @@ export class DataSeeder {
           };
           
           // For recordings associated with meetings, use a predictable ID
-          if (meeting.title === '产品规划会议' && recording.filename === 'product-meeting.wav') {
+          if (meeting.title === '产品规划会议' && (recording as any).originalFileName === 'product-meeting.wav') {
             recordingData._id = new ObjectId(recordingIds[0]);
-          } else if (meeting.title === '产品规划会议' && recording.filename === 'product-meeting-2.wav') {
+          } else if (meeting.title === '产品规划会议' && (recording as any).originalFileName === 'product-meeting-2.wav') {
             recordingData._id = new ObjectId(recordingIds[1]);
-          } else if (meeting.title === '技术架构评审' && recording.filename === 'tech-review.wav') {
+          } else if (meeting.title === '技术架构评审' && (recording as any).originalFileName === 'tech-review.wav') {
             recordingData._id = new ObjectId(recordingIds[2]);
           }
           
           await recordingCollection.insertOne(recordingData);
-          console.log(`🎵 Seeded recording ${recording.filename}`);
+          console.log(`🎵 Seeded recording ${(recording as any).originalFileName}`);
         }
       }
     }
@@ -342,9 +338,9 @@ export class DataSeeder {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      await collection.deleteMany({ filename: recording.filename });
+      await collection.deleteMany({ originalFileName: (recording as any).originalFileName });
       await collection.insertOne(recordingData);
-      console.log(`🎵 Seeded recording ${recording.filename}`);
+      console.log(`🎵 Seeded recording ${(recording as any).originalFileName}`);
     }
     console.log(`🎵 Seeded ${this.mockData.recordings.length} recordings`);
   }

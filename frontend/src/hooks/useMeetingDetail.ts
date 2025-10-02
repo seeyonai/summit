@@ -14,7 +14,6 @@ interface UseMeetingDetailReturn {
   refresh: () => Promise<void>;
   deleteMeeting: () => Promise<void>;
   handleRecordingComplete: (recordingData: {
-    filename: string;
     duration: number;
     downloadUrl?: string;
     transcription?: string;
@@ -58,7 +57,6 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
   }, [meetingId, navigate]);
 
   const handleRecordingComplete = useCallback(async (recordingData: {
-    filename: string;
     duration: number;
     downloadUrl?: string;
     transcription?: string;
@@ -72,8 +70,7 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
         recordings: [
           ...meeting.recordings,
           {
-            filename: recordingData.filename,
-            filePath: `/files/${recordingData.filename}`,
+            originalFileName: undefined,
             duration: recordingData.duration,
             ...(recordingData.transcription ? { transcription: recordingData.transcription } : {}),
           }

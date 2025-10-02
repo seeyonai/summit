@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { fileUrlFor } from '@/services/api';
 
-export const audioUrlFor = (filename: string) => fileUrlFor(filename);
+export const audioUrlFor = (id: string) => fileUrlFor(id);
 
 export function useAudioPlayback() {
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);

@@ -7,7 +7,6 @@ import { useAudioRecording } from '@/hooks/useAudioRecording';
 interface RealTimeSpeechRecognitionProps {
   meetingId: string;
   onRecordingComplete: (recordingData: {
-    filename: string;
     downloadUrl: string;
     transcription: string;
     duration: number;

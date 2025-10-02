@@ -99,7 +99,7 @@ export interface HealthStatus {
 export type SpeakerSegment = baseTypes.SpeakerSegment;
 
 export type Recording = baseTypes.Recording & Id & Timestamp;
-export type RecordCreate = Partial<Recording> & Pick<Recording, 'filePath' | 'filename'>;
+export type RecordCreate = Partial<Recording> & Pick<Recording, 'originalFileName'>;
 export type RecordUpdate = Partial<Recording> & Pick<Recording, '_id'>;
 
 export interface ErrorMessage {

@@ -24,8 +24,7 @@ export interface AlignmentItem {
 }
 
 export interface Recording {
-  filePath: string;
-  filename: string;
+  originalFileName?: string;
   duration?: number;
   fileSize?: number;
   transcription?: string;
@@ -38,7 +37,6 @@ export interface Recording {
   channels?: number;
   format?: string;
   source?: 'live' | 'upload';
-  externalId?: string;
   meeting?: Meeting;
   organizedSpeeches?: OrganizedSpeech[];
   createdAt?: Date;

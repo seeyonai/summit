@@ -110,11 +110,10 @@ function MeetingDetail() {
 
   const handleMeetingRecordingComplete = useCallback(
     (recordingInfo: RecordingInfo) => {
-      if (!recordingInfo.filename || typeof recordingInfo.duration !== 'number') {
+      if (typeof recordingInfo.duration !== 'number') {
         return;
       }
       handleRecordingComplete({
-        filename: recordingInfo.filename,
         duration: recordingInfo.duration,
         downloadUrl: recordingInfo.downloadUrl,
       });

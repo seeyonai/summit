@@ -15,8 +15,6 @@ import { debug } from '../utils/logger';
 
 interface LiveRecordingStartResponse {
   id: string;
-  filename: string;
-  filePath: string;
   message?: string;
 }
 
@@ -120,7 +118,7 @@ async function findRecording(recordingId: string): Promise<RecordingDocument | n
     }
   }
 
-  return collection.findOne({ externalId: recordingId });
+  return null;
 }
 
 async function findRecordingOrThrow(recordingId: string): Promise<RecordingDocument> {
@@ -133,13 +131,22 @@ async function findRecordingOrThrow(recordingId: string): Promise<RecordingDocum
   return document;
 }
 
+function inferExtension(format?: string): string {
+  const f = (format || '').toLowerCase();
+  if (!f) return 'wav';
+  return f;
+}
+
 async function resolveAbsoluteFilePath(document: RecordingDocument): Promise<string> {
-  const candidate = document.filePath || document.filename;
+  const ext = inferExtension((document as any).format);
+  const candidate = `${document._id.toString()}.${ext}`;
   return resolveExistingPathFromCandidate(RECORDINGS_DIR, candidate);
 }
 
 function getRelativeFilePath(document: RecordingDocument): string {
-  return makeRelativeToBase(RECORDINGS_DIR, document.filePath || document.filename);
+  const ext = inferExtension((document as any).format);
+  const candidate = `${document._id.toString()}.${ext}`;
+  return makeRelativeToBase(RECORDINGS_DIR, candidate);
 }
 
 async function deleteRecordingFile(document: RecordingDocument): Promise<void> {
@@ -230,9 +237,7 @@ export async function getRecordingById(recordingId: string): Promise<RecordingRe
 }
 
 export async function createRecording(recordingData: {
-  filename: string;
-  originalFilename: string;
-  filePath: string;
+  originalFileName?: string;
   fileSize: number;
   format: string;
   mimeType: string;
@@ -246,8 +251,7 @@ export async function createRecording(recordingData: {
   const now = new Date();
 
   const document: Omit<RecordingDocument, '_id'> = {
-    filePath: recordingData.filePath,
-    filename: recordingData.filename,
+    originalFileName: recordingData.originalFileName,
     createdAt: recordingData.createdAt,
     updatedAt: now,
     duration: recordingData.duration || undefined,
@@ -259,7 +263,6 @@ export async function createRecording(recordingData: {
     sampleRate: recordingData.sampleRate || undefined,
     channels: recordingData.channels || undefined,
     format: recordingData.format || undefined,
-    externalId: undefined,
     source: 'upload',
     ownerId: new ObjectId(recordingData.ownerId),
     meetingId: recordingData.meetingId && ObjectId.isValid(recordingData.meetingId) ? new ObjectId(recordingData.meetingId) : undefined,
@@ -276,7 +279,7 @@ export async function createRecording(recordingData: {
   return recordingDocumentToResponse(inserted);
 }
 
-export async function startRecording(ownerId: string, meetingId?: string): Promise<{ id: string; filename: string; filePath: string; message: string }> {
+export async function startRecording(ownerId: string, meetingId?: string): Promise<{ id: string; message: string }> {
   const remoteResponse = await callLiveService<LiveRecordingStartResponse>('/api/recordings/start', {
     method: 'POST',
     body: {},
@@ -284,12 +287,9 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
   });
 
   const now = new Date();
-  const filename = remoteResponse.filename || `recording-${now.getTime()}.wav`;
-  const filePathValue = remoteResponse.filePath || `/files/${filename}`;
+  // No on-disk filename is stored; the file is saved as <_id>.<ext>
 
   const document: Omit<RecordingDocument, '_id'> = {
-    filePath: filePathValue,
-    filename,
     createdAt: now,
     updatedAt: now,
     duration: undefined,
@@ -301,7 +301,6 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
     sampleRate: undefined,
     channels: undefined,
     format: undefined,
-    externalId: remoteResponse.id,
     source: 'live',
     ownerId: new ObjectId(ownerId),
     meetingId: meetingId && ObjectId.isValid(meetingId) ? new ObjectId(meetingId) : undefined,
@@ -317,8 +316,6 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
 
   return {
     id: inserted._id.toHexString(),
-    filename: inserted.filename,
-    filePath: inserted.filePath,
     message: remoteResponse.message || '录音已开始',
   };
 }
@@ -329,10 +326,7 @@ export async function updateRecording(recordingId: string, updateData: Recording
   const updates: Partial<RecordingDocument> = {};
   const remoteUpdates: Record<string, unknown> = {};
 
-  if (typeof updateData.filename === 'string') {
-    updates.filename = updateData.filename;
-    remoteUpdates.filename = updateData.filename;
-  }
+  // filename removed; do not allow updating originalFileName via this endpoint
 
   if (typeof updateData.transcription === 'string') {
     updates.transcription = updateData.transcription;
@@ -358,13 +352,7 @@ export async function updateRecording(recordingId: string, updateData: Recording
     return { message: '未应用更改' };
   }
 
-  if (document.externalId) {
-    await callLiveService(`/api/recordings/${document.externalId}`, {
-      method: 'PUT',
-      body: remoteUpdates,
-      expectedStatus: [200],
-    });
-  }
+  // No live-service mirror updates without externalId
 
   updates.updatedAt = new Date();
 
@@ -378,18 +366,7 @@ export async function deleteRecording(recordingId: string): Promise<{ message: s
   const document = await findRecordingOrThrow(recordingId);
   const collection = recordingsCollection();
 
-  if (document.externalId) {
-    try {
-      await callLiveService(`/api/recordings/${document.externalId}`, {
-        method: 'DELETE',
-        expectedStatus: [200, 204],
-      });
-    } catch (error) {
-      if (!(error instanceof HttpError && error.status === 404)) {
-        throw error;
-      }
-    }
-  }
+  // No remote deletion without externalId linkage
 
   await collection.deleteOne({ _id: document._id });
   await deleteRecordingFile(document).catch(() => undefined);
@@ -452,13 +429,7 @@ export async function transcribeRecording(recordingId: string, hotword?: string)
   const collection = recordingsCollection();
   await collection.updateOne({ _id: document._id }, { $set: updates });
 
-  if (document.externalId) {
-    await callLiveService(`/api/recordings/${document.externalId}`, {
-      method: 'PUT',
-      body: { transcription: transcriptionResponse.text },
-      expectedStatus: [200],
-    }).catch(() => undefined);
-  }
+  // No live-service sync without externalId
 
   return {
     message: '转录完成',

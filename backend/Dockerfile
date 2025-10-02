@@ -35,7 +35,8 @@ RUN mkdir -p /app/files \
 USER node
 
 # Defaults (can be overridden at runtime)
-ENV PORT=2591
+ENV PORT=2591 \
+    RECORDING_FILE_DIR=/app/files
 EXPOSE 2591
 
 # Basic healthcheck hitting /health

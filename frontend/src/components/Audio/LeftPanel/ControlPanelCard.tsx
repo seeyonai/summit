@@ -48,7 +48,7 @@ const ControlPanelCard: React.FC<ControlPanelCardProps> = ({
           <Button
             onClick={onStopRecording}
             disabled={!isRecording}
-            className="w-full bg-red-600/90 hover:bg-red-600 text-white transition-all shadow-lg hover:shadow-red-500/25"
+            className="w-full bg-destructive/90 hover:bg-destructive text-white transition-all shadow-lg hover:shadow-red-500/25"
           >
             <X className="w-4 h-4 mr-2" />
             停止录音

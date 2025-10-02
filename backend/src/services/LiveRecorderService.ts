@@ -8,9 +8,7 @@ import { Recording } from '../types';
 import { debug, debugWarn } from '../utils/logger';
 
 interface ActiveRecording {
-  id: string;
-  filename: string;
-  filePath: string;
+  id: string; // ephemeral session id
   chunks: Buffer[];
   startTime: Date;
   ws: WebSocket;
@@ -35,14 +33,9 @@ export class LiveRecorderService {
       debug('WebSocket connected from client on port 2591');
 
       const recordingId = uuidv4();
-      const filename = `recording_${recordingId}.wav`;
-      const filesDir = getFilesBaseDir();
-      const filePath = resolveWithinBase(filesDir, filename);
 
       const activeRecording: ActiveRecording = {
         id: recordingId,
-        filename,
-        filePath,
         chunks: [],
         startTime: new Date(),
         ws
@@ -54,8 +47,7 @@ export class LiveRecorderService {
       ws.send(JSON.stringify({
         type: 'ready',
         message: '准备接收音频数据',
-        recordingId,
-        filename
+        recordingId
       }));
 
       ws.on('message', (data: Buffer) => {
@@ -123,7 +115,7 @@ export class LiveRecorderService {
 
   private async saveRecording(recording: ActiveRecording) {
     try {
-      debug(`Starting to save recording ${recording.id} to ${recording.filePath}`);
+      debug(`Starting to save recording session ${recording.id}`);
       
       // Concatenate all audio chunks
       const audioBuffer = Buffer.concat(recording.chunks);
@@ -151,53 +143,54 @@ export class LiveRecorderService {
       // Combine header and audio data
       const wavBuffer = Buffer.concat([wavHeader, audioBuffer]);
       
-      // Ensure directory exists
-      const dir = path.dirname(recording.filePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      
-      // Save file
-      fs.writeFileSync(recording.filePath, wavBuffer);
-      
       const duration = Math.floor((Date.now() - recording.startTime.getTime()) / 1000);
-      
-      // Send completion message
-      recording.ws.send(JSON.stringify({
-        type: 'recording_saved',
-        filename: recording.filename,
-        filePath: recording.filePath,
-        downloadUrl: `/files/${recording.filename}`,
-        duration,
-        chunksCount: recording.chunks.length,
-        fileSize: wavBuffer.length
-      }));
-      
-      debug(`Recording saved: ${recording.filename} (${wavBuffer.length} bytes, ${duration}s)`);
 
-      // Create Recording document in database
+      // Create Recording document in database first to get ID
+      let insertedId: string | null = null;
       try {
         const collection = await getCollection('recordings');
         const now = new Date();
-        
         const recordingDocument: Omit<Recording, '_id'> = {
-          filePath: recording.filePath,
-          filename: recording.filename,
+          // originalFileName not set for live recordings
           duration,
           fileSize: wavBuffer.length,
           source: 'live',
-          externalId: recording.id,
           sampleRate: 16000,
           channels: 1,
           format: 'wav',
           createdAt: now,
           updatedAt: now
-        };
+        } as any;
 
         const result = await collection.insertOne(recordingDocument);
-        debug(`Recording document created with ID: ${result.insertedId}`);
+        insertedId = result.insertedId.toString();
+        debug(`Recording document created with ID: ${insertedId}`);
       } catch (dbError) {
         console.error('Error creating Recording document:', dbError);
+      }
+
+      // Persist file to disk using <_id>.<ext>
+      if (insertedId) {
+        const filesDir = getFilesBaseDir();
+        if (!fs.existsSync(filesDir)) {
+          fs.mkdirSync(filesDir, { recursive: true });
+        }
+        const storedName = `${insertedId}.wav`;
+        const fullPath = resolveWithinBase(filesDir, storedName);
+        fs.writeFileSync(fullPath, wavBuffer);
+        debug(`Recording saved: ${storedName} (${wavBuffer.length} bytes, ${duration}s)`);
+
+        // Send completion message with id-based download URL
+        recording.ws.send(JSON.stringify({
+          type: 'recording_saved',
+          recordingId: insertedId,
+          downloadUrl: `/files/${insertedId}`,
+          duration,
+          chunksCount: recording.chunks.length,
+          fileSize: wavBuffer.length
+        }));
+      } else {
+        recording.ws.send(JSON.stringify({ type: 'error', message: '无法保存录音记录' }));
       }
       
       // Clean up
@@ -247,7 +240,6 @@ export class LiveRecorderService {
   public getActiveRecordings() {
     return Array.from(this.activeRecordings.values()).map(r => ({
       id: r.id,
-      filename: r.filename,
       startTime: r.startTime,
       chunksCount: r.chunks.length
     }));

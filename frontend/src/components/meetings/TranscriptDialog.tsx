@@ -45,7 +45,7 @@ function TranscriptDialog({
   const handleDownload = useCallback(() => {
     const allTranscriptions = recordingsToShow
       .filter(r => r.transcription)
-      .map(r => `=== ${showCombinedRecording ? '合并录音' : r.filename} ===\n\n${r.transcription}`)
+      .map(r => `=== ${showCombinedRecording ? '合并录音' : (r as any).originalFileName || (r as any)._id} ===\n\n${r.transcription}`)
       .join('\n\n' + '='.repeat(50) + '\n\n');
 
     const blob = new Blob([allTranscriptions], { type: 'text/plain;charset=utf-8' });
@@ -104,7 +104,7 @@ function TranscriptDialog({
                   <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
                     <h4 className="font-medium text-sm flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
-                      {showCombinedRecording ? '合并录音' : recording.filename}
+                      {showCombinedRecording ? '合并录音' : ((recording as any).originalFileName || (recording as any)._id)}
                     </h4>
                     <Button
                       variant="ghost"

@@ -161,8 +161,9 @@ function RecordingList() {
   const filteredRecordings = useMemo(() => {
     return recordings
       .filter(recording => {
+        const name = (recording.originalFileName || recording._id).toLowerCase();
         const matchesSearch = searchQuery === '' || 
-          recording.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          name.includes(searchQuery.toLowerCase()) ||
           recording.transcription?.toLowerCase().includes(searchQuery.toLowerCase());
         
         const matchesFilter = filterStatus === 'all' ||
@@ -197,7 +198,7 @@ function RecordingList() {
   // Recording actions for shared components
   const getRecordingId = (recording: unknown): string => {
     const rec = recording as Record<string, unknown>;
-    return (rec._id as string) || (rec.filename as string) || '';
+    return (rec._id as string) || '';
   };
   
   const recordingActions = {
@@ -230,7 +231,7 @@ function RecordingList() {
                   asChild
                   disabled={uploading || recording}
                   size="lg"
-                  className="bg-card text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg disabled:opacity-50"
+                  variant="hero"
                 >
                   <label htmlFor="audio-upload" className="cursor-pointer">
                     {uploading ? (
@@ -251,7 +252,7 @@ function RecordingList() {
                 onClick={toggleFloatingPanel}
                 disabled={uploading}
                 size="lg"
-                className="bg-card text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg disabled:opacity-50"
+                variant="hero"
               >
                 <MicIcon className="w-5 h-5 mr-2" />
                 快速录音

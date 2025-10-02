@@ -114,7 +114,9 @@ function RecordingTranscription({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${recording.filename.replace('.wav', '')}_transcription.${fileExtension}`;
+      const base = (recording as any).originalFileName || `${recording._id}.${recording.format || 'wav'}`;
+      const name = base.replace(/\.[^.]+$/, '');
+      a.download = `${name}_transcription.${fileExtension}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -521,7 +523,7 @@ function RecordingTranscription({
                     <Badge
                       key={word}
                       variant="secondary"
-                      className="cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30"
+                      className="cursor-pointer hover:bg-destructive dark:hover:bg-destructive/30"
                       onClick={() => removeHotword(word)}
                     >
                       {word}

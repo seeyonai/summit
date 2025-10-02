@@ -18,7 +18,6 @@ import {
 
 interface RecordingInfo {
   recordingId?: string;
-  filename?: string;
   downloadUrl?: string;
   duration?: number;
   fileSize?: number;
@@ -370,8 +369,7 @@ function LiveRecorderTest() {
           case 'ready':
             setStatus('ready');
             setLastRecording({
-              recordingId: data.recordingId,
-              filename: data.filename
+              recordingId: data.recordingId
             });
             setMessage(data.message);
             break;
@@ -389,7 +387,7 @@ function LiveRecorderTest() {
               fileSize: data.fileSize,
               chunksCount: data.chunksCount
             }));
-            setMessage(`Recording saved: ${data.filename} (${data.duration}s, ${data.fileSize} bytes)`);
+            setMessage(`Recording saved (${data.duration}s, ${data.fileSize} bytes)`);
             break;
             
           case 'error':
@@ -731,7 +729,7 @@ function LiveRecorderTest() {
                 <Button 
                   onClick={startRecording} 
                   disabled={status !== 'ready'}
-                  className="flex-1 bg-red-500 hover:bg-red-600"
+                  className="flex-1 bg-destructive hover:bg-destructive"
                 >
                   <Mic className="w-4 h-4 mr-2" />
                   Start Recording
@@ -851,7 +849,7 @@ function LiveRecorderTest() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Filename:</span>
-                  <p className="font-mono text-xs break-all">{lastRecording.filename}</p>
+              <p className="font-mono text-xs break-all">{lastRecording.downloadUrl}</p>
                 </div>
                 {lastRecording.duration && (
                   <div>
@@ -897,7 +895,7 @@ function LiveRecorderTest() {
             <p>2. Click "Start Recording" to begin capturing audio from your microphone</p>
             <p>3. Speak into your microphone - audio chunks will be streamed via WebSocket</p>
             <p>4. Click "Stop Recording" to end the session and save the audio file</p>
-            <p>5. The recording will be saved to the /files directory and available for download</p>
+            <p>5. The recording will be saved under the configured directory (default backend /files) and available for download</p>
           </CardContent>
         </Card>
 
@@ -926,7 +924,7 @@ function LiveRecorderTest() {
               </div>
               <div>
                 <span className="font-medium">Save Location:</span>
-                <p>/files/ directory (configurable via FILE_BASE_PATH)</p>
+                <p>/files/ directory (configurable via RECORDING_FILE_DIR)</p>
               </div>
             </div>
           </CardContent>

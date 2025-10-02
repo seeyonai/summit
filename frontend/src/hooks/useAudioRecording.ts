@@ -15,7 +15,6 @@ export interface UseAudioRecordingOptions {
   sampleRate?: number;
   language?: string;
   onRecordingComplete?: (data: {
-    filename: string;
     downloadUrl: string;
     transcription: string;
     duration: number;
@@ -40,7 +39,7 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const recordingInfoRef = useRef<{ recordingId?: string; filename?: string }>({});
+  const recordingInfoRef = useRef<{ recordingId?: string }>({});
 
   const cleanup = useCallback(() => {
     try {
@@ -99,8 +98,7 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
         switch (data.type) {
           case 'recording_started':
             recordingInfoRef.current = {
-              recordingId: data.recordingId,
-              filename: data.filename
+              recordingId: data.recordingId
             };
             break;
           case 'chunk_received':
@@ -109,7 +107,6 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
           case 'recording_saved':
             if (options.onRecordingComplete) {
               options.onRecordingComplete({
-                filename: data.filename,
                 downloadUrl: data.downloadUrl,
                 transcription: '',
                 duration: data.duration

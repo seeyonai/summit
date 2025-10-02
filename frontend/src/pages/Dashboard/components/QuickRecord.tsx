@@ -6,7 +6,7 @@ import { useAudioRecording } from '@/hooks/useAudioRecording';
 import { formatDuration } from '@/utils/formatHelpers';
 
 interface QuickRecordProps {
-  onRecordingComplete?: (filename: string) => void;
+  onRecordingComplete?: (downloadUrl: string) => void;
 }
 
 const QuickRecord: React.FC<QuickRecordProps> = ({ onRecordingComplete }) => {
@@ -20,7 +20,7 @@ const QuickRecord: React.FC<QuickRecordProps> = ({ onRecordingComplete }) => {
     recordingTime
   } = useAudioRecording({
     onRecordingComplete: (data) => {
-      onRecordingComplete?.(data.filename);
+      onRecordingComplete?.(data.downloadUrl);
     }
   });
 
@@ -95,12 +95,12 @@ const QuickRecord: React.FC<QuickRecordProps> = ({ onRecordingComplete }) => {
         )}
         
         {finalText && (
-          <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-lg animate-slide-up">
+          <div className="p-4 bg-success/5 border border-success/20 rounded-lg animate-slide-up">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              <span className="text-sm font-medium text-green-600">录音完成</span>
+              <CheckCircle className="w-4 h-4 text-success" />
+              <span className="text-sm font-medium text-success">录音完成</span>
             </div>
-            <p className="text-xs text-green-500">{formatDuration(recordingTime)}</p>
+            <p className="text-xs text-success">{formatDuration(recordingTime)}</p>
           </div>
         )}
       </CardContent>

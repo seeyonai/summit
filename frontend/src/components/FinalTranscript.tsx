@@ -130,7 +130,7 @@ const FinalTranscript: React.FC<FinalTranscriptProps> = ({
               {meeting.recordings?.filter(r => r.transcription).map((recording, index) => (
                 <div key={(recording._id && recording._id.toString()) || index} className="bg-white bg-opacity-50 rounded p-3">
                   <h5 className="text-sm font-medium text-warning mb-1">
-                    录音 {index + 1}: {recording.filename}
+                    录音 {index + 1}: {(recording as any).originalFileName || recording._id}
                   </h5>
                   <p className="text-warning text-sm whitespace-pre-wrap">
                     {recording.transcription}

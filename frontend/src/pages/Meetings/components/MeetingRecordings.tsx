@@ -104,7 +104,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {recordings.map((recording) => (
               <RecordingCard 
-                key={recording.filename} 
+                key={recording._id} 
                 recording={recording}
                 showMeetingInfo={false}
               />

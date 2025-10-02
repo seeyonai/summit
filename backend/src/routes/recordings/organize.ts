@@ -16,7 +16,7 @@ router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request
   const { recordingId } = req.params;
 
   const recording = await recordingService.getRecordingById(recordingId);
-  const filePath = recording.filePath || recording.filename;
+  const filePath = `${recording._id}.${recording.format || 'wav'}`;
   if (!filePath) {
     throw badRequest('Recording file path is missing', 'organize.file_missing');
   }

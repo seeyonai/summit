@@ -3,22 +3,24 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle as AlertCircleIcon, PlusIcon } from 'lucide-react';
+import { AlertCircle as AlertCircleIcon, PlusIcon, TrendingUp, Clock, Users, FolderOpenIcon } from 'lucide-react';
 import type { Hotword, HotwordUpdate, HotwordCreate } from '@/types';
 import createHotwordService from '@/services/hotwordService';
 import { useHotwords } from '@/hooks/useHotwords';
 import { getHotwordAnalytics, filterHotwords, exportHotwords, readHotwordsFromFile } from '@/utils/hotwords';
-import HotwordHeader from '@/pages/Hotwords/components/HotwordHeader';
+import PageHeader from '@/components/PageHeader';
 import HotwordToolbar from '@/pages/Hotwords/components/HotwordToolbar';
 import HotwordCreateModal from '@/pages/Hotwords/components/HotwordCreateModal';
 import HotwordEditModal from '@/pages/Hotwords/components/HotwordEditModal';
 import HotwordBulkActions from '@/pages/Hotwords/components/HotwordBulkActions';
 import HotwordListItem from '@/pages/Hotwords/components/HotwordListItem';
-import HotwordCards from '@/pages/Hotwords/components/HotwordList';
+import HotwordCards from '@/pages/Hotwords/components/HotwordCards';
 
 function HotwordListPage() {
   const service = useMemo(() => createHotwordService(), []);
   const { hotwords, loading, error, actions } = useHotwords(service);
+
+  const stats = useMemo(() => getHotwordAnalytics(hotwords), [hotwords]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -28,7 +30,6 @@ function HotwordListPage() {
   const [editingHotword, setEditingHotword] = useState<Hotword | null>(null);
   const [opError, setOpError] = useState<string | undefined>(undefined);
 
-  const stats = useMemo(() => getHotwordAnalytics(hotwords), [hotwords]);
   const filtered = useMemo(() => filterHotwords(hotwords, searchTerm, statusFilter), [hotwords, searchTerm, statusFilter]);
 
   const handleCreate = async (payload: HotwordCreate) => {
@@ -111,7 +112,60 @@ function HotwordListPage() {
 
   return (
     <div className="space-y-8">
-      <HotwordHeader stats={stats} onCreate={() => setShowCreateModal(true)} />
+      <PageHeader
+        title="热词"
+        subline="集中维护识别热词，提升语音识别准确率"
+        actionButtons={
+          <Button onClick={() => setShowCreateModal(true)} size="lg" variant="hero">
+            <PlusIcon className="w-5 h-5 mr-2" />
+            添加热词
+          </Button>
+        }
+      >
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">总热词数</p>
+                <p className="stat-value">{stats.totalHotwords}</p>
+              </div>
+              <FolderOpenIcon className="stat-icon" />
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">活跃率</p>
+                <p className="stat-value">
+                  {stats.totalHotwords > 0 ? Math.round((stats.activeHotwords / stats.totalHotwords) * 100) : 0}%
+                </p>
+              </div>
+              <TrendingUp className="stat-icon" />
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">本周新增</p>
+                <p className="stat-value">{stats.recentlyAdded}</p>
+              </div>
+              <Clock className="stat-icon" />
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">平均长度</p>
+                <p className="stat-value">{stats.averageLength}</p>
+              </div>
+              <Users className="stat-icon" />
+            </div>
+          </div>
+        </div>
+      </PageHeader>
 
       <HotwordToolbar
         searchTerm={searchTerm}
@@ -177,14 +231,14 @@ function HotwordListPage() {
       {!loading && !error && filtered.length === 0 && (
         <Card className="p-12">
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
+            <div className="mx-auto h-12 w-12 text-muted-foreground mb-4">
               {/* icon placeholder */}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v8m-4-4h8" /></svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-foreground mb-2">
               {searchTerm || statusFilter !== 'all' ? '没有找到匹配的热词' : '暂无热词'}
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-muted-foreground mb-6">
               {searchTerm || statusFilter !== 'all' ? '尝试调整搜索条件或筛选器' : '点击“添加热词”开始创建'}
             </p>
             {(searchTerm || statusFilter !== 'all') ? (

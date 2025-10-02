@@ -61,7 +61,7 @@ function HotwordListItem({ hotword, onEdit, onDelete, onToggleActive, isLoading 
           <Button
             size="sm"
             variant="ghost"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="text-red-600 hover:text-red-700 hover:bg-destructive"
             onClick={() => onDelete(hotword._id)}
             disabled={isLoading || readOnly}
           >

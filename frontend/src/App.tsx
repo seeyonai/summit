@@ -8,7 +8,7 @@ import { RecordingPanelProvider, useRecordingPanel } from '@/contexts/RecordingP
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
-import HotwordManagement from './pages/Hotwords/HotwordListPage';
+import HotwordListPage from './pages/Hotwords/HotwordListPage';
 import Meetings from './pages/Meetings';
 import MeetingDetail from './pages/Meetings/MeetingDetail';
 import MeetingEdit from './pages/Meetings/MeetingEdit';
@@ -84,7 +84,7 @@ function AppContent() {
                 <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
                 <Route path="/meetings/:id" element={<ProtectedRoute><MeetingDetail /></ProtectedRoute>} />
                 <Route path="/meetings/:id/edit" element={<ProtectedRoute><MeetingEdit /></ProtectedRoute>} />
-                <Route path="/hotwords" element={<ProtectedRoute><HotwordManagement /></ProtectedRoute>} />
+                <Route path="/hotwords" element={<ProtectedRoute><HotwordListPage /></ProtectedRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
                 <Route path="/test-recorder" element={<ProtectedRoute><LiveRecorderTest /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

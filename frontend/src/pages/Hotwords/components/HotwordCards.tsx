@@ -6,7 +6,7 @@ import { Edit, Trash2, AlertCircle } from 'lucide-react';
 import type { Hotword } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface HotwordListProps {
+interface HotwordCardsProps {
   hotwords: Hotword[];
   onEdit: (hotword: Hotword) => void;
   onDelete: (hotwordId: string) => void;
@@ -14,7 +14,7 @@ interface HotwordListProps {
   isLoading?: boolean;
 }
 
-const HotwordList: React.FC<HotwordListProps> = ({ 
+const HotwordCards: React.FC<HotwordCardsProps> = ({ 
   hotwords, 
   onEdit, 
   onDelete, 
@@ -112,4 +112,4 @@ const HotwordList: React.FC<HotwordListProps> = ({
   );
 };
 
-export default HotwordList;
+export default HotwordCards;

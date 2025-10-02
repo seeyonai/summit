@@ -62,7 +62,7 @@ files/             # Audio file storage (served at /files/*)
 - **MongoDB Integration**: Direct MongoDB driver with connection pooling
 - **Route Organization**: Feature-based routing (`/api/meetings`, `/api/recordings`, `/api/hotwords`, `/api/segmentation`)
 - **Service Layer**: Business logic separated from route handlers
-- **File Management**: Local audio file serving with configurable base path via `FILE_BASE_PATH`
+- **File Management**: Local audio file serving with configurable base path via `RECORDING_FILE_DIR` (falls back to `files/`)
 - **WebSocket Support**: Live recording service via `LiveRecorderService`
 - **Environment Configuration**: `.env` support for MongoDB URI, service URLs, OpenAI keys
 
@@ -130,7 +130,7 @@ files/             # Audio file storage (served at /files/*)
 - Create tailwind util classes for common styles.
 
 #### Environment Variables
-- Backend: `MONGODB_URI`, `DB_NAME`, `FILE_BASE_PATH`, `SEED_DATA`, OpenAI keys, external service URLs
+- Backend: `MONGODB_URI`, `DB_NAME`, `RECORDING_FILE_DIR`, `SEED_DATA`, OpenAI keys, external service URLs
   - `SEGMENTATION_SERVICE_URL`: Echo Voices service URL (default: `http://localhost:2593`)
   - `TRANSCRIBE_SERVICE_URL`: Echo Vault service URL (default: `http://localhost:2594`)
   - `ALIGNER_SERVICE_URL`: Echo Aligner service URL (default: `http://localhost:2595`)

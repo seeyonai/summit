@@ -22,7 +22,7 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
     <Card className={`${themeClasses.card} backdrop-blur-sm`}>
       <CardContent className="p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-purple-400" />
+          <Sparkles className="w-5 h-5 text-accent" />
           <h3 className={`text-lg font-semibold ${themeClasses.text.primary}`}>AI 助手</h3>
         </div>
         <div className="space-y-3">

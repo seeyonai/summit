@@ -71,7 +71,7 @@ function RecordingInfo({ recording }: RecordingInfoProps) {
                 <FileAudioIcon className="w-5 h-5 text-muted-foreground mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">文件名</p>
-                  <p className="font-medium break-all">{recording.filename}</p>
+                  <p className="font-medium break-all">{(recording as any).originalFileName || `${recording._id}.${recording.format || 'wav'}`}</p>
                 </div>
               </div>
               
@@ -234,7 +234,7 @@ function RecordingInfo({ recording }: RecordingInfoProps) {
       )}
 
       {/* Additional Metadata */}
-      {recording.externalId && (
+      {recording.timeStampedNotes && recording.timeStampedNotes.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>扩展信息</CardTitle>
@@ -243,22 +243,16 @@ function RecordingInfo({ recording }: RecordingInfoProps) {
           <CardContent>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-muted-foreground">外部ID</p>
-                <p className="font-medium font-mono text-sm">{recording.externalId}</p>
-              </div>
-              {recording.timeStampedNotes && recording.timeStampedNotes.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">时间戳笔记</p>
-                  <div className="space-y-2">
-                    {recording.timeStampedNotes.map((note, index) => (
-                      <div key={index} className="flex gap-2 text-sm">
-                        <Badge variant="outline">{Math.floor(note.timestamp / 60)}:{(note.timestamp % 60).toString().padStart(2, '0')}</Badge>
-                        <span>{note.text}</span>
-                      </div>
-                    ))}
-                  </div>
+                <p className="text-sm text-muted-foreground mb-2">时间戳笔记</p>
+                <div className="space-y-2">
+                  {recording.timeStampedNotes.map((note, index) => (
+                    <div key={index} className="flex gap-2 text-sm">
+                      <Badge variant="outline">{Math.floor(note.timestamp / 60)}:{(note.timestamp % 60).toString().padStart(2, '0')}</Badge>
+                      <span>{note.text}</span>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -13,12 +13,15 @@ import { debug, debugWarn } from '../utils/logger';
 
 const router = Router();
 
-async function findRecordingByFilename(filename: string): Promise<RecordingDocument | null> {
+async function findRecordingById(id: string): Promise<RecordingDocument | null> {
   const col = getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
-  const rec = await col.findOne({ filename } as any);
-  if (rec) return rec;
-  const alt = await col.findOne({ filePath: `/files/${filename}` } as any);
-  return alt;
+  try {
+    const { ObjectId } = await import('mongodb');
+    if (!ObjectId.isValid(id)) return null;
+    return col.findOne({ _id: new ObjectId(id) } as any);
+  } catch {
+    return null;
+  }
 }
 
 async function userHasAccess(rec: RecordingDocument, userId: string, role?: string): Promise<boolean> {
@@ -38,7 +41,7 @@ async function userHasAccess(rec: RecordingDocument, userId: string, role?: stri
   return !!isOwner || !!isMember;
 }
 
-router.get('/:filename', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const r = req as RequestWithUser;
   let userId = r.user?.userId;
   let role = r.user?.role;
@@ -60,22 +63,23 @@ router.get('/:filename', asyncHandler(async (req: Request, res: Response) => {
       throw forbidden('Unauthorized', 'auth.unauthorized');
     }
   }
-  const { filename } = req.params as { filename: string };
-  debug('File request received', { filename, userId, role });
-  const rec = await findRecordingByFilename(filename);
+  const { id } = req.params as { id: string };
+  debug('File request received', { id, userId, role });
+  const rec = await findRecordingById(id);
   if (!rec) {
-    debugWarn('File not found in DB', { filename });
+    debugWarn('File not found in DB', { id });
     throw notFound('Recording not found', 'recording.not_found');
   }
   const allowed = await userHasAccess(rec, userId!, role);
   if (!allowed) {
-    debugWarn('File access forbidden', { filename, userId, role });
+    debugWarn('File access forbidden', { id, userId, role });
     throw forbidden('Not allowed', 'recording.forbidden');
   }
 
   const baseDir = getFilesBaseDir();
-  const candidate = rec.filePath || rec.filename;
-  const absolutePath = await resolveExistingPathFromCandidate(baseDir, candidate);
+  const ext = (rec as any).format ? String((rec as any).format) : 'wav';
+  const storedName = `${rec._id.toString()}.${ext}`;
+  const absolutePath = await resolveExistingPathFromCandidate(baseDir, storedName);
 
   const stat = fs.statSync(absolutePath);
   const mime = getMimeType(path.basename(absolutePath));
@@ -86,7 +90,7 @@ router.get('/:filename', asyncHandler(async (req: Request, res: Response) => {
       const start = match[1] ? parseInt(match[1], 10) : 0;
       const end = match[2] ? parseInt(match[2], 10) : stat.size - 1;
       const chunkSize = (end - start) + 1;
-      debug('Streaming ranged file response', { filename: path.basename(absolutePath), start, end, chunkSize });
+      debug('Streaming ranged file response', { file: path.basename(absolutePath), start, end, chunkSize });
       res.status(206);
       res.setHeader('Content-Range', `bytes ${start}-${end}/${stat.size}`);
       res.setHeader('Accept-Ranges', 'bytes');
@@ -100,7 +104,7 @@ router.get('/:filename', asyncHandler(async (req: Request, res: Response) => {
 
   res.setHeader('Content-Length', String(stat.size));
   res.setHeader('Content-Type', mime);
-  debug('Streaming full file response', { filename: path.basename(absolutePath), size: stat.size });
+  debug('Streaming full file response', { file: path.basename(absolutePath), size: stat.size });
   const stream = fs.createReadStream(absolutePath);
   stream.pipe(res);
 }));

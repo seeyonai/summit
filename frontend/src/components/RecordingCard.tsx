@@ -51,7 +51,7 @@ function RecordingCard({
 }: RecordingCardProps) {
   const { playingAudio, toggleAudioPlayback } = useAudioPlayback();
   const navigate = useNavigate();
-  const recordingId = ('_id' in recording ? recording._id : undefined) || recording.filename;
+  const recordingId = ('_id' in recording ? (recording as any)._id : '') as string;
   const hasTranscription = !!recording.transcription;
   const hasSpeakers = recording.speakerSegments && recording.speakerSegments.length > 0;
   const numSpeakers = recording.numSpeakers || 
@@ -75,11 +75,11 @@ function RecordingCard({
   const defaultActions = {
     onView: (recording: Recording, e?: React.MouseEvent) => {
       e?.stopPropagation();
-      navigate(`/recordings/${('_id' in recording ? recording._id : undefined) || recording.filename}`);
+      navigate(`/recordings/${('_id' in recording ? (recording as any)._id : '')}`);
     },
     onDownload: (recording: Recording, e?: React.MouseEvent) => {
       e?.stopPropagation();
-      window.open(audioUrlFor(recording.filename), '_blank');
+      window.open(audioUrlFor(recordingId), '_blank');
     },
     ...actions
   };
@@ -129,7 +129,7 @@ function RecordingCard({
                 </Badge>
               )}
               <CardTitle className="text-base font-semibold truncate dark:text-gray-100">
-                {recording.filename}
+                {(recording as any).originalFileName || recordingId}
               </CardTitle>
             </div>
             <CardDescription className="mt-1 text-xs dark:text-gray-400">
@@ -176,7 +176,7 @@ function RecordingCard({
               {getWaveformBars()}
             </div>
             <button
-              onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recording.filename), e)}
+              onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recordingId), e)}
               className="absolute inset-0 flex items-center justify-center bg-background/0 hover:bg-background/10 dark:hover:bg-foreground/5 transition-colors opacity-0 group-hover:opacity-100 transition-opacity duration-100"
             >
               <div className={`${variant === 'compact' ? 'w-12 h-12' : 'w-14 h-14'} bg-background/70 dark:bg-background/70 backdrop-blur-sm rounded-full border border-primary/20 flex items-center justify-center shadow-lg dark:shadow-primary/20 group-hover:scale-105 transition-transform`}>

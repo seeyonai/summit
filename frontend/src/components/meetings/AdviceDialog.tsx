@@ -43,7 +43,7 @@ function AdviceDialog({
         <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-purple-500/5 to-pink-500/5 -m-6 mb-0 p-6 rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 shadow-sm">
-              <Sparkles className="w-6 h-6 text-purple-500" />
+              <Sparkles className="w-6 h-6 text-accent" />
             </div>
             <div className="flex-1">
               <DialogTitle className="text-xl font-semibold">AI 智能建议</DialogTitle>
@@ -81,7 +81,7 @@ function AdviceDialog({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  <Sparkles className="w-4 h-4 text-accent" />
                   AI 建议
                 </div>
                 <div className="flex items-center gap-2">
@@ -89,7 +89,7 @@ function AdviceDialog({
                     variant="ghost"
                     size="sm"
                     onClick={handleCopy}
-                    className="gap-1.5 text-xs hover:bg-primary/5 hover:text-purple-700"
+                    className="gap-1.5 text-xs hover:bg-primary/5 hover:text-accent"
                   >
                     {copied ? (
                       <>
@@ -108,7 +108,7 @@ function AdviceDialog({
                       variant="ghost"
                       size="sm"
                       onClick={onRegenerate}
-                      className="gap-1.5 text-xs hover:bg-primary/5 hover:text-purple-700"
+                      className="gap-1.5 text-xs hover:bg-primary/5 hover:text-accent"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       重新生成

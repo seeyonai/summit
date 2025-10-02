@@ -84,17 +84,21 @@ interface Meeting {
 ### Recording
 ```typescript
 interface Recording {
-  id: string;
-  file_path: string;
-  filename: string;
-  created_at: Date;
+  _id: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  // Original uploaded filename (uploads only)
+  originalFileName?: string;
   duration?: number;
-  file_size?: number;
+  fileSize?: number;
   transcription?: string;
-  speaker_segments?: SpeakerSegment[];
-  num_speakers?: number;
-  sample_rate?: number;
+  speakerSegments?: SpeakerSegment[];
+  numSpeakers?: number;
+  sampleRate?: number;
   channels?: number;
-  format?: string;
+  format?: string; // e.g. 'wav'
+  source?: 'live' | 'upload';
 }
 ```
+
+Files are stored on disk within `RECORDING_FILE_DIR` (defaults to the repository `files/` folder) using the document `_id` as the base filename: `<_id>.<ext>`. Stream audio via `GET /files/:id`.

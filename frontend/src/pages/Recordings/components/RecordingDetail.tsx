@@ -1,24 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+ 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+ 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import HotwordSelection from '@/components/HotwordSelection';
 import BackButton from '@/components/BackButton';
-import type { Recording } from '@/types';
-import { apiService, apiUrl } from '@/services/api';
+ 
 import RecordingTranscription from './RecordingTranscription';
 import RecordingAlignment from './RecordingAlignment';
 import RecordingAnalysis from './RecordingAnalysis';
 import RecordingInfo from './RecordingInfo';
 import RecordingOrganize from './RecordingOrganize';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
+import { useRecording } from './hooks/useRecording';
 import {
-  ArrowLeftIcon,
   SaveIcon,
   LinkIcon,
   CalendarIcon,
@@ -33,88 +32,35 @@ import {
   UsersIcon,
   InfoIcon,
   Link2Icon,
-  DownloadIcon
+  DownloadIcon,
+  Trash2Icon
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 
 function RecordingDetailRedesign() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [recording, setRecording] = useState<Recording | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<{ transcription?: string; verbatimTranscript?: string }>({});
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'transcription');
-  const [, setTranscribing] = useState(false);
   const [showHotwordSelection, setShowHotwordSelection] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showAssociateModal, setShowAssociateModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Fetch recording details
-  const fetchRecording = useCallback(async () => {
-    try {
-      setLoading(true);
-      if (!id) throw new Error('Missing recording identifier');
-      const data = await apiService.getRecording(id);
-      setRecording(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  // Update recording
-  const updateRecording = async () => {
-    if (!recording) return;
-
-    try {
-      const { message } = await apiService.updateRecording(recording._id, editForm);
-      await fetchRecording();
-      setIsEditing(false);
-      setEditForm({});
-      setSuccess(message || '录音更新成功');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    }
-  };
-
-  // Toggle editing
-  const toggleEditing = () => {
-    if (!recording) return;
-
-    if (isEditing) {
-      setIsEditing(false);
-      setEditForm({});
-    } else {
-      setEditForm({
-        transcription: recording.transcription,
-        verbatimTranscript: recording.verbatimTranscript,
-      });
-      setIsEditing(true);
-    }
-  };
-
-  useEffect(() => {
-    if (id) {
-      fetchRecording();
-    }
-  }, [id, fetchRecording]);
-
-  useEffect(() => {
-    if (success || error) {
-      const timer = setTimeout(() => {
-        setSuccess(null);
-        setError(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [success, error]);
+  const {
+    recording,
+    loading,
+    error,
+    success,
+    isEditing,
+    editForm,
+    setEditForm,
+    setSuccess,
+    setError,
+    fetchRecording,
+    updateRecording,
+    toggleEditing,
+    generateTranscription,
+    handleDownloadRecording,
+    deleteRecording,
+  } = useRecording();
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -135,20 +81,6 @@ function RecordingDetailRedesign() {
     return dateObj.toLocaleString('zh-CN');
   };
 
-  const generateTranscription = async () => {
-    try {
-      setTranscribing(true);
-      if (!recording) throw new Error('Missing recording');
-      const { message } = await apiService.transcribeRecording(recording._id);
-      await fetchRecording();
-      setSuccess(message || '转录生成成功');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setTranscribing(false);
-    }
-  };
-
   // note: segmentation and polish handlers are unused in this view
 
   const handleHotwordTranscribe = () => {
@@ -167,47 +99,12 @@ function RecordingDetailRedesign() {
     setSuccess('录音已成功关联到会议');
   };
 
-  // Download recording
-  const handleDownloadRecording = async () => {
-    if (!recording) return;
-
-    const fileUrl = recording.filePath || recording.filename;
-    if (!fileUrl) {
-      setError('无法获取录音文件路径');
-      return;
-    }
-
-    try {
-      const downloadUrl = `${apiUrl(fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`)}`;
-
-      // Fetch the file as a blob
-      const response = await fetch(downloadUrl);
-      if (!response.ok) {
-        throw new Error('下载失败');
-      }
-
-      const blob = await response.blob();
-
-      // Create a blob URL and trigger download
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = recording.filename || `recording-${recording._id}.${recording.format || 'wav'}`;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
-      }, 100);
-
-      setSuccess('录音文件下载完成');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '下载失败');
-    }
+  // Handle delete confirmation
+  const handleDeleteConfirm = () => {
+    setShowDeleteDialog(false);
+    deleteRecording();
   };
+
 
 
   if (loading) {
@@ -227,7 +124,7 @@ function RecordingDetailRedesign() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-destructive dark:bg-destructive/20 rounded-full flex items-center justify-center mb-4">
                 <AlertCircleIcon className="h-8 w-8 text-red-500 dark:text-red-400" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">录音未找到</h2>
@@ -277,6 +174,22 @@ function RecordingDetailRedesign() {
                   <TooltipContent>关联到会议</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="text-red-600 hover:text-red-700 hover:bg-destructive dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-destructive"
+                    >
+                      <Trash2Icon className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>删除录音</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
 
@@ -290,7 +203,7 @@ function RecordingDetailRedesign() {
                   </div>
                   <div className="flex-1">
                     <h1 className="text-xl font-bold text-foreground mb-2">
-                      {recording.filename}
+                      {(recording as any).originalFileName || recording._id}
                     </h1>
 
                     {/* Meeting Information */}
@@ -341,7 +254,7 @@ function RecordingDetailRedesign() {
                 {isEditing ? (
                   <Button
                     onClick={updateRecording}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-blue-600 hover:bg-primary text-white"
                   >
                     <SaveIcon className="w-4 h-4 mr-2" />
                     保存更改
@@ -529,6 +442,33 @@ function RecordingDetailRedesign() {
             onError={setError}
           />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>确认删除录音</DialogTitle>
+              <DialogDescription>
+                您确定要删除这个录音吗？此操作不可撤销，录音文件和所有相关数据将被永久删除。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                取消
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+              >
+                <Trash2Icon className="w-4 h-4 mr-2" />
+                确认删除
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div >
   );

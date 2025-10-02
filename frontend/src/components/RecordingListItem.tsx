@@ -36,7 +36,7 @@ function RecordingListItem({
 }: RecordingListItemProps) {
   const { playingAudio, toggleAudioPlayback } = useAudioPlayback();
   
-  const recordingId = ('_id' in recording ? recording._id : undefined) || recording.filename;
+  const recordingId = ('_id' in recording ? (recording as any)._id : '') as string;
 
   const handleCardClick = () => {
     if (onClick) {
@@ -56,7 +56,7 @@ function RecordingListItem({
   const defaultActions = {
     onDownload: (recording: Recording, e?: React.MouseEvent) => {
       e?.stopPropagation();
-      window.open(audioUrlFor(recording.filename), '_blank');
+      window.open(audioUrlFor(recordingId), '_blank');
     },
     ...actions
   };
@@ -71,7 +71,7 @@ function RecordingListItem({
       <div className="flex items-center gap-4">
         {/* Play Button */}
         <button
-          onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recording.filename), e)}
+          onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recordingId), e)}
           className="w-12 h-12 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center text-primary-foreground shadow-lg dark:shadow-primary/20 hover:scale-105 transition-transform"
         >
           {playingAudio === recordingId ? (
@@ -84,7 +84,7 @@ function RecordingListItem({
         {/* Recording Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-foreground truncate">{recording.filename}</h3>
+            <h3 className="font-semibold text-foreground truncate">{(recording as any).originalFileName || recordingId}</h3>
             {recording.transcription && (
               <Badge variant="secondary" className="bg-success/10 text-success border-success/20 text-xs">
                 已转录

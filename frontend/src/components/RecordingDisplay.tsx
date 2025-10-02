@@ -69,12 +69,14 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
     );
   };
 
+  const displayName = recording.originalFileName || `${recording._id}.${recording.format || 'wav'}`;
+
   return (
     <div className="bg-card rounded-lg shadow-sm border border-border p-6">
       {/* Recording Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">{recording.filename}</h3>
+          <h3 className="text-lg font-semibold text-foreground">{displayName}</h3>
           <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
             {recording.duration && (
               <span>时长: {formatTime(recording.duration)}</span>
@@ -92,7 +94,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           <audio controls className="w-48">
-            <source src={fileUrlFor(recording.filePath)} type="audio/wav" />
+            <source src={fileUrlFor(recording._id)} type="audio/wav" />
             您的浏览器不支持音频播放
           </audio>
         </div>

@@ -11,8 +11,8 @@ import { isOwner as isMeetingOwner } from '../../services/MeetingService';
 import { getPreferredLang } from '../../utils/lang';
 
 // Ensure files directory exists (storage for uploaded audio)
-// Note: __dirname here is backend/src/routes/recordings; we need repo-root /files
-const filesDir = path.join(__dirname, '..', '..', '..', 'files');
+import { getFilesBaseDir } from '../../utils/filePaths';
+const filesDir = getFilesBaseDir();
 if (!fs.existsSync(filesDir)) {
   fs.mkdirSync(filesDir, { recursive: true });
 }
@@ -72,8 +72,8 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
     throw badRequest('No audio file provided', 'upload.file_required');
   }
 
-  const { filename, originalname, size, mimetype, path: tempPath } = req.file;
-  const absolutePath = path.join(filesDir, filename);
+  const { filename: tempFilename, originalname, size, mimetype, path: tempPath } = req.file;
+  const absolutePath = path.join(filesDir, tempFilename);
 
   let duration = 0;
   let sampleRate = 0;
@@ -94,7 +94,7 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
 
     const container = metadata.format.container || '';
     const codec = metadata.format.codec || '';
-    const ext = path.extname(filename).replace(/^\./, '').toLowerCase();
+    const ext = path.extname(tempFilename).replace(/^\./, '').toLowerCase();
 
     const mapContainerToFormat = (c: string, co: string, fallbackExt: string): string => {
       const cUp = c.toUpperCase();
@@ -114,7 +114,7 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
 
     detectedFormat = mapContainerToFormat(container, codec, ext);
   } catch (mmError) {
-    const ext = path.extname(filename).replace(/^\./, '').toLowerCase();
+    const ext = path.extname(tempFilename).replace(/^\./, '').toLowerCase();
     detectedFormat = ext || 'unknown';
   }
 
@@ -129,9 +129,7 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
       meetingIdToAssign = meetingIdParam;
     }
     const recordingData = {
-      filename,
-      originalFilename: originalname,
-      filePath: `/files/${filename}`,
+      originalFileName: originalname,
       fileSize: size,
       format: (detectedFormat || '').toLowerCase(),
       mimeType: mimetype,
@@ -144,6 +142,15 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
     };
 
     const result = await recordingService.createRecording(recordingData);
+
+    // Move uploaded file to final id-based filename
+    try {
+      const storedName = `${result._id}.${result.format || 'wav'}`;
+      const finalPath = path.join(filesDir, storedName);
+      fs.renameSync(absolutePath, finalPath);
+    } catch (moveErr) {
+      console.warn('Failed to move uploaded file to final path:', moveErr);
+    }
 
     const lang = getPreferredLang(req);
     res.status(201).json({

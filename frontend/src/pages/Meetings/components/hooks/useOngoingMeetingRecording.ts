@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 
 export interface RecordingInfo {
   recordingId?: string;
-  filename?: string;
   downloadUrl?: string;
   duration?: number;
   fileSize?: number;
@@ -270,8 +269,7 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
           case 'ready':
             setStatus('ready');
             setLastRecording({
-              recordingId: data.recordingId,
-              filename: data.filename
+              recordingId: data.recordingId
             });
             setMessage(data.message);
             break;
@@ -287,11 +285,10 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
               duration: data.duration,
               fileSize: data.fileSize,
               chunksCount: data.chunksCount,
-              filename: data.filename,
               recordingId: data.recordingId
             };
             setLastRecording(recordingInfo);
-            setMessage(`Recording saved: ${data.filename}`);
+            setMessage('Recording saved');
             if (onRecordingComplete) {
               onRecordingComplete(recordingInfo);
             }

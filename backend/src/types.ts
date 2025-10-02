@@ -22,8 +22,7 @@ export interface RecordingResponse {
   _id: string;
   meetingId?: string;
   ownerId?: string;
-  filePath: string;
-  filename: string;
+  originalFileName?: string;
   createdAt: string;
   updatedAt?: string;
   duration?: number;
@@ -37,7 +36,6 @@ export interface RecordingResponse {
   sampleRate?: number;
   channels?: number;
   format?: string;
-  externalId?: string;
   source?: 'live' | 'upload';
   organizedSpeeches?: Array<{
     speakerIndex: number;

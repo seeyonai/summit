@@ -52,8 +52,7 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
     _id: recordingDoc._id.toString(),
     meetingId: recordingDoc.meetingId?.toString(),
     ownerId: recordingDoc.ownerId?.toString(),
-    filePath: recordingDoc.filePath,
-    filename: recordingDoc.filename,
+    originalFileName: (recordingDoc as any).originalFileName,
     createdAt: recordingDoc.createdAt.toISOString(),
     updatedAt: toIsoString(recordingDoc.updatedAt),
     duration: recordingDoc.duration,
@@ -67,7 +66,6 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
     sampleRate: recordingDoc.sampleRate,
     channels: recordingDoc.channels,
     format: recordingDoc.format,
-    externalId: recordingDoc.externalId,
     source: recordingDoc.source,
     organizedSpeeches: recordingDoc.organizedSpeeches,
   };
