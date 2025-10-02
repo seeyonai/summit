@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import type { Recording, OrganizedSpeech } from '@/types';
 import { apiService } from '@/services/api';
-import { UsersIcon, ClockIcon, SparklesIcon } from 'lucide-react';
+import { UsersIcon, ClockIcon, SparklesIcon, PencilIcon, SaveIcon, XIcon } from 'lucide-react';
 import PipelineStageCard from './PipelineStageCard';
 
 interface RecordingOrganizeProps {
@@ -18,6 +20,9 @@ interface RecordingOrganizeProps {
 function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: RecordingOrganizeProps) {
   const [loading, setLoading] = useState(false);
   const [speeches, setSpeeches] = useState<OrganizedSpeech[] | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editedSpeech, setEditedSpeech] = useState<OrganizedSpeech | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const borderColors = [
     'border-blue-500',
@@ -68,6 +73,43 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
     }
   }, [recording?._id, recording?.organizedSpeeches]);
 
+  const handleEdit = (index: number, speech: OrganizedSpeech) => {
+    setEditingIndex(index);
+    setEditedSpeech({ ...speech });
+  };
+
+  const handleCancel = () => {
+    setEditingIndex(null);
+    setEditedSpeech(null);
+  };
+
+  const handleSave = async () => {
+    if (!editedSpeech || editingIndex === null || !speeches) return;
+
+    try {
+      setSaving(true);
+      const updatedSpeeches = [...speeches];
+      updatedSpeeches[editingIndex] = editedSpeech;
+
+      await apiService.updateRecording(recording._id, {
+        organizedSpeeches: updatedSpeeches
+      });
+
+      setSpeeches(updatedSpeeches);
+      setEditingIndex(null);
+      setEditedSpeech(null);
+      setSuccess('发言已更新');
+
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '保存失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const primaryButton = (
     <Button onClick={load} disabled={loading} className="bg-primary hover:bg-primary/90 text-primary-foreground" size="sm">
       {loading ? (
@@ -97,25 +139,69 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
     >
       <div className="space-y-4">
         {speeches?.map((s, idx) => {
-          const colorIdx = Math.abs(s.speakerIndex) % borderColors.length;
+          const isEditing = editingIndex === idx;
+          const displaySpeech = isEditing ? editedSpeech! : s;
+          const colorIdx = Math.abs(displaySpeech.speakerIndex) % borderColors.length;
           const borderClass = borderColors[colorIdx];
           const badgeClass = badgeColors[colorIdx];
+          
           return (
             <div key={`${s.speakerIndex}-${s.startTime}-${idx}`} className={`p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 ${borderClass}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Badge className={badgeClass}>
-                    <UsersIcon className="w-3 h-3 mr-1" /> 说话人 {s.speakerIndex + 1}
-                  </Badge>
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">说话人</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={editedSpeech!.speakerIndex}
+                        onChange={(e) => setEditedSpeech({ ...editedSpeech!, speakerIndex: parseInt(e.target.value) || 0 })}
+                        className="w-20 h-7 text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <Badge className={badgeClass}>
+                      <UsersIcon className="w-3 h-3 mr-1" /> 说话人 {displaySpeech.speakerIndex + 1}
+                    </Badge>
+                  )}
                   <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                     <ClockIcon className="w-3 h-3" />
-                    <span>{formatTime(s.startTime)} - {formatTime(s.endTime)}</span>
+                    <span>{formatTime(displaySpeech.startTime)} - {formatTime(displaySpeech.endTime)}</span>
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  {isEditing ? (
+                    <>
+                      <Button onClick={handleSave} disabled={saving} size="sm" variant="default" className="h-7">
+                        <SaveIcon className="w-3 h-3 mr-1" />
+                        保存
+                      </Button>
+                      <Button onClick={handleCancel} disabled={saving} size="sm" variant="outline" className="h-7">
+                        <XIcon className="w-3 h-3 mr-1" />
+                        取消
+                      </Button>
+                    </>
+                  ) : (
+                    <Button onClick={() => handleEdit(idx, s)} size="sm" variant="ghost" className="h-7">
+                      <PencilIcon className="w-3 h-3 mr-1" />
+                      编辑
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="text-gray-900 dark:text-gray-100 leading-7">
-                {s.polishedText}
-              </div>
+              {isEditing ? (
+                <Textarea
+                  value={editedSpeech!.polishedText}
+                  onChange={(e) => setEditedSpeech({ ...editedSpeech!, polishedText: e.target.value })}
+                  className="min-h-[100px] text-gray-900 dark:text-gray-100 leading-7"
+                  disabled={saving}
+                />
+              ) : (
+                <div className="text-gray-900 dark:text-gray-100 leading-7">
+                  {displaySpeech.polishedText}
+                </div>
+              )}
             </div>
           );
         })}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
 import type { Recording } from '@/types';
 import { AlignLeftIcon } from 'lucide-react';
 import { apiService } from '@/services/api';
@@ -144,13 +144,13 @@ function RecordingAlignment({
               </Badge>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground">时间偏移</span>
-                <input
-                  type="range"
+                <Slider
+                  className="w-36"
                   min={-500}
                   max={500}
                   step={10}
-                  value={globalOffsetMs}
-                  onChange={(e) => setGlobalOffsetMs(parseInt(e.target.value, 10))}
+                  value={[globalOffsetMs]}
+                  onValueChange={(value) => setGlobalOffsetMs(value[0])}
                 />
                 <span className="text-muted-foreground">{globalOffsetMs}ms</span>
               </div>
