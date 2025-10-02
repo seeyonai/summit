@@ -118,7 +118,7 @@ function RecordingCard({
   };
 
   return (
-    <Card className={`flex flex-col h-full cursor-pointer border-t-4 ${getStatusBorderColor()}`} onClick={handleCardClick}>
+    <Card className={`group hover:shadow-md transition-all duration-300 flex flex-col h-full cursor-pointer border-t-4 ${getStatusBorderColor()}`} onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">

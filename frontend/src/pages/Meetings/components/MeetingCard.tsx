@@ -49,7 +49,7 @@ function MeetingCard({ meeting, onDelete }: MeetingCardProps) {
 
   return (
     <Card 
-      className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-border dark:border-border overflow-hidden"
+      className="group hover:shadow-md transition-all duration-300 cursor-pointer border-border dark:border-border overflow-hidden"
       onClick={() => navigate(`/meetings/${meeting._id}`)}
     >
       <CardHeader className="pb-3">

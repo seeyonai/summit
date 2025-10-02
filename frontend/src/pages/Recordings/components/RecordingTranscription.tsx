@@ -288,7 +288,6 @@ function RecordingTranscription({
     <>
       <PipelineStageCard
         icon={<FileTextIcon className="w-5 h-5 text-white" />}
-        iconBgColor="bg-primary"
         title="转录内容"
         description="音频的文字转录结果"
         primaryButton={primaryButton || headerButtons}

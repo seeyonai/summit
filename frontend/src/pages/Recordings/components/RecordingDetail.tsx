@@ -347,7 +347,6 @@ function RecordingDetailRedesign() {
 
         {/* Pipeline Stages Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Stage 1: Transcription - Full Width */}
           <div className="lg:col-span-2">
             <RecordingTranscription
               recording={recording}
@@ -361,7 +360,6 @@ function RecordingDetailRedesign() {
             />
           </div>
 
-          {/* Stage 2: Alignment and Analysis - Side by Side on lg */}
           <RecordingAlignment
             recording={recording}
             isEditing={isEditing}
@@ -377,7 +375,6 @@ function RecordingDetailRedesign() {
             setError={setError}
           />
 
-          {/* Stage 3: Organize - Full Width */}
           <div className="lg:col-span-2">
             <RecordingOrganize
               recording={recording}

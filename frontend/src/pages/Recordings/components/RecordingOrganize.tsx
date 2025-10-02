@@ -19,7 +19,7 @@ interface RecordingOrganizeProps {
 
 function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: RecordingOrganizeProps) {
   const [loading, setLoading] = useState(false);
-  const [speeches, setSpeeches] = useState<OrganizedSpeech[] | null>(null);
+  const [speeches, setSpeeches] = useState<OrganizedSpeech[] | undefined>(recording.organizedSpeeches);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editedSpeech, setEditedSpeech] = useState<OrganizedSpeech | null>(null);
   const [saving, setSaving] = useState(false);
@@ -110,8 +110,13 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
     }
   };
 
+  const empty = !speeches || speeches.length === 0;
   const primaryButton = (
-    <Button onClick={load} disabled={loading} className="bg-primary hover:bg-primary/90 text-primary-foreground" size="sm">
+    <Button
+      onClick={load}
+      disabled={loading || !recording.alignmentItems || !recording.transcription || !recording.speakerSegments}
+      size={empty ? 'lg' : 'sm'}
+    >
       {loading ? (
         <>
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -120,7 +125,7 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
       ) : (
         <>
           <SparklesIcon className="w-4 h-4 mr-2" />
-          开始整理
+          {empty ? '开始整理' : '重新整理'}
         </>
       )}
     </Button>
@@ -129,11 +134,10 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
   return (
     <PipelineStageCard
       icon={<SparklesIcon className="w-5 h-5 text-white" />}
-      iconBgColor="bg-chart-4"
       title="整理发言"
       description="将说话人分段与文本对齐并润色，生成结构化对话"
       primaryButton={primaryButton}
-      isEmpty={!speeches || speeches.length === 0}
+      isEmpty={empty}
       emptyIcon={<SparklesIcon className="w-12 h-12" />}
       emptyMessage={loading ? '请稍候...' : '暂无整理结果'}
     >

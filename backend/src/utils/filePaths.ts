@@ -6,8 +6,7 @@ export function getFilesBaseDir(): string {
   if (envBase && envBase.trim().length > 0) {
     return path.isAbsolute(envBase) ? envBase : path.resolve(envBase);
   }
-  // Default to repository-level /files directory for development
-  return path.resolve(process.cwd(), '..', 'files');
+  return path.resolve(process.cwd(), 'files');
 }
 
 export function normalizePublicOrRelative(input: string): string {

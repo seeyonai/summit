@@ -103,12 +103,13 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
     );
   };
 
+  const empty = !recording.speakerSegments || recording.speakerSegments.length === 0;
   const primaryButton = (
     <Button
       onClick={() => runSpeakerSegmentation()}
       disabled={segmenting}
-      className="bg-primary hover:bg-primary/90 text-primary-foreground"
-      size="sm"
+      size={empty ? 'lg' : 'sm'}
+      variant={empty ? 'default' : 'outline'}
     >
       {segmenting ? (
         <>
@@ -118,7 +119,7 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
       ) : (
         <>
           <UsersIcon className="w-4 h-4 mr-2" />
-          开始分析
+          {empty ? '开始分析' : '重新分析'}
         </>
       )}
     </Button>
@@ -127,15 +128,14 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
   return (
     <PipelineStageCard
       icon={<BarChart3Icon className="w-5 h-5 text-white" />}
-      iconBgColor="bg-accent"
       title="说话人分析"
       description="识别和分析录音中的不同说话人"
       primaryButton={primaryButton}
-      isEmpty={!recording.speakerSegments || recording.speakerSegments.length === 0}
+      isEmpty={empty}
       emptyIcon={<UsersIcon className="w-12 h-12" />}
       emptyMessage="暂无说话人分析结果"
     >
-      {recording.speakerSegments && recording.speakerSegments.length > 0 && (
+      {!empty && (
         <div className="space-y-6">
           {renderSpeakerTimeline()}
               

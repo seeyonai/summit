@@ -101,12 +101,14 @@ function RecordingAlignment({
     audio.play();
   };
 
+  const empty = !alignment;
+
   const primaryButton = (
     <Button
       onClick={handleAlign}
       disabled={aligning || !recording.transcription}
-      className="bg-primary hover:bg-primary/90 text-primary-foreground"
-      size="sm"
+      size={empty ? 'lg' : 'sm'}
+      variant={empty ? 'default' : 'outline'}
     >
       {aligning ? (
         <>
@@ -116,7 +118,7 @@ function RecordingAlignment({
       ) : (
         <>
           <AlignLeftIcon className="w-4 h-4 mr-2" />
-          开始对齐
+          {empty ? '开始对齐' : '重新对齐'}
         </>
       )}
     </Button>
@@ -125,11 +127,10 @@ function RecordingAlignment({
   return (
     <PipelineStageCard
       icon={<AlignLeftIcon className="w-5 h-5 text-white" />}
-      iconBgColor="bg-success"
       title="对齐"
       description="将转录文本与音频时间轴对齐"
       primaryButton={primaryButton}
-      isEmpty={!recording.transcription || !alignment}
+      isEmpty={!recording.transcription || empty}
       emptyIcon={<AlignLeftIcon className="w-12 h-12" />}
       emptyMessage={!recording.transcription ? "需要先生成转录内容，才能进行对齐。" : undefined}
     >

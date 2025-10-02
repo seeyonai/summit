@@ -3,7 +3,6 @@ import { Separator } from '@/components/ui/separator';
 
 interface PipelineStageCardProps {
   icon: ReactNode;
-  iconBgColor?: string;
   title: string;
   description: string;
   primaryButton: ReactNode;
@@ -16,7 +15,6 @@ interface PipelineStageCardProps {
 
 function PipelineStageCard({
   icon,
-  iconBgColor = 'bg-primary',
   title,
   description,
   primaryButton,
@@ -33,7 +31,7 @@ function PipelineStageCard({
           /* Empty State - Simplified view with centered button */
           <div className="flex-1 flex flex-col">
             <div className="flex items-start gap-3 mb-6">
-              <div className={`w-10 h-10 ${iconBgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+              <div className={`w-10 h-10 bg-primary/70 rounded-lg flex items-center justify-center flex-shrink-0`}>
                 {icon}
               </div>
               <div>
@@ -58,7 +56,7 @@ function PipelineStageCard({
             <div className="flex flex-col space-y-4">
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 ${iconBgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                  <div className={`w-10 h-10 bg-primary/70 rounded-lg flex items-center justify-center flex-shrink-0`}>
                     {icon}
                   </div>
                   <div>
