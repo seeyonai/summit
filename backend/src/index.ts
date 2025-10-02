@@ -9,7 +9,7 @@ import filesRouter from './routes/files';
 // Load environment variables from .env file
 dotenv.config({ quiet: true });
 import { DataSeeder } from './utils/seedData';
-import meetingsRouter from './routes/meetings';
+import meetingsRouter from './routes/meetings/index';
 import authRouter from './routes/auth';
 import usersRouter from './routes/users';
 import hotwordsRouter from './routes/hotwords';
@@ -18,7 +18,6 @@ import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings/index';
 import configRouter from './routes/config';
 import { LiveRecorderService } from './services/LiveRecorderService';
-import { HealthCheckService } from './services/HealthCheckService';
 import { checkAllServices, generateHealthTable } from './utils/healthChecker';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
@@ -86,9 +85,9 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found:' + req.url });
+// 404 handler (use originalUrl for clarity)
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found:' + req.originalUrl });
 });
 
 // Start server with database connection

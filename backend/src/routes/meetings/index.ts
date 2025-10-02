@@ -392,9 +392,7 @@ router.post('/:meetingId/extract-analysis', requireMemberOrOwner(), asyncHandler
   }
 }));
 
-export default router;
-
-// Member management (owner only)
+// Member management (owner or admin)
 router.post('/:id/members', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   const { userId } = req.body as { userId?: string };
@@ -416,3 +414,5 @@ router.delete('/:id/members/:userId', requireOwner(), asyncHandler(async (req: R
   }
   res.json(serializeMeeting(updated));
 }));
+
+export default router;
