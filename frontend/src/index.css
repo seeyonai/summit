@@ -153,7 +153,7 @@
 
   /* Page Header Components */
   .page-header {
-    @apply relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/90 to-accent/90 p-8 text-white;
+    @apply relative overflow-hidden rounded-2xl bg-gradient-to-t from-primary/90 to-accent/90 p-8 text-white;
     @apply dark:from-primary/50 dark:to-accent/50;
   }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 /* card imports removed */
 import { Separator } from '@/components/ui/separator';
 import SearchInput from '@/components/SearchInput';
@@ -587,8 +588,8 @@ function RecordingTranscription({
                 <Input
                   placeholder="输入自定义热词"
                   value={customHotword}
-                  onChange={(e) => setCustomHotword(e.target.value)}
-                  onKeyDown={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomHotword(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                     if (e.key === 'Enter') {
                       addCustomHotword();
                     }
