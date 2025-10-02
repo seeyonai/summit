@@ -1,40 +1,108 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LayoutDashboard, Mic } from 'lucide-react';
-import QuickRecord from './components/QuickRecord';
-import QuickActions from './components/QuickActions';
+import { Button } from '@/components/ui/button';
+import { Mic, Calendar, ActivityIcon, TargetIcon } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 import IncomingMeetings from './components/IncomingMeetings';
 import PendingMeetings from './components/PendingMeetings';
+import MeetingCalendar from './components/MeetingCalendar';
+import { useMeetings } from '@/hooks/useMeetings';
+import { apiService } from '@/services/api';
+import type { Recording } from '@/types';
 
 const Dashboard: React.FC = () => {
+  const { meetings, loading } = useMeetings();
+  const [recordings, setRecordings] = useState<Recording[]>([]);
   const [recentRecordings, setRecentRecordings] = useState<string[]>([]);
 
-  const handleRecordingComplete = (filename: string) => {
-    setRecentRecordings(prev => [filename, ...prev.slice(0, 4)]);
-  };
+  // Fetch recordings on mount
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      try {
+        const data = await apiService.getRecordings();
+        setRecordings(data);
+      } catch (err) {
+        console.error('Error fetching recordings:', err);
+      }
+    };
+    fetchRecordings();
+  }, []);
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const totalMeetings = meetings.length;
+    const scheduledCount = meetings.filter(m => m.status === 'scheduled').length;
+    const inProgressCount = meetings.filter(m => m.status === 'in_progress').length;
+    const completedCount = meetings.filter(m => m.status === 'completed').length;
+    const totalRecordings = recordings.length;
+    const totalTodos = meetings.reduce((acc, m) => acc + (m.parsedTodos?.length || 0), 0);
+    const completedTodos = meetings.reduce((acc, m) => 
+      acc + (m.parsedTodos?.filter(t => t.completed).length || 0), 0);
+    const todoCompletionRate = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
+    
+    return {
+      totalMeetings,
+      scheduledCount,
+      inProgressCount,
+      completedCount,
+      totalRecordings,
+      totalTodos,
+      completedTodos,
+      todoCompletionRate
+    };
+  }, [meetings, recordings]);
 
   return (
     <div className="space-y-8">
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/20 via-blue-50/20 to-purple-50/20 dark:from-blue-950/10 dark:via-blue-950/10 dark:to-purple-950/10"></div>
-        <div className="relative text-center space-y-4 py-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
-            <LayoutDashboard className="w-4 h-4" />
-            欢迎回来
+      <PageHeader title="仪表盘" subline="全面掌握您的会议和录音数据">
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">总会议数</p>
+                <p className="stat-value">{stats.totalMeetings}</p>
+              </div>
+              <Calendar className="stat-icon" />
+            </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight gradient-text">仪表板</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            快速访问录音功能，管理会议安排，处理待办事项
-          </p>
+          
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">进行中</p>
+                <p className="stat-value">{stats.inProgressCount}</p>
+              </div>
+              <ActivityIcon className="stat-icon" />
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">任务完成率</p>
+                <p className="stat-value">{stats.todoCompletionRate.toFixed(0)}%</p>
+              </div>
+              <TargetIcon className="stat-icon" />
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">总录音数</p>
+                <p className="stat-value">{stats.totalRecordings}</p>
+              </div>
+              <Mic className="stat-icon" />
+            </div>
+          </div>
         </div>
-      </div>
+      </PageHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <QuickRecord onRecordingComplete={handleRecordingComplete} />
-          <QuickActions />
+      {/* Main Content */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6">
+          <MeetingCalendar meetings={meetings} loading={loading} />
         </div>
         
         <div className="space-y-6">

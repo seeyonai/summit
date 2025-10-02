@@ -94,7 +94,7 @@
 
 @layer components {
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+    @apply bg-gradient-to-t from-primary to-accent bg-clip-text text-transparent;
   }
   
   .glass-effect {
@@ -191,6 +191,28 @@
     @apply bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20;
     @apply dark:bg-white/5 dark:border-white/10;
   }
+  
+  /* Staggered reveal animation for stat cards */
+  .stats-grid .stat-card {
+    animation: reveal 0.4s ease-out forwards;
+    opacity: 0;
+  }
+  
+  .stats-grid .stat-card:nth-child(1) {
+    animation-delay: 0.2s;
+  }
+  
+  .stats-grid .stat-card:nth-child(2) {
+    animation-delay: 0.25s;
+  }
+  
+  .stats-grid .stat-card:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  
+  .stats-grid .stat-card:nth-child(4) {
+    animation-delay: 0.35s;
+  }
 
   .stat-content {
     @apply flex items-center justify-between;
@@ -284,6 +306,22 @@
   @keyframes float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-reveal {
+    animation: reveal 0.4s ease-out forwards;
+    opacity: 0;
   }
   
   .animate-pulse-slow {

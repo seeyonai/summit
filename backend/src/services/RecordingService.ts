@@ -76,6 +76,15 @@ async function buildRecordingResponse(
       _id: meeting._id.toString(),
     };
 
+    const toIso = (v: unknown): string | undefined => {
+      if (v instanceof Date) return v.toISOString();
+      if (typeof v === 'string' || typeof v === 'number') {
+        const d = new Date(v);
+        return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+      }
+      return undefined;
+    };
+
     meetingFields.forEach((field) => {
       const value = meeting[field];
       if (value === undefined) {
@@ -83,7 +92,10 @@ async function buildRecordingResponse(
       }
 
       if (field === 'createdAt' || field === 'updatedAt' || field === 'scheduledStart') {
-        meetingPayload[field] = (value as Date).toISOString();
+        const iso = toIso(value);
+        if (iso) {
+          meetingPayload[field] = iso;
+        }
         return;
       }
 

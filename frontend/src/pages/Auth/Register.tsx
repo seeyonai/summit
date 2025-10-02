@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
 function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, user } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -12,11 +13,14 @@ function Register() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Get the intended destination from location state or default to meetings
+  const from = (location.state as any)?.from?.pathname || '/meetings';
+
   useEffect(() => {
     if (user) {
-      navigate('/meetings', { replace: true });
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, from]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +28,7 @@ function Register() {
     setLoading(true);
     try {
       await register(email, password, name || undefined);
-      navigate('/meetings');
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Register failed');
     } finally {

@@ -16,6 +16,7 @@ import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
 import LiveRecorderTest from './pages/LiveRecorderTest';
 import FloatingRecordingPanel from './components/Audio/FloatingRecordingPanel';
+import DebugInfo from './components/DebugInfo';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Auth/Login';
@@ -23,7 +24,10 @@ import Register from '@/pages/Auth/Register';
 import AdminRoute from '@/components/AdminRoute';
 import AdminUsers from '@/pages/Admin/Users';
 import Profile from '@/pages/Profile';
+import Settings from '@/pages/Settings';
 import { ConfigProvider } from '@/contexts/ConfigContext';
+import { ColorThemeProvider } from '@/contexts/ThemeContext';
+import { DebugProvider } from '@/contexts/DebugContext';
 
 function AppContent() {
   const { isRecording } = useAudioRecording();
@@ -57,38 +61,44 @@ function AppContent() {
   }, [toggleFloatingPanel, closePanel]);
 
   return (
-    <ThemeProvider>
-      <Router>
-        <div className="min-h-screen bg-background">
-          <Toaster />
+    <ColorThemeProvider>
+      <DebugProvider>
+        <ThemeProvider>
+          <Router>
+            <div className="min-h-screen bg-background">
+              <Toaster />
+              <DebugInfo />
 
-          <Header
-            isRecording={isRecording}
-          />
+              <Header
+                isRecording={isRecording}
+              />
 
-          <main className="container mx-auto px-4 py-8 animate-fade-in">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/recordings" element={<ProtectedRoute><RecordingManagement /></ProtectedRoute>} />
-              <Route path="/recordings/:id" element={<ProtectedRoute><RecordingDetail /></ProtectedRoute>} />
-              <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
-              <Route path="/meetings/:id" element={<ProtectedRoute><MeetingDetail /></ProtectedRoute>} />
-              <Route path="/meetings/:id/edit" element={<ProtectedRoute><MeetingEdit /></ProtectedRoute>} />
-              <Route path="/hotwords" element={<ProtectedRoute><HotwordManagement /></ProtectedRoute>} />
-              <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-              <Route path="/test-recorder" element={<ProtectedRoute><LiveRecorderTest /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
+            <main className="container mx-auto px-4 py-8 animate-fade-in">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/recordings" element={<ProtectedRoute><RecordingManagement /></ProtectedRoute>} />
+                <Route path="/recordings/:id" element={<ProtectedRoute><RecordingDetail /></ProtectedRoute>} />
+                <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
+                <Route path="/meetings/:id" element={<ProtectedRoute><MeetingDetail /></ProtectedRoute>} />
+                <Route path="/meetings/:id/edit" element={<ProtectedRoute><MeetingEdit /></ProtectedRoute>} />
+                <Route path="/hotwords" element={<ProtectedRoute><HotwordManagement /></ProtectedRoute>} />
+                <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                <Route path="/test-recorder" element={<ProtectedRoute><LiveRecorderTest /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
 
-          <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} />
-        </div>
-      </Router>
-    </ThemeProvider>
+            <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} />
+          </div>
+        </Router>
+      </ThemeProvider>
+    </DebugProvider>
+  </ColorThemeProvider>
   );
 }
 

@@ -19,7 +19,7 @@ import { useOngoingMeetingRecording } from './hooks/useOngoingMeetingRecording';
 import type { RecordingInfo } from './hooks/useOngoingMeetingRecording';
 import { MeetingAgenda } from './MeetingAgenda';
 import { RecordingControls } from './RecordingControls';
-import { MeetingStats } from './MeetingStats';
+import MeetingStats from './MeetingStats';
 import '@/styles/meeting-display.css';
 import LiveTranscript from './LiveTranscript';
 

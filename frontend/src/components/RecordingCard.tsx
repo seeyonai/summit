@@ -102,8 +102,23 @@ function RecordingCard({
     ));
   };
 
+  const getStatusBorderColor = () => {
+    if (!recording.meeting) return '';
+    
+    switch (recording.meeting.status) {
+      case 'completed':
+        return 'border-t-green-500';
+      case 'in_progress':
+        return 'border-t-primary';
+      case 'scheduled':
+        return 'border-t-gray-400';
+      default:
+        return 'border-t-destructive';
+    }
+  };
+
   return (
-    <Card className={`flex flex-col h-full cursor-pointer`} onClick={handleCardClick}>
+    <Card className={`flex flex-col h-full cursor-pointer border-t-4 ${getStatusBorderColor()}`} onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
@@ -128,19 +143,6 @@ function RecordingCard({
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
                   {recording.meeting.title}
                 </span>
-                <Badge 
-                  variant="outline"
-                  className={
-                    recording.meeting.status === 'completed' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
-                    recording.meeting.status === 'in_progress' ? 'bg-primary/10 text-primary border-primary/20' :
-                    recording.meeting.status === 'scheduled' ? 'bg-muted text-muted-foreground border-border' :
-                    'bg-destructive/10 text-destructive border-destructive/20'
-                  }
-                >
-                  {recording.meeting.status === 'completed' ? '已完成' :
-                   recording.meeting.status === 'in_progress' ? '进行中' :
-                   recording.meeting.status === 'scheduled' ? '已排期' : '失败'}
-                </Badge>
               </div>
             )}
           </div>

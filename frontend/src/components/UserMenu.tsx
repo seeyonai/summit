@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, LogOut, LogIn, UserPlus, Wrench, User, Flame } from 'lucide-react';
+import { ChevronDown, LogOut, LogIn, UserPlus, Wrench, User, Flame, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 function getInitials(name?: string, email?: string) {
@@ -70,14 +70,17 @@ function UserMenu() {
             </div>
           </div>
           <div className="py-1">
-            <Link to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
+            <Link to="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
               <User className="w-4 h-4" /> 个人资料
             </Link>
-            <Link to="/hotwords" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
+            <Link to="/hotwords" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
               <Flame className="w-4 h-4" /> 热词
             </Link>
+            <Link to="/settings" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
+              <Settings className="w-4 h-4" /> 设置
+            </Link>
             {user.role === 'admin' && (
-              <Link to="/admin/users" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
+              <Link to="/admin/users" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
                 <Wrench className="w-4 h-4" /> 管理
               </Link>
             )}

@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { ObjectId } from 'mongodb';
 import meetingService from '../../services/MeetingService';
 import transcriptExtractionService from '../../services/TranscriptExtractionService';
 import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../../types';
@@ -70,6 +71,9 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 // Get meeting by ID (owner or member only)
 router.get('/:id', requireMemberOrOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!ObjectId.isValid(id)) {
+    throw badRequest('Invalid meeting id', 'meeting.invalid_id');
+  }
   const meeting = await meetingService.getMeetingById(id);
 
   if (!meeting) {

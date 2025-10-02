@@ -14,6 +14,7 @@ import type { Recording } from '@/types';
 import RecordingCard from '@/components/RecordingCard';
 import RecordingListItem from '@/components/RecordingListItem';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
+import PageHeader from '@/components/PageHeader';
 import {
   MicIcon,
   
@@ -211,105 +212,95 @@ function RecordingList() {
 
   return (
     <div className="space-y-8">
-        {/* Header Section with Stats */}
-        <div className="page-header">
-          <div className="page-header-content">
-            <div className="flex justify-between items-start mb-6">
-              <div className="page-header-title">
-                <h1>录音</h1>
-                <p>智能管理和分析您的音频记录</p>
-              </div>
-              <div className="page-header-actions">
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleFileUpload}
-                    disabled={uploading || recording}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                    id="audio-upload"
-                  />
-                  <Button
-                    asChild
-                    disabled={uploading || recording}
-                    size="lg"
-                    className="bg-card text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg disabled:opacity-50"
-                  >
-                    <label htmlFor="audio-upload" className="cursor-pointer">
-                      {uploading ? (
-                        <>
-                          <div className="w-3 h-3 bg-primary rounded-full animate-spin mr-2" />
-                          上传中... {uploadProgress}%
-                        </>
-                      ) : (
-                        <>
-                          <UploadIcon className="w-5 h-5 mr-2" />
-                          上传音频
-                        </>
-                      )}
-                    </label>
-                  </Button>
-                </div>
+        <PageHeader
+          title="录音"
+          subline="智能管理和分析您的音频记录"
+          actionButtons={
+            <>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
+                  disabled={uploading || recording}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                  id="audio-upload"
+                />
                 <Button
-                  onClick={toggleFloatingPanel}
-                  disabled={uploading}
+                  asChild
+                  disabled={uploading || recording}
                   size="lg"
                   className="bg-card text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg disabled:opacity-50"
                 >
-                  <MicIcon className="w-5 h-5 mr-2" />
-                  快速录音
+                  <label htmlFor="audio-upload" className="cursor-pointer">
+                    {uploading ? (
+                      <>
+                        <div className="w-3 h-3 bg-primary rounded-full animate-spin mr-2" />
+                        上传中... {uploadProgress}%
+                      </>
+                    ) : (
+                      <>
+                        <UploadIcon className="w-5 h-5 mr-2" />
+                        上传音频
+                      </>
+                    )}
+                  </label>
                 </Button>
+              </div>
+              <Button
+                onClick={toggleFloatingPanel}
+                disabled={uploading}
+                size="lg"
+                className="bg-card text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg disabled:opacity-50"
+              >
+                <MicIcon className="w-5 h-5 mr-2" />
+                快速录音
+              </Button>
+            </>
+          }
+        >
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="stat-label">总录音数</p>
+                  <p className="stat-value">{stats.total}</p>
+                </div>
+                <FileAudioIcon className="stat-icon" />
               </div>
             </div>
             
-            {/* Statistics Cards */}
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-content">
-                  <div className="stat-info">
-                    <p className="stat-label">总录音数</p>
-                    <p className="stat-value">{stats.total}</p>
-                  </div>
-                  <FileAudioIcon className="stat-icon" />
+            <div className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="stat-label">总时长</p>
+                  <p className="stat-value">{formatDuration(stats.totalDuration)}</p>
                 </div>
+                <ClockIcon className="stat-icon" />
               </div>
-              
-              <div className="stat-card">
-                <div className="stat-content">
-                  <div className="stat-info">
-                    <p className="stat-label">总时长</p>
-                    <p className="stat-value">{formatDuration(stats.totalDuration)}</p>
-                  </div>
-                  <ClockIcon className="stat-icon" />
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="stat-label">转录率</p>
+                  <p className="stat-value">{stats.transcriptionRate.toFixed(0)}%</p>
                 </div>
+                <ActivityIcon className="stat-icon" />
               </div>
-              
-              <div className="stat-card">
-                <div className="stat-content">
-                  <div className="stat-info">
-                    <p className="stat-label">转录率</p>
-                    <p className="stat-value">{stats.transcriptionRate.toFixed(0)}%</p>
-                  </div>
-                  <ActivityIcon className="stat-icon" />
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="stat-label">存储空间</p>
+                  <p className="stat-value">{formatFileSize(stats.totalSize)}</p>
                 </div>
-              </div>
-              
-              <div className="stat-card">
-                <div className="stat-content">
-                  <div className="stat-info">
-                    <p className="stat-label">存储空间</p>
-                    <p className="stat-value">{formatFileSize(stats.totalSize)}</p>
-                  </div>
-                  <FolderOpenIcon className="stat-icon" />
-                </div>
+                <FolderOpenIcon className="stat-icon" />
               </div>
             </div>
           </div>
-          
-          {/* Decorative elements */}
-          <div className="header-decoration header-decoration-top-right" />
-          <div className="header-decoration header-decoration-bottom-left" />
-        </div>
+        </PageHeader>
 
         {/* Search and Filter Bar */}
         <div className="flex flex-col lg:flex-row gap-4">

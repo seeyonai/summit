@@ -14,6 +14,7 @@ import type { MeetingCreate } from '@/types';
 import { useMeetings } from '@/hooks/useMeetings';
 import MeetingCard from './components/MeetingCard';
 import MeetingListItem from './components/MeetingListItem';
+import PageHeader from '@/components/PageHeader';
 import {
   Mic,
   Calendar,
@@ -141,72 +142,62 @@ function MeetingList() {
 
   return (
     <div className="space-y-8">
-        {/* Header Section with Stats */}
-        <div className="page-header">
-          <div className="page-header-content">
-            <div className="flex justify-between items-start mb-6">
-              <div className="page-header-title">
-                <h1>会议</h1>
-                <p>智能管理您的会议记录和任务进度</p>
+        <PageHeader
+          title="会议"
+          subline="智能管理您的会议记录和任务进度"
+          actionButtons={
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              size="lg"
+              className="bg-background text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg"
+            >
+              <PlusIcon className="w-5 h-5 mr-2" />
+              创建会议
+            </Button>
+          }
+        >
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="stat-label">总会议数</p>
+                  <p className="stat-value">{stats.total}</p>
+                </div>
+                <FolderOpenIcon className="stat-icon" />
               </div>
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                size="lg"
-                className="bg-background text-primary hover:bg-primary/10 transition-all duration-300 shadow-lg"
-              >
-                <PlusIcon className="w-5 h-5 mr-2" />
-                创建会议
-              </Button>
             </div>
             
-            {/* Statistics Cards */}
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-content">
-                  <div className="stat-info">
-                    <p className="stat-label">总会议数</p>
-                    <p className="stat-value">{stats.total}</p>
-                  </div>
-                  <FolderOpenIcon className="stat-icon" />
+            <div className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="stat-label">进行中</p>
+                  <p className="stat-value">{stats.inProgressCount}</p>
                 </div>
+                <ActivityIcon className="stat-icon" />
               </div>
-              
-              <div className="stat-card">
-                <div className="stat-content">
-                  <div className="stat-info">
-                    <p className="stat-label">进行中</p>
-                    <p className="stat-value">{stats.inProgressCount}</p>
-                  </div>
-                  <ActivityIcon className="stat-icon" />
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="stat-label">任务完成率</p>
+                  <p className="stat-value">{stats.todoCompletionRate.toFixed(0)}%</p>
                 </div>
+                <TargetIcon className="stat-icon" />
               </div>
-              
-              <div className="stat-card">
-                <div className="stat-content">
-                  <div className="stat-info">
-                    <p className="stat-label">任务完成率</p>
-                    <p className="stat-value">{stats.todoCompletionRate.toFixed(0)}%</p>
-                  </div>
-                  <TargetIcon className="stat-icon" />
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="stat-label">总录音数</p>
+                  <p className="stat-value">{stats.totalRecordings}</p>
                 </div>
-              </div>
-              
-              <div className="stat-card">
-                <div className="stat-content">
-                  <div className="stat-info">
-                    <p className="stat-label">总录音数</p>
-                    <p className="stat-value">{stats.totalRecordings}</p>
-                  </div>
-                  <Mic className="stat-icon" />
-                </div>
+                <Mic className="stat-icon" />
               </div>
             </div>
           </div>
-          
-          {/* Decorative elements */}
-          <div className="header-decoration header-decoration-top-right" />
-          <div className="header-decoration header-decoration-bottom-left" />
-        </div>
+        </PageHeader>
 
         {/* Search and Filter Bar */}
         <div className="flex flex-col lg:flex-row gap-4">

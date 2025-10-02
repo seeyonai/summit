@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import HotwordSelection from '@/components/HotwordSelection';
+import BackButton from '@/components/BackButton';
 import type { Recording } from '@/types';
 import { apiService, apiUrl } from '@/services/api';
 import RecordingTranscription from './RecordingTranscription';
@@ -231,13 +232,7 @@ function RecordingDetailRedesign() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">录音未找到</h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">{error || '请求的录音不存在或已被删除'}</p>
-              <Button
-                onClick={() => navigate('/recordings')}
-                variant="outline"
-              >
-                <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                返回录音列表
-              </Button>
+              <BackButton url="/recordings">返回录音列表</BackButton>
             </div>
           </div>
         </div>
@@ -251,14 +246,7 @@ function RecordingDetailRedesign() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <Button
-              onClick={() => history.back()}
-              variant="ghost"
-              className="hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              返回
-            </Button>
+            <BackButton>返回</BackButton>
             <div className="flex items-center gap-2">
               <TooltipProvider>
                 <Tooltip>

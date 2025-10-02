@@ -1,1 +1,1 @@
-export { default } from './RecordingList';
+export { default } from './components/RecordingList';

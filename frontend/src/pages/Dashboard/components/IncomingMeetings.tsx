@@ -1,48 +1,49 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Users } from 'lucide-react';
-
-interface Meeting {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  status: 'incoming' | 'pending';
-  participants?: number;
-  summary?: string;
-}
+import { useMeetings } from '@/hooks/useMeetings';
+import type { Meeting } from '@/types';
 
 interface IncomingMeetingsProps {
   className?: string;
 }
 
 const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const { meetings: allMeetings, loading } = useMeetings();
 
-  useState(() => {
-    setMeetings([
-      {
-        id: '1',
-        title: '产品规划会议',
-        date: '2024-01-15',
-        time: '14:00',
-        status: 'incoming',
-        participants: 5,
-        summary: '讨论Q1产品路线图'
-      },
-      {
-        id: '2',
-        title: '技术评审',
-        date: '2024-01-16',
-        time: '10:00',
-        status: 'incoming',
-        participants: 3,
-        summary: '新架构方案评审'
-      }
-    ]);
-  });
+  // Filter for scheduled meetings happening today or soon
+  const upcomingMeetings = useMemo(() => {
+    const now = new Date();
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+    
+    return allMeetings
+      .filter(m => {
+        if (m.status !== 'scheduled') return false;
+        if (!m.scheduledStart) return false;
+        
+        const scheduledDate = new Date(m.scheduledStart);
+        return scheduledDate >= now && scheduledDate <= todayEnd;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.scheduledStart!);
+        const dateB = new Date(b.scheduledStart!);
+        return dateA.getTime() - dateB.getTime();
+      })
+      .slice(0, 5);
+  }, [allMeetings]);
+
+  const formatDate = (dateStr: Date | string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+  };
+
+  const formatTime = (dateStr: Date | string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
 
   return (
     <Card className={className}>
@@ -60,7 +61,14 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
         </div>
       </CardHeader>
       <CardContent>
-        {meetings.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <div className="animate-pulse space-y-4">
+              <div className="h-20 bg-muted rounded-lg" />
+              <div className="h-20 bg-muted rounded-lg" />
+            </div>
+          </div>
+        ) : upcomingMeetings.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="text-lg font-medium mb-1">暂无即将到来的会议</p>
@@ -68,8 +76,8 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
           </div>
         ) : (
           <div className="space-y-4">
-            {meetings.map((meeting) => (
-              <Link key={meeting.id} to={`/meetings/${meeting.id}`}>
+            {upcomingMeetings.map((meeting) => (
+              <Link key={meeting._id} to={`/meetings/${meeting._id}`}>
                 <div className="group p-4 rounded-lg border border-border/50 hover:bg-primary/10 dark:hover:bg-primary/20 hover:border-primary/30 dark:hover:border-primary/70 transition-all duration-200 cursor-pointer">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -79,20 +87,28 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
                           即将开始
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-3">{meeting.summary}</p>
+                      {meeting.summary && (
+                        <p className="text-xs text-muted-foreground mb-3">{meeting.summary}</p>
+                      )}
                       <div className="flex items-center gap-6 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>{meeting.date}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{meeting.time}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5" />
-                          <span>{meeting.participants} 人</span>
-                        </div>
+                        {meeting.scheduledStart && (
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>{formatDate(meeting.scheduledStart)}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{formatTime(meeting.scheduledStart)}</span>
+                            </div>
+                          </>
+                        )}
+                        {meeting.participants && (
+                          <div className="flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>{meeting.participants} 人</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

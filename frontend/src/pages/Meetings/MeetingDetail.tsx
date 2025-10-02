@@ -8,6 +8,7 @@ import { useMeetingDetail } from "@/hooks/useMeetingDetail";
 import { useTodoAdvice } from "@/hooks/useTodoAdvice";
 import { formatDate } from "@/utils/date";
 import { useRecordingPanel } from "@/contexts/RecordingPanelContext";
+import BackButton from "@/components/BackButton";
 import MeetingTranscript from "./components/MeetingTranscript";
 import MeetingRecordings from "./components/MeetingRecordings";
 import DisputedIssues from "./components/DisputedIssues";
@@ -217,14 +218,7 @@ function MeetingDetail() {
             <AlertCircleIcon className="h-4 w-4" />
             <AlertDescription>{error || "会议不存在"}</AlertDescription>
           </Alert>
-          <Button
-            onClick={() => navigate("/meetings")}
-            className="mt-4"
-            variant="outline"
-          >
-            <ArrowLeftIcon className="w-4 h-4 mr-2" />
-            返回会议列表
-          </Button>
+          <BackButton url="/meetings" className="mt-4">返回会议列表</BackButton>
         </div>
       </div>
     );
@@ -240,14 +234,7 @@ function MeetingDetail() {
     <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <Button
-          onClick={() => navigate("/meetings")}
-          variant="ghost"
-          className="mb-4"
-        >
-          <ArrowLeftIcon className="w-4 h-4 -ml-2 mr-2" />
-          返回
-        </Button>
+        <BackButton url="/meetings" variant="ghost" className="mb-4">返回</BackButton>
 
         <div className="flex justify-between items-start mb-6">
           <div>

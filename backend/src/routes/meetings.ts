@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { ObjectId } from 'mongodb';
 import meetingService from '../services/MeetingService';
 import transcriptExtractionService from '../services/TranscriptExtractionService';
 import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse, Recording } from '../types';
@@ -57,6 +58,10 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    // Validate ObjectId format; return 400 if invalid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid meeting id' });
+    }
     const meeting = await meetingService.getMeetingById(id);
     
     if (!meeting) {
