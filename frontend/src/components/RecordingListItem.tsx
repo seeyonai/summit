@@ -63,7 +63,7 @@ function RecordingListItem({
 
   return (
     <div 
-      className={`group bg-card rounded-lg border border-border hover:border-primary hover:shadow-md dark:hover:shadow-primary/10 transition-all duration-300 p-4 ${
+      className={`group bg-card rounded-lg border border-border hover:shadow transition-all duration-300 p-4 ${
         onClick ? 'cursor-pointer' : ''
       } ${className}`}
       onClick={handleCardClick}

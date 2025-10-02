@@ -235,14 +235,14 @@ function MeetingList() {
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 onClick={() => setViewMode('grid')}
-                className="rounded-r-none"
+                className={`rounded-r-none ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : ''}`}
               >
                 <GridIcon className="w-4 h-4" />
               </Button>
               <Button
                 variant={viewMode === 'list' ? 'default' : 'ghost'}
                 onClick={() => setViewMode('list')}
-                className="rounded-l-none"
+                className={`rounded-l-none ${viewMode === 'list' ? 'bg-accent text-accent-foreground' : ''}`}
               >
                 <ListIcon className="w-4 h-4" />
               </Button>
