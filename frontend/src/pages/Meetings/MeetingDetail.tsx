@@ -40,8 +40,10 @@ function MeetingDetail() {
   const [success, setSuccess] = useState<string | null>(null);
   const [showAnalysisSuccess, setShowAnalysisSuccess] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  console.log("searchParams:", searchParams.getAll('tab'));
   const showMeetingDisplay = searchParams.get("display") === "full";
   const activeTab = searchParams.get("tab") || "recordings";
+  console.log("activeTab:", activeTab);
 
   const { exitFullscreen, enterFullscreen } =
     useRecordingPanel();

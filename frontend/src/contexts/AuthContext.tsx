@@ -30,14 +30,17 @@ function getStoredToken(): string | null {
   }
 }
 
+const storedToken = getStoredToken();
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(getStoredToken());
+  const [token, setToken] = useState<string | null>(storedToken);
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(!!storedToken);
 
   useEffect(() => {
     if (!token) {
       setUser(null);
+      setLoading(false);
       return;
     }
     let active = true;
