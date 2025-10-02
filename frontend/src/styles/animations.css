@@ -294,3 +294,23 @@
 .animate-recording-pulse {
   animation: recording-pulse 1.2s ease-in-out infinite;
 }
+
+/* Emitting animation - ripple effect for connection status */
+@keyframes emit {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 6px currentColor;
+    opacity: 0.5;
+  }
+  100% {
+    box-shadow: 0 0 0 12px currentColor;
+    opacity: 0;
+  }
+}
+
+.animate-emit {
+  animation: emit 0.8s ease-out;
+}

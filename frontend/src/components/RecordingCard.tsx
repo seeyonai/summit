@@ -107,11 +107,11 @@ function RecordingCard({
     
     switch (recording.meeting.status) {
       case 'completed':
-        return 'border-t-green-500';
+        return 'border-t-success';
       case 'in_progress':
         return 'border-t-primary';
       case 'scheduled':
-        return 'border-t-gray-400';
+        return 'border-t-muted';
       default:
         return 'border-t-destructive';
     }

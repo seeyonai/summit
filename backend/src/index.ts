@@ -18,6 +18,7 @@ import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings/index';
 import configRouter from './routes/config';
 import { LiveRecorderService } from './services/LiveRecorderService';
+import { HealthCheckService } from './services/HealthCheckService';
 import { checkAllServices, generateHealthTable } from './utils/healthChecker';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
@@ -113,7 +114,7 @@ async function startServer() {
       debug(`Summit API listening on port ${PORT}`);
     });
 
-    // Initialize WebSocket service for live recording
+    // Initialize WebSocket services
     const liveRecorderService = new LiveRecorderService(server);
     debug('LiveRecorderService initialized');
   } catch (error) {

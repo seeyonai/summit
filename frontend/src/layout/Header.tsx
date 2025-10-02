@@ -2,31 +2,21 @@ import React from 'react';
 import { Navigation } from './Navigation';
 import { ThemeToggle } from './ThemeToggle';
 import UserMenu from '@/components/UserMenu';
+import AppLogo from '@/components/AppLogo';
 import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from './useTheme';
-import { useConfig } from '@/contexts/ConfigContext';
 
 export const Header: React.FC<{
   isRecording: boolean;
 }> = ({ isRecording }) => {
   const { toggleFloatingPanel, showFloatingPanel } = useRecordingPanel();
   const { user } = useAuth();
-  const { theme } = useTheme();
-  const { config } = useConfig();
-  const logo = (theme === 'dark' ? (config.logoDarkUrl || config.logoUrl) : (config.logoUrl || config.logoDarkUrl)) || '/logo-rectangle.png';
   return (
     <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-8">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <img src={logo} alt={config.appName || 'App'} className="h-8 w-auto" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-success rounded-full border-2 border-background"></div>
-              </div>
-              <h1 className="text-2xl gradient-text" style={{ fontFamily: 'Impact, "Arial Narrow", "Helvetica Neue Condensed"' }}>{config.appName || 'Summit AI'}</h1>
-            </div>
+            <AppLogo />
             <Navigation />
           </div>
           <div className="flex items-center space-x-2">
