@@ -8,8 +8,10 @@ import {
   CopyIcon,
   DownloadIcon,
   MessageSquareIcon,
-  UsersIcon
+  UsersIcon,
+  HashIcon
 } from 'lucide-react';
+import StatisticsCard from '@/components/StatisticsCard';
 
 interface MeetingTranscriptProps {
   meeting: Meeting;
@@ -196,25 +198,25 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
               </div>
               
               {/* Text Statistics */}
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {meeting.finalTranscript.length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">字符数</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {meeting.finalTranscript.split(/\s+/).length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">词数</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {meeting.finalTranscript.split(/[。！？.!?]+/).filter(s => s.trim()).length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">句数</p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                <StatisticsCard
+                  icon={<FileTextIcon className="w-4 h-4 text-primary" />}
+                  label="字符数"
+                  value={meeting.finalTranscript.length.toLocaleString()}
+                  description="文本中的字符总数"
+                />
+                <StatisticsCard
+                  icon={<HashIcon className="w-4 h-4 text-accent" />}
+                  label="词数"
+                  value={meeting.finalTranscript.split(/\s+/).filter(Boolean).length.toLocaleString()}
+                  description="按空白分隔统计"
+                />
+                <StatisticsCard
+                  icon={<MessageSquareIcon className="w-4 h-4 text-success" />}
+                  label="句数"
+                  value={meeting.finalTranscript.split(/[。！？.!?]+/).filter(s => s.trim()).length.toLocaleString()}
+                  description="按句号/问号/感叹号划分"
+                />
               </div>
             </div>
           ) : (

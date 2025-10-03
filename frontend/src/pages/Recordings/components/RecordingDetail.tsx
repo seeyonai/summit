@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
  
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import RecordingInfo from './RecordingInfo';
 import RecordingOrganize from './RecordingOrganize';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
 import { useRecording } from './hooks/useRecording';
+import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
 import {
   SaveIcon,
   LinkIcon,
@@ -62,6 +63,9 @@ function RecordingDetailRedesign() {
     handleDownloadRecording,
     deleteRecording,
   } = useRecording();
+
+  const speakerNames = recording?.speakerNames;
+  const speakerNameMap = useMemo(() => buildSpeakerNameMap(speakerNames), [speakerNames]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -317,7 +321,7 @@ function RecordingDetailRedesign() {
                 recording={recording}
                 timestamps={recording.speakerSegments?.map(segment => ({
                   time: segment.startTime,
-                  label: `说话人 ${segment.speakerIndex + 1}`
+                  label: getSpeakerDisplayName(segment.speakerIndex, speakerNameMap)
                 })) || []}
               />
             </div>

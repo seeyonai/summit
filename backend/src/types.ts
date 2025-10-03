@@ -34,6 +34,7 @@ export interface RecordingResponse {
   transcription?: string;
   verbatimTranscript?: string;
   speakerSegments?: SpeakerSegment[];
+  speakerNames?: baseTypes.SpeakerName[];
   timeStampedNotes?: TimeStampedNote[];
   alignmentItems?: AlignmentItem[];
   numSpeakers?: number;

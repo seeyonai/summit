@@ -108,6 +108,35 @@ router.put('/:recordingId', requireRecordingWriteAccess(), asyncHandler(async (r
     throw badRequest('organizedSpeeches must be an array', 'recording.invalid_payload');
   }
 
+  // Validate speakerNames if provided
+  if (updateData.speakerNames !== undefined) {
+    if (!Array.isArray(updateData.speakerNames)) {
+      throw badRequest('speakerNames must be an array', 'recording.invalid_payload');
+    }
+
+    for (const entry of updateData.speakerNames) {
+      if (typeof entry !== 'object' || entry === null) {
+        throw badRequest('Each speakerName entry must be an object', 'recording.invalid_payload');
+      }
+
+      if (typeof entry.index !== 'number' || entry.index < 0 || !Number.isInteger(entry.index)) {
+        throw badRequest('speakerName index must be a non-negative integer', 'recording.invalid_payload');
+      }
+
+      if (typeof entry.name !== 'string') {
+        throw badRequest('speakerName name must be a string', 'recording.invalid_payload');
+      }
+
+      const trimmedName = entry.name.trim();
+      if (trimmedName.length === 0) {
+        throw badRequest('speakerName name cannot be empty or whitespace-only', 'recording.invalid_payload');
+      }
+
+      // Normalize the name (trim whitespace)
+      entry.name = trimmedName;
+    }
+  }
+
   const result = await recordingService.updateRecording(recordingId, updateData);
   const lang = getPreferredLang(req);
   let message = result.message;

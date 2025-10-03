@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import type { Recording as BaseRecording } from '@base/types';
 import { fileUrlFor } from '@/services/api';
+import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
 
 interface AudioPlayerProps {
   showFilename?: boolean;
@@ -12,6 +13,8 @@ interface AudioPlayerProps {
 
 function AudioPlayer({ recording, onTimestampClick, showFilename = true }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const speakerNames = recording.speakerNames;
+  const speakerNameMap = useMemo(() => buildSpeakerNameMap(speakerNames), [speakerNames]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -54,7 +57,7 @@ function AudioPlayer({ recording, onTimestampClick, showFilename = true }: Audio
                   onClick={() => handleSeek(segment.startTime)}
                   className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs hover:bg-green-200 transition-colors"
                 >
-                  说话人{segment.speakerIndex + 1}: {formatTime(segment.startTime)}-{formatTime(segment.endTime)}
+                  {getSpeakerDisplayName(segment.speakerIndex, speakerNameMap)}: {formatTime(segment.startTime)}-{formatTime(segment.endTime)}
                 </button>
               ))}
             </div>

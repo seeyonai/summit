@@ -61,7 +61,7 @@ function RecordingCard({
   const recordingId = ('_id' in recording ? (recording as any)._id : '') as string;
   const hasTranscription = !!recording.transcription;
   const hasSpeakers = recording.speakerSegments && recording.speakerSegments.length > 0;
-  const numSpeakers = recording.numSpeakers || 
+  const numSpeakers = recording.numSpeakers ||
     (hasSpeakers ? new Set(recording.speakerSegments?.map(s => s.speakerIndex)).size : 0);
 
   const getSourceIcon = (source?: 'live' | 'upload' | 'concatenated') => {
@@ -96,7 +96,7 @@ function RecordingCard({
     }
   };
 
-  const handleAction = (actionFn?: (recording: Recording, e?: React.MouseEvent) => void) => 
+  const handleAction = (actionFn?: (recording: Recording, e?: React.MouseEvent) => void) =>
     (e: React.MouseEvent) => {
       e.stopPropagation();
       if (actionFn) {
@@ -122,7 +122,7 @@ function RecordingCard({
     const colorClasses = variant === 'concatenated'
       ? 'from-primary/30 to-accent/30 dark:from-primary/40 dark:to-accent/40'
       : 'from-primary/60 to-primary/60 dark:from-primary/70 dark:to-primary/70';
-    
+
     return Array.from({ length: barCount }).map((_, i) => (
       <div
         key={i}
@@ -137,7 +137,7 @@ function RecordingCard({
 
   const getStatusBorderColor = () => {
     if (!recording.meeting) return '';
-    
+
     switch (recording.meeting.status) {
       case 'completed':
         return 'border-t-success';
@@ -161,14 +161,33 @@ function RecordingCard({
                   拼接录音
                 </Badge>
               )}
-              <CardTitle className="text-base font-semibold truncate dark:text-gray-100">
+              <CardTitle className="text-base font-semibold truncate dark:text-gray-100 flex items-center gap-2">
+                {/* Source Icon */}
+                {showSource && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="p-1 -ml-1">
+                          {(() => {
+                            const SourceIcon = getSourceIcon(recording.source);
+                            return <SourceIcon className="w-4 h-4 text-muted-foreground" />;
+                          })()}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{getSourceLabel(recording.source)}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
                 {(recording as any).originalFileName || recordingId}
               </CardTitle>
             </div>
             <CardDescription className="mt-1 text-xs dark:text-gray-400">
               {formatDate(recording.createdAt)}
             </CardDescription>
-            
+
             {/* Meeting Information */}
             {showMeetingInfo && recording.meeting && (
               <div className="mt-2 flex items-center gap-2">
@@ -179,27 +198,8 @@ function RecordingCard({
               </div>
             )}
           </div>
-          
+
           <div className="flex items-start gap-1">
-            {/* Source Icon */}
-            {showSource && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="p-1.5 rounded-md bg-muted/50 hover:bg-muted transition-colors">
-                      {(() => {
-                        const SourceIcon = getSourceIcon(recording.source);
-                        return <SourceIcon className="w-3.5 h-3.5 text-muted-foreground" />;
-                      })()}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{getSourceLabel(recording.source)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            
             {hasTranscription && (
               <Badge variant="secondary" className="bg-badge-success">
                 <CheckCircleIcon className="w-3 h-3 mr-1" />
@@ -219,11 +219,10 @@ function RecordingCard({
       <CardContent className="flex flex-col flex-1">
         <div className="flex-1 space-y-4">
           {/* Audio Waveform Visualization */}
-          <div className={`group relative ${variant === 'compact' ? 'h-16' : 'h-20'} bg-gradient-to-r ${
-            variant === 'concatenated' 
-              ? 'from-primary/5 to-accent/5' 
+          <div className={`group relative ${variant === 'compact' ? 'h-16' : 'h-20'} bg-gradient-to-r ${variant === 'concatenated'
+              ? 'from-primary/5 to-accent/5'
               : 'from-primary/5 to-primary/5'
-          } rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800`}>
+            } rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800`}>
             <div className="absolute inset-0 flex items-center justify-center gap-1 px-4">
               {getWaveformBars()}
             </div>
@@ -275,7 +274,7 @@ function RecordingCard({
               <EyeIcon className="w-3 h-3 mr-1" />
               {variant === 'compact' ? '查看' : '详情'}
             </Button>
-            
+
             {defaultActions.onAssociate && (
               <Button
                 size="sm"
@@ -285,7 +284,7 @@ function RecordingCard({
                 <LinkIcon className="w-3 h-3" />
               </Button>
             )}
-            
+
             <Button
               size="sm"
               variant="outline"
@@ -293,7 +292,7 @@ function RecordingCard({
             >
               <DownloadIcon className="w-3 h-3" />
             </Button>
-            
+
             {defaultActions.onDelete && (
               <Button
                 size="sm"

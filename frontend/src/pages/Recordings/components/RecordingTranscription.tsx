@@ -16,8 +16,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { apiService } from '@/services/api';
+import StatisticsCard from '@/components/StatisticsCard';
 import type { Recording } from '@/types';
-import { MicIcon, CopyIcon, DownloadIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon, EditIcon, XIcon } from 'lucide-react';
+import { MicIcon, CopyIcon, DownloadIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon, EditIcon, XIcon, MessageSquareIcon } from 'lucide-react';
 import PipelineStageCard from './PipelineStageCard';
 
 interface RecordingTranscriptionProps {
@@ -447,31 +448,31 @@ function RecordingTranscription({
                 
                 {/* Word Statistics */}
                 {recording.transcription && (
-                  <div className="grid grid-cols-4 gap-3 p-3 bg-muted rounded-lg">
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-foreground">
-                        {getWordStats(recording.transcription).characters.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">字符</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-foreground">
-                        {getWordStats(recording.transcription).words.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">词数</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-foreground">
-                        {getWordStats(recording.transcription).sentences.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">句数</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-foreground">
-                        {getWordStats(recording.transcription).paragraphs.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">段落</p>
-                    </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted rounded-lg">
+                    <StatisticsCard
+                      icon={<FileTextIcon className="w-4 h-4 text-primary" />}
+                      label="字符"
+                      value={getWordStats(recording.transcription).characters.toLocaleString()}
+                      description="文本中的字符总数"
+                    />
+                    <StatisticsCard
+                      icon={<HashIcon className="w-4 h-4 text-accent" />}
+                      label="词数"
+                      value={getWordStats(recording.transcription).words.toLocaleString()}
+                      description="按空白分隔统计"
+                    />
+                    <StatisticsCard
+                      icon={<MessageSquareIcon className="w-4 h-4 text-success" />}
+                      label="句数"
+                      value={getWordStats(recording.transcription).sentences.toLocaleString()}
+                      description="按句号/问号/感叹号划分"
+                    />
+                    <StatisticsCard
+                      icon={<FileTextIcon className="w-4 h-4 text-foreground" />}
+                      label="段落"
+                      value={getWordStats(recording.transcription).paragraphs.toLocaleString()}
+                      description="按空行划分"
+                    />
                   </div>
                 )}
           </div>

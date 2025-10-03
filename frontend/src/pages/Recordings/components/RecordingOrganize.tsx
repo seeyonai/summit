@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import type { Recording, OrganizedSpeech } from '@/types';
 import { apiService } from '@/services/api';
 import { UsersIcon, ClockIcon, SparklesIcon, PencilIcon, SaveIcon, XIcon } from 'lucide-react';
 import PipelineStageCard from './PipelineStageCard';
+import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
 
 interface RecordingOrganizeProps {
   recording: Recording;
@@ -23,6 +24,8 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editedSpeech, setEditedSpeech] = useState<OrganizedSpeech | null>(null);
   const [saving, setSaving] = useState(false);
+  const speakerNames = recording.speakerNames;
+  const speakerNameMap = useMemo(() => buildSpeakerNameMap(speakerNames), [speakerNames]);
 
   const borderColors = [
     'border-blue-500',
@@ -166,7 +169,7 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
                     </div>
                   ) : (
                     <Badge className={badgeClass}>
-                      <UsersIcon className="w-3 h-3 mr-1" /> 说话人 {displaySpeech.speakerIndex + 1}
+                      <UsersIcon className="w-3 h-3 mr-1" /> {getSpeakerDisplayName(displaySpeech.speakerIndex, speakerNameMap)}
                     </Badge>
                   )}
                   <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
@@ -215,5 +218,3 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
 }
 
 export default RecordingOrganize;
-
-

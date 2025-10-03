@@ -27,7 +27,9 @@ import {
   AlertCircleIcon,
   ActivityIcon,
   FolderOpenIcon,
-  TargetIcon
+  TargetIcon,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 function MeetingList() {
@@ -37,6 +39,7 @@ function MeetingList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set(['completed']));
   
   const getTomorrow9AM = () => {
     const tomorrow = new Date();
@@ -96,6 +99,13 @@ function MeetingList() {
 
   // Filtered meetings based on search and filter
   const filteredMeetings = useMemo(() => {
+    // Define status priority: in_progress > scheduled > completed > others
+    const statusPriority = {
+      in_progress: 1,
+      scheduled: 2,
+      completed: 3
+    };
+    
     return (meetings || [])
       .filter(meeting => {
         const matchesSearch = searchQuery === '' || 
@@ -108,7 +118,15 @@ function MeetingList() {
         return matchesSearch && matchesFilter;
       })
       .sort((a, b) => {
-        // Sort by most recently updated (use createdAt or updatedAt if available, fallback to scheduledStart)
+        // First, sort by status priority
+        const priorityA = statusPriority[a.status as keyof typeof statusPriority] || 999;
+        const priorityB = statusPriority[b.status as keyof typeof statusPriority] || 999;
+        
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        
+        // Within same status, sort by most recently updated
         const dateA = a.updatedAt || a.createdAt || a.scheduledStart;
         const dateB = b.updatedAt || b.createdAt || b.scheduledStart;
         const timeA = dateA ? new Date(dateA as string | number | Date).getTime() : 0;
@@ -116,6 +134,43 @@ function MeetingList() {
         return timeB - timeA;
       });
   }, [meetings, searchQuery, filterStatus]);
+
+  // Group meetings by status for visual grouping
+  const groupedMeetings = useMemo(() => {
+    const groups: { status: string; label: string; icon: React.ElementType; meetings: typeof filteredMeetings }[] = [];
+    
+    const inProgress = filteredMeetings.filter(m => m.status === 'in_progress');
+    const scheduled = filteredMeetings.filter(m => m.status === 'scheduled');
+    const completed = filteredMeetings.filter(m => m.status === 'completed');
+    const others = filteredMeetings.filter(m => m.status !== 'in_progress' && m.status !== 'scheduled' && m.status !== 'completed');
+    
+    if (inProgress.length > 0) {
+      groups.push({ status: 'in_progress', label: '进行中', icon: ActivityIcon, meetings: inProgress });
+    }
+    if (scheduled.length > 0) {
+      groups.push({ status: 'scheduled', label: '已排期', icon: Calendar, meetings: scheduled });
+    }
+    if (completed.length > 0) {
+      groups.push({ status: 'completed', label: '已完成', icon: CheckCircle, meetings: completed });
+    }
+    if (others.length > 0) {
+      groups.push({ status: 'other', label: '其他', icon: FolderOpenIcon, meetings: others });
+    }
+    
+    return groups;
+  }, [filteredMeetings]);
+
+  const toggleGroupCollapse = (status: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      return next;
+    });
+  };
 
   // Statistics
   const stats = useMemo(() => {
@@ -296,19 +351,43 @@ function MeetingList() {
 
         {/* Meetings Grid/List */}
         {!loading && !error && filteredMeetings.length > 0 && (
-          viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMeetings.map((meeting) => (
-                <MeetingCard key={meeting._id} meeting={meeting} onDelete={deleteMeeting} />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredMeetings.map((meeting) => (
-                <MeetingListItem key={meeting._id} meeting={meeting} onDelete={deleteMeeting} />
-              ))}
-            </div>
-          )
+          <div className="space-y-8">
+            {groupedMeetings.map((group) => {
+              const isCollapsed = collapsedGroups.has(group.status);
+              return (
+                <div key={group.status}>
+                  <button
+                    onClick={() => toggleGroupCollapse(group.status)}
+                    className="flex items-center gap-2 mb-4 w-full text-left hover:opacity-70 transition-opacity"
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                    )}
+                    <group.icon className="w-5 h-5 text-muted-foreground" />
+                    <h2 className="text-lg font-semibold text-foreground">{group.label}</h2>
+                    <span className="text-sm text-muted-foreground">({group.meetings.length})</span>
+                  </button>
+                  {!isCollapsed && (
+                    viewMode === 'grid' ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {group.meetings.map((meeting) => (
+                          <MeetingCard key={meeting._id} meeting={meeting} onDelete={deleteMeeting} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {group.meetings.map((meeting) => (
+                          <MeetingListItem key={meeting._id} meeting={meeting} onDelete={deleteMeeting} />
+                        ))}
+                      </div>
+                    )
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {/* Empty State */}

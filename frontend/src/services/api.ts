@@ -159,6 +159,10 @@ interface RecordingUpdatePayload {
     rawText: string;
     polishedText: string;
   }>;
+  speakerNames?: Array<{
+    index: number;
+    name: string;
+  }>;
 }
 
 type SegmentRecordingOptions = Pick<SegmentationRequest, 'oracleNumSpeakers' | 'returnText'>;

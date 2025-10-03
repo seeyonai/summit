@@ -346,6 +346,11 @@ export async function updateRecording(recordingId: string, updateData: Recording
     remoteUpdates.organizedSpeeches = updateData.organizedSpeeches;
   }
 
+  if (Array.isArray(updateData.speakerNames)) {
+    updates.speakerNames = updateData.speakerNames;
+    remoteUpdates.speakerNames = updateData.speakerNames;
+  }
+
   if (Array.isArray(updateData.alignmentItems)) {
     updates.alignmentItems = updateData.alignmentItems;
     remoteUpdates.alignmentItems = updateData.alignmentItems;

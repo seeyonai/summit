@@ -4,6 +4,11 @@ export interface SpeakerSegment {
   speakerIndex: number;
 }
 
+export interface SpeakerName {
+  index: number;
+  name: string;
+}
+
 export interface OrganizedSpeech {
   speakerIndex: number;
   startTime: number;
@@ -38,6 +43,7 @@ export interface Recording {
   transcription?: string;
   verbatimTranscript?: string;
   speakerSegments?: SpeakerSegment[];
+  speakerNames?: SpeakerName[];
   timeStampedNotes?: TimeStampedNote[];
   alignmentItems?: AlignmentItem[];
   numSpeakers?: number;
