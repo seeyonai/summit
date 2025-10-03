@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-/* card imports removed */
-import { Separator } from '@/components/ui/separator';
 import SearchInput from '@/components/SearchInput';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -20,6 +17,7 @@ import StatisticsCard from '@/components/StatisticsCard';
 import type { Recording } from '@/types';
 import { MicIcon, CopyIcon, DownloadIcon, FileTextIcon, SaveIcon, RotateCcwIcon, EyeIcon, HashIcon, EditIcon, XIcon, MessageSquareIcon } from 'lucide-react';
 import PipelineStageCard from './PipelineStageCard';
+import HotwordSelection from '@/components/HotwordSelection';
 
 interface RecordingTranscriptionProps {
   recording: Recording;
@@ -51,14 +49,12 @@ function RecordingTranscription({
   const autoSaveTimer = useRef<number | null>(null);
   const [viewMode, setViewMode] = useState<'formatted' | 'plain' | 'timeline'>('formatted');
   const [showRedoConfirm, setShowRedoConfirm] = useState(false);
-  const [hotwords, setHotwords] = useState<string[]>([]);
-  const [customHotword, setCustomHotword] = useState('');
-  const [showHotwordDialog, setShowHotwordDialog] = useState(false);
+  const [selectedHotwords, setSelectedHotwords] = useState<string[]>(recording.hotwords ?? []);
+  const [showHotwordSelection, setShowHotwordSelection] = useState(false);
 
-  const predefinedHotwords = [
-    '会议', '项目', '任务', '时间', '截止日期', '负责人', '完成', '开始', '结束', '讨论',
-    '决定', '行动', '计划', '目标', '问题', '解决方案', '团队', '客户', '产品', '功能'
-  ];
+  useEffect(() => {
+    setSelectedHotwords(recording.hotwords ?? []);
+  }, [recording.hotwords]);
 
   const generateTranscription = async () => {
     try {
@@ -76,7 +72,7 @@ function RecordingTranscription({
         });
       }, 1000);
       
-      const hotwordParam = hotwords.length > 0 ? hotwords.join(' ') : undefined;
+      const hotwordParam = selectedHotwords.length > 0 ? selectedHotwords.join(' ') : undefined;
       const { message } = await apiService.transcribeRecording(recording._id, hotwordParam);
       
       clearInterval(progressInterval);
@@ -224,24 +220,29 @@ function RecordingTranscription({
     await generateTranscription();
   };
 
-  // Hotword management functions
-  const toggleHotword = (word: string) => {
-    setHotwords(prev => 
-      prev.includes(word) 
-        ? prev.filter(w => w !== word)
-        : [...prev, word]
-    );
-  };
+  const handleHotwordsApply = async (words: string[], useAll: boolean) => {
+    const appliedHotwords = useAll
+      ? words.filter(Boolean)
+      : Array.from(new Set(words.filter(Boolean)));
+    const currentHotwords = selectedHotwords;
 
-  const addCustomHotword = () => {
-    if (customHotword.trim() && !hotwords.includes(customHotword.trim())) {
-      setHotwords(prev => [...prev, customHotword.trim()]);
-      setCustomHotword('');
+    if (
+      appliedHotwords.length === currentHotwords.length &&
+      appliedHotwords.every((word, index) => word === currentHotwords[index])
+    ) {
+      return;
     }
-  };
 
-  const removeHotword = (word: string) => {
-    setHotwords(prev => prev.filter(w => w !== word));
+    setSelectedHotwords(appliedHotwords);
+
+    try {
+      await apiService.updateRecording(recording._id, { hotwords: appliedHotwords });
+      await onRefresh();
+      setSuccess('热词已更新');
+    } catch (err) {
+      setSelectedHotwords(currentHotwords);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    }
   };
 
   const headerButtons = isEditing ? (
@@ -285,13 +286,36 @@ function RecordingTranscription({
     </Button>
   ) : null;
 
+  const basePrimaryControl = primaryButton ?? headerButtons;
+
+  const hotwordButton = (
+    <Button
+      onClick={() => setShowHotwordSelection(true)}
+      variant="outline"
+      size="sm"
+    >
+      <HashIcon className="w-4 h-4 mr-2" />
+      选择热词
+      {selectedHotwords.length > 0 && (
+        <span className="ml-1">({selectedHotwords.length})</span>
+      )}
+    </Button>
+  );
+
+  const combinedPrimaryControls = (
+    <div className="flex items-center gap-2">
+      {basePrimaryControl}
+      {hotwordButton}
+    </div>
+  );
+
   return (
     <>
       <PipelineStageCard
         icon={<FileTextIcon className="w-5 h-5 text-white" />}
         title="转录内容"
         description="音频的文字转录结果"
-        primaryButton={primaryButton || headerButtons}
+        primaryButton={combinedPrimaryControls}
         isEmpty={!recording.transcription}
         emptyIcon={<MicIcon className="w-12 h-12" />}
         emptyMessage="暂无转录内容"
@@ -327,16 +351,6 @@ function RecordingTranscription({
               <option value="base">中</option>
               <option value="lg">大</option>
             </select>
-
-            {/* Hotword Selection */}
-            <Button
-              onClick={() => setShowHotwordDialog(true)}
-              variant="outline"
-              size="sm"
-            >
-              <HashIcon className="w-4 h-4 mr-2" />
-              热词 ({hotwords.length})
-            </Button>
 
             {/* Export Controls */}
             {recording.transcription && !isEditing && (
@@ -377,6 +391,17 @@ function RecordingTranscription({
               </>
             )}
         </div>
+
+        {selectedHotwords.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>已选择热词:</span>
+            {selectedHotwords.map((word) => (
+              <Badge key={word} variant="secondary">
+                {word}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         {/* Transcription Progress */}
         {transcribing && (
@@ -501,89 +526,12 @@ function RecordingTranscription({
         </DialogContent>
       </Dialog>
 
-      {/* Hotword Selection Dialog */}
-      <Dialog open={showHotwordDialog} onOpenChange={setShowHotwordDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>选择热词</DialogTitle>
-            <DialogDescription>
-              选择或添加热词以提高转录准确性。热词会被优先识别。
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Selected Hotwords */}
-            {hotwords.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  已选择的热词
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {hotwords.map((word) => (
-                    <Badge
-                      key={word}
-                      variant="secondary"
-                      className="cursor-pointer hover:bg-destructive dark:hover:bg-destructive/30"
-                      onClick={() => removeHotword(word)}
-                    >
-                      {word}
-                      <span className="ml-1 text-red-500 dark:text-red-400">×</span>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Predefined Hotwords */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                预设热词
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {predefinedHotwords.map((word) => (
-                  <Button
-                    key={word}
-                    variant={hotwords.includes(word) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => toggleHotword(word)}
-                    className="text-left"
-                  >
-                    {word}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom Hotword Input */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                添加自定义热词
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="输入自定义热词"
-                  value={customHotword}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomHotword(e.target.value)}
-                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                    if (e.key === 'Enter') {
-                      addCustomHotword();
-                    }
-                  }}
-                />
-                <Button onClick={addCustomHotword} size="sm">
-                  添加
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowHotwordDialog(false)}>
-              完成
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <HotwordSelection
+        isOpen={showHotwordSelection}
+        onClose={() => setShowHotwordSelection(false)}
+        onApply={handleHotwordsApply}
+        currentHotwords={selectedHotwords}
+      />
     </>
   );
 }

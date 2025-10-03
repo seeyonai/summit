@@ -152,6 +152,7 @@ export function fileUrlFor(id: string): string {
 interface RecordingUpdatePayload {
   transcription?: string;
   verbatimTranscript?: string;
+  hotwords?: string[];
   organizedSpeeches?: Array<{
     speakerIndex: number;
     startTime: number;

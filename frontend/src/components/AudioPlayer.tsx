@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import type { Recording as BaseRecording } from '@base/types';
 import { fileUrlFor } from '@/services/api';
 import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
+import { RadioIcon } from 'lucide-react';
 
 interface AudioPlayerProps {
   showFilename?: boolean;
@@ -49,7 +50,10 @@ function AudioPlayer({ recording, onTimestampClick, showFilename = true }: Audio
         {/* Speaker Segments */}
         {recording.speakerSegments && recording.speakerSegments.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-gray-700">说话人分段</h3>
+            <div className="flex items-center gap-2">
+              <RadioIcon className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium text-gray-700">说话人分段</h3>
+            </div>
             <div className="flex flex-wrap gap-2">
               {recording.speakerSegments.map((segment, index) => (
                 <button

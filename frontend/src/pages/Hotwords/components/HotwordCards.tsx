@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Edit, Trash2, AlertCircle } from 'lucide-react';
 import type { Hotword } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,8 +59,8 @@ const HotwordCards: React.FC<HotwordCardsProps> = ({
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-lg">{hotword.word}</span>
-                  <Badge variant={hotword.isActive ? 'default' : 'secondary'}>
+                  <span className="font-medium font-serif text-xl flex-grow">{hotword.word}</span>
+                  <Badge variant={hotword.isActive ? 'default' : 'secondary'} className="flex-shrink-0">
                     {hotword.isActive ? '启用' : '禁用'}
                   </Badge>
                   {hotword.isPublic && (
@@ -75,12 +76,10 @@ const HotwordCards: React.FC<HotwordCardsProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600">是否启用:</label>
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={hotword.isActive}
-                  onChange={() => onToggleActive(hotword)}
+                  onCheckedChange={() => onToggleActive(hotword)}
                   disabled={isLoading || (!!hotword.isPublic && !isAdmin)}
-                  className="rounded"
                 />
               </div>
               

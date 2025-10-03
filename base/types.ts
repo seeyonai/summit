@@ -51,7 +51,8 @@ export interface Recording {
   channels?: number;
   format?: string;
   source?: 'live' | 'upload' | 'concatenated';
-  meeting?: Meeting;
+  // meeting?: Meeting; // meeting is frontend only
+  hotwords?: string[];
   organizedSpeeches?: OrganizedSpeech[];
   createdAt?: Date;
   metadata?: {

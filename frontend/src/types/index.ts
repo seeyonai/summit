@@ -98,7 +98,7 @@ export interface HealthStatus {
 // Audio and recording related types
 export type SpeakerSegment = baseTypes.SpeakerSegment;
 
-export type Recording = baseTypes.Recording & Id & Timestamp;
+export type Recording = baseTypes.Recording & Id & Timestamp & { meeting?: Meeting };
 export type RecordCreate = Partial<Recording> & Pick<Recording, 'originalFileName'>;
 export type RecordUpdate = Partial<Recording> & Pick<Recording, '_id'>;
 

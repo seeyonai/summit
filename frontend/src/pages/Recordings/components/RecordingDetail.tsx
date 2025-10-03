@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
-import HotwordSelection from '@/components/HotwordSelection';
 import BackButton from '@/components/BackButton';
 import StatisticsCard from '@/components/StatisticsCard';
  
@@ -26,7 +25,6 @@ import {
   ClockIcon,
   FileAudioIcon,
   AlertCircleIcon,
-  HeadphonesIcon,
   ActivityIcon,
   BarChart3Icon,
   FileTextIcon,
@@ -38,10 +36,10 @@ import {
   Trash2Icon
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { getSourceIcon, getSourceLabel } from '@/utils/recordingSource';
 
 
 function RecordingDetailRedesign() {
-  const [showHotwordSelection, setShowHotwordSelection] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showAssociateModal, setShowAssociateModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -59,7 +57,6 @@ function RecordingDetailRedesign() {
     fetchRecording,
     updateRecording,
     toggleEditing,
-    generateTranscription,
     handleDownloadRecording,
     deleteRecording,
   } = useRecording();
@@ -87,11 +84,6 @@ function RecordingDetailRedesign() {
   };
 
   // note: segmentation and polish handlers are unused in this view
-
-  const handleHotwordTranscribe = () => {
-    setShowHotwordSelection(false);
-    generateTranscription();
-  };
 
   // Open associate modal
   const openAssociateModal = () => {
@@ -203,13 +195,29 @@ function RecordingDetailRedesign() {
             <div className="flex justify-between items-start mb-6">
               <div className="flex-1">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <HeadphonesIcon className="w-8 h-8 text-muted-foreground" />
-                  </div>
                   <div className="flex-1">
-                    <h1 className="text-xl font-bold text-foreground mb-2">
-                      {(recording as any).originalFileName || recording._id}
-                    </h1>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const SourceIcon = getSourceIcon(recording.source);
+                        return (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <SourceIcon className="w-4 h-4" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{getSourceLabel(recording.source)}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })()}
+                      <h1 className="text-xl font-bold text-foreground mb-2">
+                        {(recording as any).originalFileName || recording._id}
+                      </h1>
+                    </div>
 
                     {/* Meeting Information */}
                     {recording.meeting && (
@@ -313,7 +321,10 @@ function RecordingDetailRedesign() {
             {/* Audio Player */}
             <div className="pt-4">
               <div className="flex items-center gap-2 mb-3">
-                <HeadphonesIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                {(() => {
+                  const SourceIcon = getSourceIcon(recording.source);
+                  return <SourceIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
+                })()}
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">音频播放器</h3>
               </div>
               <AudioPlayer
@@ -401,16 +412,6 @@ function RecordingDetailRedesign() {
             )}
           </DialogContent>
         </Dialog>
-
-        {/* Hotword Selection Modal */}
-        {showHotwordSelection && (
-          <HotwordSelection
-            isOpen={showHotwordSelection}
-            onClose={() => setShowHotwordSelection(false)}
-            onApply={handleHotwordTranscribe}
-            currentHotwords={recording.transcription ? [recording.transcription] : []}
-          />
-        )}
 
         {/* Associate to Meeting Modal */}
         {recording && (
