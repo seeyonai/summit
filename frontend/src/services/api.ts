@@ -406,6 +406,16 @@ class ApiService {
     return this.delete(`/api/meetings/${id}`);
   }
 
+  async concatenateMeetingRecordings(meetingId: string, recordingIds?: string[]): Promise<{
+    success?: boolean;
+    meeting?: MeetingWithRecordings | null;
+    recording: Recording;
+    message?: string;
+  }> {
+    const payload = Array.isArray(recordingIds) && recordingIds.length > 0 ? { recordingIds } : undefined;
+    return this.post(`/api/meetings/${meetingId}/concatenate-recordings`, payload);
+  }
+
   async addMeetingMember(meetingId: string, userId: string) {
     return this.post(`/api/meetings/${meetingId}/members`, { userId });
   }
@@ -535,6 +545,10 @@ class ApiService {
   // Meeting ↔ Recording association
   async addRecordingToMeeting(meetingId: string, recordingId: string): Promise<MeetingWithRecordings> {
     return this.post<MeetingWithRecordings>(`/api/meetings/${meetingId}/recordings`, { recordingId });
+  }
+
+  async removeRecordingFromMeeting(meetingId: string, recordingId: string): Promise<Meeting> {
+    return this.delete<Meeting>(`/api/meetings/${meetingId}/recordings/${recordingId}`);
   }
 }
 

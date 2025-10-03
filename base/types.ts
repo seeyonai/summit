@@ -44,7 +44,8 @@ export interface Recording {
   sampleRate?: number;
   channels?: number;
   format?: string;
-  source?: 'live' | 'upload';
+  source?: 'live' | 'upload' | 'concatenated';
+  kind?: 'original' | 'concatenated';
   meeting?: Meeting;
   organizedSpeeches?: OrganizedSpeech[];
   createdAt?: Date;
@@ -105,6 +106,7 @@ export interface Meeting {
   participants?: number;
   recordings?: Recording[];
   recordingOrder?: MeetingRecordingOrderItem[];
+  concatenatedRecording?: Recording | null;
 }
 
 export interface SegmentationResponse {

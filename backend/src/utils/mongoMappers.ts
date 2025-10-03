@@ -30,7 +30,7 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     ownerId: meetingDoc.ownerId,
     members: meetingDoc.members,
     recordings: meetingDoc.recordings,
-    combinedRecording: meetingDoc.combinedRecording || undefined,
+    concatenatedRecording: meetingDoc.concatenatedRecording || undefined,
     recordingOrder: Array.isArray(meetingDoc.recordingOrder)
       ? meetingDoc.recordingOrder
           .map((entry, idx) => {
@@ -77,11 +77,13 @@ export function hotwordDocumentToHotword(hotwordDoc: HotwordDocument): Hotword {
   };
 }
 
+const toHex = (value?: ObjectId | null): string | undefined => (value ? value.toHexString() : undefined);
+
 export function recordingDocumentToResponse(recordingDoc: RecordingDocument): RecordingResponse {
   return {
-    _id: recordingDoc._id.toString(),
-    meetingId: recordingDoc.meetingId?.toString(),
-    ownerId: recordingDoc.ownerId?.toString(),
+    _id: recordingDoc._id.toHexString(),
+    meetingId: toHex(recordingDoc.meetingId),
+    ownerId: toHex(recordingDoc.ownerId),
     originalFileName: (recordingDoc as any).originalFileName,
     createdAt: recordingDoc.createdAt.toISOString(),
     updatedAt: toIsoString(recordingDoc.updatedAt),
@@ -97,6 +99,7 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
     channels: recordingDoc.channels,
     format: recordingDoc.format,
     source: recordingDoc.source,
+    kind: (recordingDoc as any).kind,
     organizedSpeeches: recordingDoc.organizedSpeeches,
   };
 }

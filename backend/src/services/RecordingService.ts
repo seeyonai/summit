@@ -245,8 +245,10 @@ export async function createRecording(recordingData: {
   duration: number;
   sampleRate: number;
   channels: number;
-  ownerId: string;
+  ownerId?: string;
   meetingId?: string;
+  source?: 'live' | 'upload' | 'concatenated';
+  kind?: 'original' | 'concatenated';
 }): Promise<RecordingResponse> {
   const now = new Date();
 
@@ -263,8 +265,11 @@ export async function createRecording(recordingData: {
     sampleRate: recordingData.sampleRate || undefined,
     channels: recordingData.channels || undefined,
     format: recordingData.format || undefined,
-    source: 'upload',
-    ownerId: new ObjectId(recordingData.ownerId),
+    source: recordingData.source || 'upload',
+    kind: recordingData.kind || 'original',
+    ownerId: recordingData.ownerId && ObjectId.isValid(recordingData.ownerId)
+      ? new ObjectId(recordingData.ownerId)
+      : undefined,
     meetingId: recordingData.meetingId && ObjectId.isValid(recordingData.meetingId) ? new ObjectId(recordingData.meetingId) : undefined,
   };
 

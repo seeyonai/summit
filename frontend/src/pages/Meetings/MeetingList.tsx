@@ -122,7 +122,10 @@ function MeetingList() {
     const scheduledCount = meetings.filter(m => m.status === 'scheduled').length;
     const inProgressCount = meetings.filter(m => m.status === 'in_progress').length;
     const completedCount = meetings.filter(m => m.status === 'completed').length;
-    const totalRecordings = meetings.reduce((acc, m) => acc + (m.recordings?.length || 0), 0);
+    const totalRecordings = meetings.reduce((acc, m) => {
+      const originals = (m.recordings || []).filter((recording) => recording.kind !== 'concatenated');
+      return acc + originals.length;
+    }, 0);
     const totalTodos = meetings.reduce((acc, m) => acc + (m.parsedTodos?.length || 0), 0);
     const completedTodos = meetings.reduce((acc, m) => 
       acc + (m.parsedTodos?.filter(t => t.completed).length || 0), 0);

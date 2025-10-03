@@ -1,5 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
+import path from 'path';
+import os from 'os';
+import { promises as fs } from 'fs';
+import { spawn } from 'child_process';
+import { parseFile } from 'music-metadata';
 import meetingService from '../../services/MeetingService';
 import transcriptExtractionService from '../../services/TranscriptExtractionService';
 import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../../types';
@@ -10,8 +15,75 @@ import type { RequestWithUser } from '../../types/auth';
 import { requireMemberOrOwner, requireOwner } from '../../middleware/auth';
 import { getPreferredLang } from '../../utils/lang';
 import { debug } from '../../utils/logger';
+import { getFilesBaseDir, resolveExistingPathFromCandidate } from '../../utils/filePaths';
 
 const router = Router();
+
+const recordingsBaseDir = getFilesBaseDir();
+
+const escapePathForFfmpeg = (input: string): string => input.replace(/'/g, "'\\''");
+
+const runProcess = (command: string, args: string[]): Promise<void> => new Promise((resolve, reject) => {
+  const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  let stderr = '';
+
+  child.stderr.on('data', (data) => {
+    stderr += data.toString();
+  });
+
+  child.on('error', (error) => {
+    reject(error);
+  });
+
+  child.on('close', (code) => {
+    if (code !== 0) {
+      reject(new Error(`${command} exited with code ${code}: ${stderr.trim()}`));
+    } else {
+      resolve();
+    }
+  });
+});
+
+const sanitizeFileName = (input: string): string => input
+  .normalize('NFKC')
+  .replace(/[\s]+/g, '_')
+  .replace(/[\\/:*?"<>|]+/g, '')
+  .replace(/_+/g, '_')
+  .replace(/^_+|_+$/g, '')
+  || 'meeting';
+
+const buildConcatenatedFileName = (title: string | undefined, extension: string = 'wav'): string => {
+  const base = sanitizeFileName(title || 'meeting');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  return `${base}-拼接录音-${timestamp}.${extension}`;
+};
+
+const responseToRecording = (response: RecordingResponse, meetingId: string): Recording => ({
+  _id: new ObjectId(response._id),
+  originalFileName: response.originalFileName,
+  createdAt: new Date(response.createdAt),
+  updatedAt: response.updatedAt ? new Date(response.updatedAt) : undefined,
+  duration: response.duration,
+  fileSize: response.fileSize,
+  transcription: response.transcription,
+  verbatimTranscript: response.verbatimTranscript,
+  speakerSegments: response.speakerSegments,
+  timeStampedNotes: response.timeStampedNotes,
+  alignmentItems: response.alignmentItems,
+  numSpeakers: response.numSpeakers,
+  sampleRate: response.sampleRate,
+  channels: response.channels,
+  format: response.format,
+  source: response.source || 'concatenated',
+  kind: response.kind || 'concatenated',
+  organizedSpeeches: response.organizedSpeeches,
+  meetingId: response.meetingId && ObjectId.isValid(response.meetingId)
+    ? new ObjectId(response.meetingId)
+    : new ObjectId(meetingId),
+  ownerId: response.ownerId && ObjectId.isValid(response.ownerId)
+    ? new ObjectId(response.ownerId)
+    : undefined,
+});
 
 type RecordingPayload = Omit<Recording, '_id' | 'createdAt' | 'updatedAt'> & {
   _id: string;
@@ -42,7 +114,7 @@ const serializeMeeting = (meeting: Meeting) => ({
   // @ts-ignore
   recordings: meeting.recordings?.map(serializeRecording) || [],
   // @ts-ignore
-  combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
+  concatenatedRecording: meeting.concatenatedRecording ? serializeRecording(meeting.concatenatedRecording) : undefined,
   ownerId: meeting.ownerId ? meeting.ownerId.toString() : undefined,
   members: Array.isArray(meeting.members) ? meeting.members.map((m: any) => m?.toString?.() || m) : [],
   recordingOrder: Array.isArray(meeting.recordingOrder)
@@ -400,6 +472,235 @@ router.post('/:meetingId/extract-analysis', requireMemberOrOwner(), asyncHandler
       'analysis.failed',
       error instanceof Error ? error.message : error
     );
+  }
+}));
+
+// Concatenate meeting recordings into a single file
+router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
+  const { meetingId } = req.params as { meetingId: string };
+
+  if (!ObjectId.isValid(meetingId)) {
+    throw badRequest('Invalid meeting id', 'meeting.invalid_id');
+  }
+
+  const meeting = await meetingService.getMeetingById(meetingId);
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${meetingId})`, 'meeting.not_found');
+  }
+
+  const recordings = await recordingService.getRecordingsByMeetingId(meetingId, false);
+  if (!Array.isArray(recordings) || recordings.length === 0) {
+    throw badRequest('No recordings available to concatenate', 'meeting.concatenate_no_recordings');
+  }
+
+  const body = (req.body || {}) as { recordingIds?: unknown };
+  const requestedIds = Array.isArray(body.recordingIds)
+    ? body.recordingIds
+        .map((value) => (typeof value === 'string' ? value : String(value || '')).trim())
+        .filter((value) => value.length > 0)
+    : [];
+
+  const recordingsMap = new Map(recordings.map((record) => [record._id, record]));
+  const orderEntries = Array.isArray(meeting.recordingOrder)
+    ? meeting.recordingOrder
+        .filter((entry) => entry && entry.enabled !== false)
+        .sort((a, b) => a.index - b.index)
+        .map((entry) => {
+          const value = entry.recordingId;
+          if (value instanceof ObjectId) {
+            return value.toString();
+          }
+          return typeof value === 'string' ? value : value?.toString?.();
+        })
+        .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    : [];
+
+  const ordered: RecordingResponse[] = [];
+  const seen = new Set<string>();
+
+  orderEntries.forEach((id) => {
+    const record = recordingsMap.get(id);
+    if (record && record.kind !== 'concatenated' && !seen.has(id)) {
+      ordered.push(record);
+      seen.add(id);
+    }
+  });
+
+  recordings.forEach((record) => {
+    if (record.kind === 'concatenated') {
+      return;
+    }
+    if (!seen.has(record._id)) {
+      ordered.push(record);
+      seen.add(record._id);
+    }
+  });
+
+  let targets: RecordingResponse[] = ordered;
+
+  if (requestedIds.length > 0) {
+    const missing: string[] = [];
+    const deduped = new Set<string>();
+    targets = requestedIds
+      .map((id) => {
+        const record = recordingsMap.get(id);
+        if (!record || record.kind === 'concatenated') {
+          missing.push(id);
+          return null;
+        }
+        if (deduped.has(record._id)) {
+          return null;
+        }
+        deduped.add(record._id);
+        return record;
+      })
+      .filter((value): value is RecordingResponse => value !== null);
+
+    if (missing.length > 0) {
+      throw badRequest('One or more recordings not found for concatenation', 'meeting.concatenate_missing_recording');
+    }
+  }
+
+  if (targets.length === 0) {
+    throw badRequest('No recordings selected for concatenation', 'meeting.concatenate_no_targets');
+  }
+
+  const fallbackDuration = targets.reduce((total, record) => total + (record.duration || 0), 0);
+
+  const resolvedFiles: Array<{ record: RecordingResponse; path: string }> = [];
+  for (const record of targets) {
+    const ext = ((record.format && record.format.trim()) || 'wav').replace(/^\./, '').toLowerCase();
+    const candidate = `${record._id}.${ext}`;
+    try {
+      const absolutePath = await resolveExistingPathFromCandidate(recordingsBaseDir, candidate);
+      resolvedFiles.push({ record, path: absolutePath });
+    } catch {
+      throw notFound(`Audio file not found for recording ${record._id}`, 'meeting.concatenate_missing_file');
+    }
+  }
+
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'summit-concatenate-'));
+  const listPath = path.join(tempDir, 'inputs.txt');
+  const outputPath = path.join(tempDir, 'concatenated.wav');
+
+  try {
+    const normalizedFiles: Array<{ record: RecordingResponse; path: string }> = [];
+
+    for (const [index, item] of resolvedFiles.entries()) {
+      const normalizedPath = path.join(tempDir, `normalized-${index}.wav`);
+      const args = [
+        '-y',
+        '-i', item.path,
+        '-c:a', 'pcm_s16le',
+        '-ar', '16000',
+        '-ac', '1',
+        normalizedPath,
+      ];
+      await runProcess('ffmpeg', args);
+      normalizedFiles.push({ record: item.record, path: normalizedPath });
+    }
+
+    if (normalizedFiles.length === 1) {
+      await fs.rm(outputPath, { force: true }).catch(() => undefined);
+      await fs.rename(normalizedFiles[0].path, outputPath);
+    } else {
+      const listContent = normalizedFiles
+        .map((item) => `file '${escapePathForFfmpeg(item.path)}'`)
+        .join('\n');
+      await fs.writeFile(listPath, `${listContent}\n`, 'utf8');
+      const args = [
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', listPath,
+        '-c:a', 'pcm_s16le',
+        '-ar', '16000',
+        '-ac', '1',
+        outputPath,
+      ];
+      await runProcess('ffmpeg', args);
+    }
+
+    const stats = await fs.stat(outputPath);
+    const metadata = await parseFile(outputPath).catch(() => null);
+    const duration = metadata?.format?.duration && Number.isFinite(metadata.format.duration)
+      ? Number(metadata.format.duration)
+      : fallbackDuration;
+    const sampleRate = metadata?.format?.sampleRate && Number.isFinite(metadata.format.sampleRate)
+      ? Number(metadata.format.sampleRate)
+      : undefined;
+    const channels = metadata?.format?.numberOfChannels && Number.isFinite(metadata.format.numberOfChannels)
+      ? Number(metadata.format.numberOfChannels)
+      : undefined;
+
+    let ownerId: string | undefined = meeting.ownerId instanceof ObjectId
+      ? meeting.ownerId.toHexString()
+      : undefined;
+    if (!ownerId && meeting.ownerId && typeof (meeting.ownerId as any).toString === 'function') {
+      const candidate = (meeting.ownerId as any).toString();
+      ownerId = ObjectId.isValid(candidate) ? candidate : undefined;
+    }
+    if (!ownerId) {
+      const firstOwned = targets.find((record) => record.ownerId)?.ownerId;
+      ownerId = typeof firstOwned === 'string' && ObjectId.isValid(firstOwned) ? firstOwned : undefined;
+    }
+
+    if (!ownerId) {
+      throw badRequest('Cannot determine owner for concatenated recording', 'meeting.concatenate_missing_owner');
+    }
+
+    const originalFileName = buildConcatenatedFileName(meeting.title, 'wav');
+
+    const newRecording = await recordingService.createRecording({
+      originalFileName,
+      fileSize: stats.size,
+      format: 'wav',
+      mimeType: 'audio/wav',
+      createdAt: new Date(),
+      duration,
+      sampleRate: sampleRate || 16000,
+      channels: channels || 1,
+      ownerId,
+      meetingId,
+      source: 'concatenated',
+      kind: 'concatenated',
+    });
+
+    const finalFilename = `${newRecording._id}.wav`;
+    const finalPath = path.join(recordingsBaseDir, finalFilename);
+
+    await fs.rm(finalPath, { force: true }).catch(() => undefined);
+    await fs.rename(outputPath, finalPath);
+
+    const concatenatedRecording = responseToRecording({
+      ...newRecording,
+      kind: newRecording.kind || 'concatenated',
+      source: newRecording.source || 'concatenated',
+      meetingId,
+      ownerId,
+    }, meetingId);
+
+    const updatedMeeting = await meetingService.updateConcatenatedRecording(meetingId, concatenatedRecording);
+
+    if (meeting.concatenatedRecording && meeting.concatenatedRecording._id) {
+      const previousId = meeting.concatenatedRecording._id.toString();
+      if (previousId !== newRecording._id) {
+        await recordingService.deleteRecording(previousId).catch((error) => {
+          debug('Failed to remove previous concatenated recording', error);
+        });
+      }
+    }
+
+    const refreshedMeeting = await meetingService.getMeetingById(meetingId);
+    const lang = getPreferredLang(req);
+    res.json({
+      success: true,
+      message: lang === 'en' ? 'Concatenated recording generated' : '拼接录音已生成',
+      recording: serializeRecording(concatenatedRecording),
+      meeting: refreshedMeeting ? serializeMeeting(refreshedMeeting) : updatedMeeting ? serializeMeeting(updatedMeeting) : null,
+    });
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined);
   }
 }));
 

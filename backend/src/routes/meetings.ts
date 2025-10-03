@@ -31,7 +31,7 @@ const serializeMeeting = (meeting: MeetingWithRecordings) => ({
   updatedAt: toIsoString(meeting.updatedAt),
   scheduledStart: toIsoString(meeting.scheduledStart),
   recordings: meeting.recordings?.map(serializeRecording) || [],
-  combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
+  concatenatedRecording: meeting.concatenatedRecording ? serializeRecording(meeting.concatenatedRecording) : undefined,
   recordingOrder: Array.isArray(meeting.recordingOrder)
     ? meeting.recordingOrder
         .map((entry) => ({

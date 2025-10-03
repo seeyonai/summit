@@ -12,8 +12,8 @@ interface TranscriptDialogProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   recordings: Recording[];
-  showCombinedRecording?: boolean;
-  combinedRecording?: Recording;
+  showConcatenatedRecording?: boolean;
+  concatenatedRecording?: Recording;
 }
 
 function TranscriptDialog({
@@ -21,15 +21,15 @@ function TranscriptDialog({
   onOpenChange,
   title,
   recordings,
-  showCombinedRecording,
-  combinedRecording,
+  showConcatenatedRecording,
+  concatenatedRecording,
 }: TranscriptDialogProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   const recordingsToShow = useMemo(() =>
-    showCombinedRecording && combinedRecording
-      ? [combinedRecording]
-      : recordings, [showCombinedRecording, combinedRecording, recordings]);
+    showConcatenatedRecording && concatenatedRecording
+      ? [concatenatedRecording]
+      : recordings, [showConcatenatedRecording, concatenatedRecording, recordings]);
 
   const handleCopy = useCallback(async (text: string, index: number) => {
     try {
@@ -45,7 +45,7 @@ function TranscriptDialog({
   const handleDownload = useCallback(() => {
     const allTranscriptions = recordingsToShow
       .filter(r => r.transcription)
-      .map(r => `=== ${showCombinedRecording ? '合并录音' : (r as any).originalFileName || (r as any)._id} ===\n\n${r.transcription}`)
+      .map(r => `=== ${showConcatenatedRecording ? '拼接录音' : (r as any).originalFileName || (r as any)._id} ===\n\n${r.transcription}`)
       .join('\n\n' + '='.repeat(50) + '\n\n');
 
     const blob = new Blob([allTranscriptions], { type: 'text/plain;charset=utf-8' });
@@ -58,7 +58,7 @@ function TranscriptDialog({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast.success('转录内容已下载');
-  }, [recordingsToShow, showCombinedRecording, title]);
+  }, [recordingsToShow, showConcatenatedRecording, title]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,13 +98,13 @@ function TranscriptDialog({
             recordingsToShow.map((recording, index) => (
               recording.transcription && (
                 <div
-                  key={showCombinedRecording ? 'combined' : index}
+                  key={showConcatenatedRecording ? 'concatenated' : index}
                   className="space-y-3 animate-in fade-in-50 slide-in-from-bottom-2"
                 >
                   <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
                     <h4 className="font-medium text-sm flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
-                      {showCombinedRecording ? '合并录音' : ((recording as any).originalFileName || (recording as any)._id)}
+                      {showConcatenatedRecording ? '拼接录音' : ((recording as any).originalFileName || (recording as any)._id)}
                     </h4>
                     <Button
                       variant="ghost"

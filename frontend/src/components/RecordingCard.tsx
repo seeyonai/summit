@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface RecordingCardProps {
   recording: Recording;
-  variant?: 'default' | 'combined' | 'compact';
+  variant?: 'default' | 'concatenated' | 'compact';
   showMeetingInfo?: boolean;
   showTranscriptionPreview?: boolean;
   showActions?: boolean;
@@ -86,7 +86,7 @@ function RecordingCard({
 
   const getWaveformBars = () => {
     const barCount = variant === 'compact' ? 25 : 40;
-    const colorClasses = variant === 'combined'
+    const colorClasses = variant === 'concatenated'
       ? 'from-primary/30 to-accent/30 dark:from-primary/40 dark:to-accent/40'
       : 'from-primary/60 to-primary/60 dark:from-primary/70 dark:to-primary/70';
     
@@ -123,9 +123,9 @@ function RecordingCard({
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              {variant === 'combined' && (
+              {variant === 'concatenated' && (
                 <Badge className="bg-primary text-primary-foreground">
-                  合并录音
+                  拼接录音
                 </Badge>
               )}
               <CardTitle className="text-base font-semibold truncate dark:text-gray-100">
@@ -168,7 +168,7 @@ function RecordingCard({
         <div className="flex-1 space-y-4">
           {/* Audio Waveform Visualization */}
           <div className={`group relative ${variant === 'compact' ? 'h-16' : 'h-20'} bg-gradient-to-r ${
-            variant === 'combined' 
+            variant === 'concatenated' 
               ? 'from-primary/5 to-accent/5' 
               : 'from-primary/5 to-primary/5'
           } rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800`}>
@@ -181,9 +181,9 @@ function RecordingCard({
             >
               <div className={`${variant === 'compact' ? 'w-12 h-12' : 'w-14 h-14'} bg-background/70 dark:bg-background/70 backdrop-blur-sm rounded-full border border-primary/20 flex items-center justify-center shadow-lg dark:shadow-primary/20 group-hover:scale-105 transition-transform`}>
                 {playingAudio === recordingId ? (
-                  <PauseIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'}`} />
+                  <PauseIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'concatenated' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'}`} />
                 ) : (
-                  <PlayIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'combined' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'} ml-1`} />
+                  <PlayIcon className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${variant === 'concatenated' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'} ml-1`} />
                 )}
               </div>
             </button>

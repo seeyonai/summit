@@ -47,8 +47,10 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
     }
   };
 
+  const sourceRecordings = (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated');
+
   // Analyze speaker segments if available
-  const speakerStats = meeting.recordings?.reduce((acc, recording) => {
+  const speakerStats = sourceRecordings.reduce((acc, recording) => {
     if (recording.speakerSegments) {
       recording.speakerSegments.forEach(segment => {
         const speakerId = `speaker_${segment.speakerIndex}`;
@@ -75,17 +77,17 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
   ];
 
   // Combine organized speeches from all recordings
-  const combinedOrganizedSpeeches: OrganizedSpeech[] | undefined = meeting.recordings?.reduce<OrganizedSpeech[]>((acc, recording) => {
+  const combinedOrganizedSpeeches: OrganizedSpeech[] | undefined = sourceRecordings.reduce<OrganizedSpeech[]>((acc, recording) => {
     if (recording.organizedSpeeches && recording.organizedSpeeches.length > 0) {
       return acc.concat(recording.organizedSpeeches);
     }
     return acc;
   }, []);
 
-  // Also check meeting's combined recording
-  const combinedRecordingSpeeches = meeting.combinedRecording?.organizedSpeeches || [];
+  // Also check meeting's concatenated recording
+  const concatenatedRecordingSpeeches = meeting.concatenatedRecording?.organizedSpeeches || [];
 
-  const allOrganizedSpeeches = [...(combinedOrganizedSpeeches || []), ...combinedRecordingSpeeches];
+  const allOrganizedSpeeches = [...(combinedOrganizedSpeeches || []), ...concatenatedRecordingSpeeches];
 
   return (
     <div className="space-y-6">

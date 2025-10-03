@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import type { Meeting, MeetingRecordingOrderItem, Recording } from '@/types';
 import RecordingListItem from '@/components/RecordingListItem';
 import StatisticsCard from '@/components/StatisticsCard';
 import { formatDuration } from '@/utils/formatHelpers';
 import { apiService } from '@/services/api';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   FileAudioIcon,
   ClockIcon,
@@ -136,20 +146,41 @@ interface MeetingRecordingsProps {
 }
 
 function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps) {
-  const recordings = meeting.recordings || [];
-  const combinedRecording = meeting.combinedRecording;
+  const [recordingsState, setRecordingsState] = useState<Recording[]>(() => meeting.recordings || []);
+  const [concatenatedRecordingState, setConcatenatedRecordingState] = useState<Recording | null | undefined>(() => meeting.concatenatedRecording);
 
   const [orderEntries, setOrderEntries] = useState<RecordingOrderEntry[]>(() =>
-    normalizeRecordingOrder(recordings, meeting.recordingOrder)
+    normalizeRecordingOrder(
+      (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated'),
+      meeting.recordingOrder
+    )
   );
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isConcatenating, setIsConcatenating] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [recordingPendingRemoval, setRecordingPendingRemoval] = useState<Recording | null>(null);
+  const [shouldDeleteRecordingFile, setShouldDeleteRecordingFile] = useState(false);
+  const [isRemovingRecording, setIsRemovingRecording] = useState(false);
   const pendingRequestIdRef = useRef(0);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
-    setOrderEntries(normalizeRecordingOrder(recordings, meeting.recordingOrder));
-  }, [recordings, meeting.recordingOrder]);
+    setRecordingsState(meeting.recordings || []);
+  }, [meeting.recordings]);
+
+  useEffect(() => {
+    setConcatenatedRecordingState(meeting.concatenatedRecording);
+  }, [meeting.concatenatedRecording]);
+
+  const originalRecordings = useMemo(
+    () => recordingsState.filter((recording) => recording.kind !== 'concatenated'),
+    [recordingsState]
+  );
+
+  useEffect(() => {
+    setOrderEntries(normalizeRecordingOrder(originalRecordings, meeting.recordingOrder));
+  }, [originalRecordings, meeting.recordingOrder]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -159,13 +190,13 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
   }, []);
 
   const recordingMap = useMemo(
-    () => new Map(recordings.map((recording) => [recording._id, recording])),
-    [recordings]
+    () => new Map(originalRecordings.map((recording) => [recording._id, recording])),
+    [originalRecordings]
   );
 
   const orderedItems = useMemo<OrderedRecording[]>(() => {
     if (orderEntries.length === 0) {
-      return recordings.map((recording, idx) => ({
+      return originalRecordings.map((recording, idx) => ({
         entry: {
           recordingId: recording._id,
           index: idx,
@@ -184,7 +215,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
         return { entry, recording };
       })
       .filter((value): value is OrderedRecording => value !== null);
-  }, [orderEntries, recordingMap, recordings]);
+  }, [orderEntries, recordingMap, originalRecordings]);
 
   const persistOrder = useCallback((nextOrder: RecordingOrderEntry[], fallback: RecordingOrderEntry[]) => {
     if (!meeting._id) {
@@ -233,6 +264,54 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
     });
   }, [persistOrder]);
 
+  const handleConcatenateRecordings = useCallback(async () => {
+    if (!meeting._id || isConcatenating) {
+      return;
+    }
+
+    if (isMountedRef.current) {
+      setIsConcatenating(true);
+    }
+
+    try {
+      const result = await apiService.concatenateMeetingRecordings(meeting._id);
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      const updatedMeeting = result?.meeting;
+      if (updatedMeeting) {
+        setConcatenatedRecordingState(updatedMeeting.concatenatedRecording);
+        const nextRecordings = updatedMeeting.recordings || [];
+        setRecordingsState(nextRecordings);
+        setOrderEntries(normalizeRecordingOrder(
+          nextRecordings.filter((recording) => recording.kind !== 'concatenated'),
+          updatedMeeting.recordingOrder
+        ));
+        return;
+      }
+
+      if (result?.recording) {
+        setConcatenatedRecordingState(result.recording);
+        setRecordingsState((prev) => {
+          const filtered = prev.filter((recording) => recording.kind !== 'concatenated');
+          const nextRecordings = [...filtered, result.recording];
+          setOrderEntries(normalizeRecordingOrder(
+            nextRecordings.filter((recording) => recording.kind !== 'concatenated'),
+            meeting.recordingOrder
+          ));
+          return nextRecordings;
+        });
+      }
+    } catch (error) {
+      console.error('Failed to concatenate recordings', error);
+    } finally {
+      if (isMountedRef.current) {
+        setIsConcatenating(false);
+      }
+    }
+  }, [meeting._id, meeting.recordingOrder, isConcatenating]);
+
   const handleDragStart = useCallback((event: React.DragEvent<HTMLLIElement>, recordingId: string) => {
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', recordingId);
@@ -273,132 +352,291 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
     setDraggingId(null);
   }, [applyReorder, draggingId]);
 
+  const clearRemovalState = useCallback(() => {
+    setRecordingPendingRemoval(null);
+    setShouldDeleteRecordingFile(false);
+  }, []);
+
+  const handleDialogOpenChange = useCallback((nextOpen: boolean) => {
+    if (isRemovingRecording) {
+      return;
+    }
+    if (!nextOpen) {
+      clearRemovalState();
+    }
+    setRemoveDialogOpen(nextOpen);
+  }, [clearRemovalState, isRemovingRecording]);
+
+  const handleRequestRemoveRecording = useCallback((recording: Recording) => {
+    setRecordingPendingRemoval(recording);
+    setShouldDeleteRecordingFile(false);
+    setRemoveDialogOpen(true);
+  }, []);
+
+  const handleConfirmRemoveRecording = useCallback(async () => {
+    if (!meeting._id || !recordingPendingRemoval || isRemovingRecording) {
+      return;
+    }
+
+    const recordingId = recordingPendingRemoval._id;
+    if (!recordingId) {
+      return;
+    }
+
+    if (isMountedRef.current) {
+      setIsRemovingRecording(true);
+    }
+
+    try {
+      const updatedMeeting = await apiService.removeRecordingFromMeeting(meeting._id, recordingId);
+
+      if (shouldDeleteRecordingFile) {
+        try {
+          await apiService.deleteRecording(recordingId);
+        } catch (error) {
+          console.error('Failed to delete recording file', error);
+        }
+      }
+
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      if (updatedMeeting) {
+        const nextRecordings = updatedMeeting.recordings || [];
+        setRecordingsState(nextRecordings);
+        setConcatenatedRecordingState(updatedMeeting.concatenatedRecording);
+        const nextOriginals = nextRecordings.filter((recording) => recording.kind !== 'concatenated');
+        const normalized = normalizeRecordingOrder(nextOriginals, updatedMeeting.recordingOrder);
+        setOrderEntries(normalized);
+        if (normalized.length !== orderEntries.length) {
+          persistOrder(normalized, orderEntries);
+        }
+      } else {
+        setRecordingsState((prev) => prev.filter((recording) => recording._id !== recordingId));
+        setOrderEntries((prev) => {
+          const filtered = prev.filter((entry) => entry.recordingId !== recordingId);
+          if (filtered.length === prev.length) {
+            return prev;
+          }
+          const normalized = filtered.map((entry, idx) => ({
+            ...entry,
+            index: idx,
+          }));
+          persistOrder(normalized, prev);
+          return normalized;
+        });
+      }
+
+      setRemoveDialogOpen(false);
+      clearRemovalState();
+    } catch (error) {
+      console.error('Failed to remove recording from meeting', error);
+    } finally {
+      if (isMountedRef.current) {
+        setIsRemovingRecording(false);
+      }
+    }
+  }, [
+    meeting._id,
+    recordingPendingRemoval,
+    isRemovingRecording,
+    shouldDeleteRecordingFile,
+    orderEntries,
+    persistOrder,
+    clearRemovalState,
+  ]);
+
   return (
-    <div className="space-y-6">
-      {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatisticsCard
-          icon={<MicIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
-          label="录音总数"
-          value={recordings.length}
-          description={`${recordings.length} 个录音文件`}
+    <>
+      <div className="space-y-6">
+        {/* Statistics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatisticsCard
+            icon={<MicIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+            label="录音总数"
+            value={originalRecordings.length}
+            description={`${originalRecordings.length} 个录音文件`}
         />
 
         <StatisticsCard
           icon={<ClockIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
           label="总时长"
-          value={formatDuration(recordings.reduce<number>((acc, r) => acc + (r.duration || 0), 0))}
+          value={formatDuration(originalRecordings.reduce<number>((acc, r) => acc + (r.duration || 0), 0))}
           description="累计录音时长 (mm:ss)"
         />
 
         <StatisticsCard
           icon={<FileAudioIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
           label="已转录"
-          value={recordings.filter((r) => Boolean(r.transcription)).length}
-          description={`共 ${recordings.length} 个录音`}
+          value={originalRecordings.filter((r) => Boolean(r.transcription)).length}
+          description={`共 ${originalRecordings.length} 个录音`}
         />
 
         <StatisticsCard
           icon={<Disc3Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
-          label="合并状态"
-          value={recordings.length > 1 ?
-            combinedRecording ? '已合并' : '未合并' :
+          label="拼接状态"
+          value={originalRecordings.length > 1 ?
+            concatenatedRecordingState ? '已拼接' : '未拼接' :
             '-'}
-          description={recordings.length > 1 ?
-            combinedRecording ? '可查看完整转录' : '多个录音可合并' : '单个录音无需合并'}
+          description={originalRecordings.length > 1 ?
+            concatenatedRecordingState ? '可查看完整转录' : '多个录音可拼接' : '单个录音无需拼接'}
         />
       </div>
 
-      {/* Combined Recording */}
-      {combinedRecording && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">合并录音</h3>
-            <Button onClick={onViewTranscript} variant="outline" size="sm">
-              <EyeIcon className="w-4 h-4 mr-2" />
-              查看完整转录
-            </Button>
-          </div>
-          <RecordingCard 
-            recording={combinedRecording} 
-            variant="combined"
-            showMeetingInfo={false}
-          />
-        </div>
-      )}
-
-      {/* Individual Recordings */}
       <div className="space-y-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-lg font-semibold">录音文件</h3>
-          {(orderedItems.length > 1 || isSaving) && (
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {orderedItems.length > 1 && (
-                <span>拖动左侧图标调整播放顺序</span>
-              )}
-              {isSaving && (
-                <span className="inline-flex items-center gap-1 text-muted-foreground/80">
-                  <Loader2Icon className="h-3 w-3 animate-spin" />
-                  保存中…
-                </span>
-              )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-lg font-semibold">录音管理</h3>
+          <Button
+            onClick={handleConcatenateRecordings}
+            disabled={isConcatenating || originalRecordings.length < 2}
+            className="sm:w-auto"
+          >
+            {isConcatenating && <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />}
+            拼接录音文件
+          </Button>
+        </div>
+
+        {concatenatedRecordingState && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-base font-semibold text-primary">已拼接</h4>
+              <Button onClick={onViewTranscript} variant="outline" size="sm">
+                <EyeIcon className="w-4 h-4 mr-2" />
+                查看完整转录
+              </Button>
             </div>
+            <RecordingListItem
+              recording={concatenatedRecordingState}
+              actions={{
+                onDelete: () => handleRequestRemoveRecording(concatenatedRecordingState),
+              }}
+            />
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h4 className="text-base font-semibold">原始文件</h4>
+            {(orderedItems.length > 1 || isSaving) && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {orderedItems.length > 1 && (
+                  <span>拖动左侧图标调整播放顺序</span>
+                )}
+                {isSaving && (
+                  <span className="inline-flex items-center gap-1 text-muted-foreground/80">
+                    <Loader2Icon className="h-3 w-3 animate-spin" />
+                    保存中…
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {orderedItems.length > 0 ? (
+            <ul className="space-y-3">
+              {orderedItems.map(({ entry, recording }) => (
+                <li
+                  key={recording._id}
+                  draggable
+                  onDragStart={(event) => handleDragStart(event, recording._id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={handleDragOver}
+                  onDrop={(event) => handleDropOnItem(event, recording._id)}
+                  className={`flex flex-col gap-2 rounded-xl border border-border bg-card/60 p-3 shadow-sm transition ${
+                    draggingId === recording._id ? 'border-primary bg-primary/10' : 'hover:border-primary/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                      <GripVerticalIcon className="h-4 w-4" />
+                    </div>
+                    <span className="text-sm font-medium text-muted-foreground/80">{entry.index + 1}</span>
+                  </div>
+                  <div className={`flex-1 ${entry.enabled ? '' : 'opacity-60'}`}>
+                    <RecordingListItem
+                      recording={recording}
+                      className="shadow-none border-none bg-transparent hover:shadow-none p-0"
+                      actions={{
+                        onDelete: () => handleRequestRemoveRecording(recording),
+                      }}
+                    />
+                  </div>
+                </li>
+              ))}
+              {draggingId && orderedItems.length > 0 && (
+                <li
+                  key="dropzone-end"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDropToEnd}
+                  className="flex h-12 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/40 text-xs text-muted-foreground"
+                >
+                  拖放到此处可排到最后
+                </li>
+              )}
+            </ul>
+          ) : (
+            <Card className="p-12">
+              <div className="text-center">
+                <MicIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-2">暂无录音</p>
+                <p className="text-sm text-muted-foreground">
+                  会议进行中可以开始录音
+                </p>
+              </div>
+            </Card>
           )}
         </div>
-        {orderedItems.length > 0 ? (
-          <ul className="space-y-3">
-            {orderedItems.map(({ entry, recording }) => (
-              <li
-                key={recording._id}
-                draggable
-                onDragStart={(event) => handleDragStart(event, recording._id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={handleDragOver}
-                onDrop={(event) => handleDropOnItem(event, recording._id)}
-                className={`flex flex-col gap-2 rounded-xl border border-border bg-card/60 p-3 shadow-sm transition ${
-                  draggingId === recording._id ? 'border-primary bg-primary/10' : 'hover:border-primary/40'
-                }`}
-              >
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted"
-                  >
-                    <GripVerticalIcon className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground/80">{entry.index + 1}</span>
-                </div>
-                <div className={`flex-1 ${entry.enabled ? '' : 'opacity-60'}`}>
-                  <RecordingListItem
-                    recording={recording}
-                    className="shadow-none border-none bg-transparent hover:shadow-none p-0"
-                  />
-                </div>
-              </li>
-            ))}
-            {draggingId && orderedItems.length > 0 && (
-              <li
-                key="dropzone-end"
-                onDragOver={handleDragOver}
-                onDrop={handleDropToEnd}
-                className="flex h-12 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/40 text-xs text-muted-foreground"
-              >
-                拖放到此处可排到最后
-              </li>
-            )}
-          </ul>
-        ) : (
-          <Card className="p-12">
-            <div className="text-center">
-              <MicIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">暂无录音</p>
-              <p className="text-sm text-muted-foreground">
-                会议进行中可以开始录音
-              </p>
-            </div>
-          </Card>
-        )}
       </div>
-    </div>
+      </div>
+
+      <Dialog open={removeDialogOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>移除录音</DialogTitle>
+            <DialogDescription>
+              {recordingPendingRemoval ? `确定要将「${recordingPendingRemoval.originalFileName || recordingPendingRemoval._id}」从当前会议中移除吗？` : '确定要移除此录音与会议的关联吗？'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              你可以仅解除关联，或同时删除该录音文件。
+            </p>
+            <div className="flex items-center gap-3 rounded-lg border border-dashed border-muted-foreground/40 p-3">
+              <Checkbox
+                id="delete-recording-file"
+                checked={shouldDeleteRecordingFile}
+                onCheckedChange={(value) => setShouldDeleteRecordingFile(value === true)}
+                disabled={isRemovingRecording}
+              />
+              <Label htmlFor="delete-recording-file" className="text-sm">
+                同时删除录音源文件
+              </Label>
+            </div>
+            {shouldDeleteRecordingFile && (
+              <p className="text-xs text-destructive">
+                文件删除后不可恢复，请谨慎操作。
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={isRemovingRecording}>
+              取消
+            </Button>
+            <Button
+              variant={shouldDeleteRecordingFile ? 'destructive' : 'default'}
+              onClick={handleConfirmRemoveRecording}
+              disabled={isRemovingRecording}
+            >
+              {isRemovingRecording && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+              {shouldDeleteRecordingFile ? '移除并删除' : '仅解除关联'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

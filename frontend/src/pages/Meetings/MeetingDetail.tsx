@@ -54,8 +54,9 @@ function MeetingDetail() {
     loading,
     error,
     showTranscript,
-    showCombinedRecording,
+    showConcatenatedRecording,
     setShowTranscript,
+    setShowConcatenatedRecording,
     deleteMeeting,
     handleRecordingComplete,
     refresh,
@@ -227,9 +228,9 @@ function MeetingDetail() {
 
   const StatusIcon = getStatusIcon(meeting.status);
   const recordingsToShow =
-    showCombinedRecording && meeting.combinedRecording
-      ? [meeting.combinedRecording]
-      : meeting.recordings || [];
+    showConcatenatedRecording && meeting.concatenatedRecording
+      ? [meeting.concatenatedRecording]
+      : (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated');
 
   return (
     <div className="min-h-screen">
@@ -330,7 +331,10 @@ function MeetingDetail() {
         <TabsContent value="recordings">
           <MeetingRecordings
             meeting={meeting}
-            onViewTranscript={() => setShowTranscript(true)}
+            onViewTranscript={() => {
+              setShowConcatenatedRecording(true);
+              setShowTranscript(true);
+            }}
           />
         </TabsContent>
 
@@ -355,9 +359,16 @@ function MeetingDetail() {
       {/* Transcript Dialog */}
       <TranscriptDialog
         open={showTranscript}
-        onOpenChange={setShowTranscript}
+        onOpenChange={(open) => {
+          setShowTranscript(open);
+          if (!open) {
+            setShowConcatenatedRecording(false);
+          }
+        }}
         title={meeting.title}
         recordings={recordingsToShow}
+        showConcatenatedRecording={showConcatenatedRecording}
+        concatenatedRecording={meeting.concatenatedRecording ?? undefined}
       />
 
       {/* Advice Dialog */}

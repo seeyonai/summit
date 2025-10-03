@@ -90,9 +90,9 @@ interface UseMeetingDetailReturn {
   loading: boolean;
   error: string | null;
   showTranscript: boolean;
-  showCombinedRecording: boolean;
+  showConcatenatedRecording: boolean;
   setShowTranscript: (show: boolean) => void;
-  setShowCombinedRecording: (show: boolean) => void;
+  setShowConcatenatedRecording: (show: boolean) => void;
   refresh: () => Promise<void>;
   deleteMeeting: () => Promise<void>;
   handleRecordingComplete: (recordingData: {
@@ -108,7 +108,7 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
-  const [showCombinedRecording, setShowCombinedRecording] = useState(false);
+  const [showConcatenatedRecording, setShowConcatenatedRecording] = useState(false);
 
   const fetchMeeting = useCallback(async () => {
     if (!meetingId) return;
@@ -176,9 +176,9 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
     loading,
     error,
     showTranscript,
-    showCombinedRecording,
+    showConcatenatedRecording,
     setShowTranscript,
-    setShowCombinedRecording,
+    setShowConcatenatedRecording,
     refresh: fetchMeeting,
     deleteMeeting,
     handleRecordingComplete,

@@ -21,7 +21,7 @@ export interface MeetingDocument extends Document {
   createdAt: Date;
   updatedAt?: Date;
   recordings?: Recording[];
-  combinedRecording?: Recording | null;
+  concatenatedRecording?: Recording | null;
   recordingOrder?: Meeting['recordingOrder'];
   ownerId?: ObjectId;
   members?: ObjectId[];

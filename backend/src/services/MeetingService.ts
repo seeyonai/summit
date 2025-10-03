@@ -251,16 +251,17 @@ export const removeRecordingFromMeeting = async (
   return meetingDocumentToMeeting(result);
 };
 
-export const updateCombinedRecording = async (meetingId: string, recording: Recording | null): Promise<Meeting | null> => {
+export const updateConcatenatedRecording = async (meetingId: string, recording: Recording | null): Promise<Meeting | null> => {
   const collection = getMeetingsCollection();
   const updateOperations: Record<string, any> = {
     $set: { updatedAt: new Date() }
   };
 
   if (recording) {
-    updateOperations.$set.combinedRecording = recording;
+    updateOperations.$set.concatenatedRecording = recording;
+    updateOperations.$unset = { ...(updateOperations.$unset || {}), combinedRecording: '' };
   } else {
-    updateOperations.$unset = { combinedRecording: '' };
+    updateOperations.$unset = { concatenatedRecording: '', combinedRecording: '' };
   }
 
   const result = await collection.findOneAndUpdate(
@@ -341,7 +342,7 @@ export const meetingService = {
   updateMeeting,
   deleteMeeting,
   removeRecordingFromMeeting,
-  updateCombinedRecording,
+  updateConcatenatedRecording,
   getMeetingsByStatus,
   getUpcomingMeetings,
   addMember,

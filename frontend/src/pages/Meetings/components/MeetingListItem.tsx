@@ -46,6 +46,7 @@ function MeetingListItem({ meeting, onDelete }: MeetingListItemProps) {
   const StatusIcon = getStatusIcon(meeting.status);
   const completedTodos = meeting.parsedTodos?.filter(t => t.completed).length || 0;
   const totalTodos = meeting.parsedTodos?.length || 0;
+  const recordingCount = (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated').length;
 
   return (
     <div 
@@ -101,7 +102,7 @@ function MeetingListItem({ meeting, onDelete }: MeetingListItemProps) {
             </span>
             <span className="flex items-center gap-1">
               <Mic className="w-3 h-3" />
-              {meeting.recordings?.length || 0} 录音
+              {recordingCount} 录音
             </span>
           </div>
           {meeting.summary && (

@@ -143,7 +143,7 @@ type BaseMeeting = Omit<baseTypes.Meeting, 'recordingOrder'> & {
 export type Meeting = BaseMeeting & Id & Timestamp & {
   ownerId?: string;
   members?: string[];
-  combinedRecording?: Recording | null;
+  concatenatedRecording?: Recording | null;
   recordings?: Recording[];
 };
 

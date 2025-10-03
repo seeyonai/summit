@@ -176,7 +176,7 @@ class TranscriptExtractionService {
       });
 
       // Note: Combined recording speeches are handled separately in the meeting model
-      // They will be accessible via meeting.combinedRecording if needed
+      // They will be accessible via meeting.concatenatedRecording if needed
 
       if (allSpeeches.length === 0) {
         throw badRequest('No organized speeches found in any recordings', 'analysis.no_speeches');

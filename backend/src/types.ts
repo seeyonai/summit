@@ -40,7 +40,8 @@ export interface RecordingResponse {
   sampleRate?: number;
   channels?: number;
   format?: string;
-  source?: 'live' | 'upload';
+  source?: 'live' | 'upload' | 'concatenated';
+  kind?: 'original' | 'concatenated';
   organizedSpeeches?: Array<{
     speakerIndex: number;
     startTime: number;
@@ -84,7 +85,7 @@ type MeetingBase = Omit<baseTypes.Meeting, 'recordingOrder'> & {
 export type Meeting = MeetingBase & Timestamp & Id & {
   ownerId?: ObjectId;
   members?: ObjectId[];
-  combinedRecording?: Recording | null;
+  concatenatedRecording?: Recording | null;
 };
 
 export type MeetingCreate = Omit<baseTypes.Meeting, 'recordingOrder'> & {
