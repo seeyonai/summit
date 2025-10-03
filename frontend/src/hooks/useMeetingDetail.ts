@@ -3,6 +3,88 @@ import { useNavigate } from 'react-router-dom';
 import { apiService } from '@/services/api';
 import type { MeetingWithRecordings } from '@/types';
 
+const sanitizeRecordingOrder = (
+  order: MeetingWithRecordings['recordingOrder']
+): MeetingWithRecordings['recordingOrder'] => {
+  if (!Array.isArray(order)) {
+    return [];
+  }
+
+  const sanitized = order
+    .map((entry, idx) => {
+      if (!entry) {
+        return null;
+      }
+      const recordingId = typeof entry.recordingId === 'string'
+        ? entry.recordingId
+        : entry.recordingId?.toString?.();
+      if (!recordingId) {
+        return null;
+      }
+      return {
+        recordingId,
+        index: typeof entry.index === 'number' ? entry.index : idx,
+        enabled: entry.enabled !== false,
+      };
+    })
+    .filter((value): value is { recordingId: string; index: number; enabled: boolean } => value !== null)
+    .sort((a, b) => a.index - b.index)
+    .map((entry, idx) => ({
+      ...entry,
+      index: idx,
+    }));
+
+  return sanitized;
+};
+
+const withOrderedRecordings = (
+  meeting: MeetingWithRecordings
+): MeetingWithRecordings => {
+  const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
+  const recordingOrder = sanitizeRecordingOrder(meeting.recordingOrder);
+
+  if (recordings.length === 0) {
+    return {
+      ...meeting,
+      recordings,
+      recordingOrder,
+    };
+  }
+
+  const knownIds = new Set(recordingOrder.map((entry) => entry.recordingId));
+  const appended = recordings
+    .filter((recording) => !knownIds.has(recording._id))
+    .map((recording, idx) => ({
+      recordingId: recording._id,
+      index: recordingOrder.length + idx,
+      enabled: true,
+    }));
+
+  const combinedOrder = [...recordingOrder, ...appended]
+    .map((entry, idx) => ({
+      ...entry,
+      index: idx,
+    }));
+
+  const orderMap = new Map(combinedOrder.map((entry) => [entry.recordingId, entry.index]));
+  const fallbackIndex = combinedOrder.length;
+
+  const sortedRecordings = recordings.slice().sort((a, b) => {
+    const indexA = orderMap.get(a._id) ?? fallbackIndex;
+    const indexB = orderMap.get(b._id) ?? fallbackIndex;
+    if (indexA === indexB) {
+      return 0;
+    }
+    return indexA - indexB;
+  });
+
+  return {
+    ...meeting,
+    recordings: sortedRecordings,
+    recordingOrder: combinedOrder,
+  };
+};
+
 interface UseMeetingDetailReturn {
   meeting: MeetingWithRecordings | null;
   loading: boolean;
@@ -34,7 +116,7 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
     try {
       setLoading(true);
       const data = await apiService.getMeeting(meetingId);
-      setMeeting(data);
+      setMeeting(withOrderedRecordings(data));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');

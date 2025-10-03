@@ -9,6 +9,7 @@ import {
   HotwordDocument,
   RecordingDocument,
 } from '../types/documents';
+import { ObjectId } from 'mongodb';
 
 const toIsoString = (value?: Date): string | undefined => (value ? value.toISOString() : undefined);
 
@@ -28,7 +29,36 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     participants: meetingDoc.participants,
     ownerId: meetingDoc.ownerId,
     members: meetingDoc.members,
+    recordings: meetingDoc.recordings,
     combinedRecording: meetingDoc.combinedRecording || undefined,
+    recordingOrder: Array.isArray(meetingDoc.recordingOrder)
+      ? meetingDoc.recordingOrder
+          .map((entry, idx) => {
+            if (!entry || !entry.recordingId) {
+              return null;
+            }
+            const raw = entry.recordingId;
+            const recordingId = raw instanceof ObjectId
+              ? raw
+              : ObjectId.isValid(raw)
+                ? new ObjectId(raw)
+                : null;
+            if (!recordingId) {
+              return null;
+            }
+            return {
+              recordingId,
+              index: typeof entry.index === 'number' ? entry.index : idx,
+              enabled: entry.enabled !== false,
+            };
+          })
+          .filter((value): value is { recordingId: ObjectId; index: number; enabled: boolean } => value !== null)
+          .sort((a, b) => a.index - b.index)
+          .map((entry, idx) => ({
+            ...entry,
+            index: idx,
+          }))
+      : undefined,
   };
 }
 

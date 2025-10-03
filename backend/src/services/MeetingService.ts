@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { Meeting, MeetingCreate, MeetingUpdate, Recording } from '../types';
+import { Meeting, MeetingCreate, MeetingUpdate, Recording, MeetingRecordingOrderItem } from '../types';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument } from '../types/documents';
 import { meetingDocumentToMeeting } from '../utils/mongoMappers';
@@ -8,39 +8,143 @@ import { internal } from '../utils/errors';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
 
+const normalizeRecordingOrderEntries = (
+  order: MeetingRecordingOrderItem[] | undefined
+): MeetingRecordingOrderItem[] | undefined => {
+  if (!Array.isArray(order)) {
+    return undefined;
+  }
+
+  const normalized = order
+    .map((entry, idx) => {
+      if (!entry || !entry.recordingId) {
+        return null;
+      }
+      const raw = entry.recordingId;
+      const recordingId = raw instanceof ObjectId
+        ? raw
+        : ObjectId.isValid(raw)
+          ? new ObjectId(raw)
+          : null;
+      if (!recordingId) {
+        return null;
+      }
+      return {
+        recordingId,
+        index: typeof entry.index === 'number' ? entry.index : idx,
+        enabled: entry.enabled !== false,
+      } satisfies MeetingRecordingOrderItem;
+    })
+    .filter((value): value is MeetingRecordingOrderItem => value !== null)
+    .sort((a, b) => a.index - b.index)
+    .map((entry, idx) => ({
+      ...entry,
+      index: idx,
+    }));
+
+  return normalized.length > 0 ? normalized : [];
+};
+
 export const getMeetingsForUser = async (
   userId: string,
   limit?: number | 'all',
 ): Promise<Meeting[]> => {
-  const collection = getMeetingsCollection();
+  const meetingsCollection = getMeetingsCollection();
   const uid = new ObjectId(userId);
-  const cursor = collection
-    .find({ $or: [
-      { ownerId: uid },
-      { members: { $elemMatch: { $eq: uid } } },
-    ] })
-    .sort({ createdAt: -1 });
+
+  const pipeline: any[] = [
+    {
+      $match: {
+        $or: [
+          { ownerId: uid },
+          { members: { $elemMatch: { $eq: uid } } }
+        ]
+      }
+    },
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $lookup: {
+        from: COLLECTIONS.RECORDINGS,
+        localField: '_id',
+        foreignField: 'meetingId',
+        as: 'recordings'
+      }
+    },
+    {
+      $addFields: {
+        recordings: {
+          $map: {
+            input: '$recordings',
+            as: 'recording',
+            in: {
+              $mergeObjects: [
+              '$$recording',
+              {
+                createdAt: { $ifNull: ['$$recording.createdAt', new Date()] },
+                updatedAt: { $ifNull: ['$$recording.updatedAt', null] }
+              }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ];
 
   if (limit !== 'all') {
-    cursor.limit(typeof limit === 'number' ? limit : 100);
+    const limitCount = typeof limit === 'number' ? limit : 100;
+    pipeline.push({ $limit: limitCount });
   }
 
-  const meetings = await cursor.toArray();
-  return meetings.map(meetingDocumentToMeeting);
+  const meetings = await meetingsCollection.aggregate(pipeline).toArray();
+  return meetings.map((doc) => meetingDocumentToMeeting(doc as MeetingDocument));
 };
 
 export const getAllMeetings = async (limit?: number | 'all'): Promise<Meeting[]> => {
-  const collection = getMeetingsCollection();
-  const cursor = collection
-    .find({})
-    .sort({ createdAt: -1 });
+  const meetingsCollection = getMeetingsCollection();
+
+  const pipeline: any[] = [
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $lookup: {
+        from: COLLECTIONS.RECORDINGS,
+        localField: '_id',
+        foreignField: 'meetingId',
+        as: 'recordings'
+      }
+    },
+    {
+      $addFields: {
+        recordings: {
+          $map: {
+            input: '$recordings',
+            as: 'recording',
+            in: {
+              $mergeObjects: [
+              '$$recording',
+              {
+                createdAt: { $ifNull: ['$$recording.createdAt', new Date()] },
+                updatedAt: { $ifNull: ['$$recording.updatedAt', null] }
+              }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ];
 
   if (limit !== 'all') {
-    cursor.limit(typeof limit === 'number' ? limit : 100);
+    const limitCount = typeof limit === 'number' ? limit : 100;
+    pipeline.push({ $limit: limitCount });
   }
 
-  const meetings = await cursor.toArray();
-  return meetings.map(meetingDocumentToMeeting);
+  const meetings = await meetingsCollection.aggregate(pipeline).toArray();
+  return meetings.map((doc) => meetingDocumentToMeeting(doc as MeetingDocument));
 };
 
 export const getMeetingById = async (id: string, options: { includeRecordings?: boolean } = {}): Promise<Meeting | null> => {
@@ -78,6 +182,7 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
     updatedAt: now,
     scheduledStart: request.scheduledStart,
     recordings: [],
+    recordingOrder: normalizeRecordingOrderEntries(request.recordingOrder) ?? [],
     finalTranscript: undefined,
     participants: request.participants,
     ownerId: ownerId && ObjectId.isValid(ownerId) ? new ObjectId(ownerId) : undefined,
@@ -100,6 +205,10 @@ export const updateMeeting = async (id: string, request: MeetingUpdate): Promise
 
   // Always use the id from the URL parameter, not from the request body
   const updateFields: Partial<MeetingDocument> = { ...updateData, updatedAt: new Date() };
+
+  if (Array.isArray(updateData.recordingOrder)) {
+    updateFields.recordingOrder = normalizeRecordingOrderEntries(updateData.recordingOrder) ?? [];
+  }
 
   const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(id) },

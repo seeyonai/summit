@@ -130,7 +130,17 @@ export type AgendaItem = baseTypes.AgendaItem;
 
 export type OrganizedSpeech = baseTypes.OrganizedSpeech;
 
-export type Meeting = baseTypes.Meeting & Id & Timestamp & {
+export interface MeetingRecordingOrderItem {
+  recordingId: string;
+  index: number;
+  enabled: boolean;
+}
+
+type BaseMeeting = Omit<baseTypes.Meeting, 'recordingOrder'> & {
+  recordingOrder?: MeetingRecordingOrderItem[];
+};
+
+export type Meeting = BaseMeeting & Id & Timestamp & {
   ownerId?: string;
   members?: string[];
   combinedRecording?: Recording | null;

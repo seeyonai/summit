@@ -4,6 +4,7 @@ import meetingService from '../services/MeetingService';
 import transcriptExtractionService from '../services/TranscriptExtractionService';
 import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse, Recording } from '../types';
 import recordingService from '../services/RecordingService';
+import * as baseTypes from '@base/types';
 
 const router = Router();
 
@@ -14,14 +15,14 @@ const toIsoString = (value?: Date | string): string | undefined => {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 };
 
-const serializeRecording = (recording: Recording) => ({
+const serializeRecording = (recording: Recording | baseTypes.Recording) => ({
   ...recording,
-  _id: recording._id.toString(),
+  _id: ('_id' in recording) ? recording._id.toString() : '',
   createdAt: toIsoString(recording.createdAt),
-  updatedAt: toIsoString(recording.updatedAt),
+  updatedAt: 'updatedAt' in recording ? toIsoString(recording.updatedAt) : undefined,
 });
 
-type MeetingWithRecordings = Meeting & { recordings?: Recording[] };
+type MeetingWithRecordings = Meeting & { recordings?: baseTypes.Recording[] };
 
 const serializeMeeting = (meeting: MeetingWithRecordings) => ({
   ...meeting,
@@ -31,6 +32,17 @@ const serializeMeeting = (meeting: MeetingWithRecordings) => ({
   scheduledStart: toIsoString(meeting.scheduledStart),
   recordings: meeting.recordings?.map(serializeRecording) || [],
   combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
+  recordingOrder: Array.isArray(meeting.recordingOrder)
+    ? meeting.recordingOrder
+        .map((entry) => ({
+          recordingId: entry.recordingId instanceof ObjectId
+            ? entry.recordingId.toString()
+            : entry.recordingId.toString(),
+          index: entry.index,
+          enabled: entry.enabled !== false,
+        }))
+        .sort((a, b) => a.index - b.index)
+    : undefined,
 });
 
 // Health check

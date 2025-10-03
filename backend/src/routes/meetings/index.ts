@@ -45,6 +45,17 @@ const serializeMeeting = (meeting: Meeting) => ({
   combinedRecording: meeting.combinedRecording ? serializeRecording(meeting.combinedRecording) : undefined,
   ownerId: meeting.ownerId ? meeting.ownerId.toString() : undefined,
   members: Array.isArray(meeting.members) ? meeting.members.map((m: any) => m?.toString?.() || m) : [],
+  recordingOrder: Array.isArray(meeting.recordingOrder)
+    ? meeting.recordingOrder
+        .map((entry) => ({
+          recordingId: entry.recordingId instanceof ObjectId
+            ? entry.recordingId.toString()
+            : entry.recordingId.toString(),
+          index: entry.index,
+          enabled: entry.enabled !== false,
+        }))
+        .sort((a, b) => a.index - b.index)
+    : undefined,
 });
 
 // (Removed meetings-specific health check; root /health covers this)

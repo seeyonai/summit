@@ -4,6 +4,10 @@ import { ObjectId } from "mongodb";
 
 export type SpeakerSegment = baseTypes.SpeakerSegment;
 
+export interface MeetingRecordingOrderItem extends Omit<baseTypes.MeetingRecordingOrderItem, 'recordingId'> {
+  recordingId: ObjectId;
+}
+
 interface Timestamp {
   createdAt: Date;
   updatedAt?: Date;
@@ -73,23 +77,30 @@ export type TodoItem = baseTypes.TodoItem;
 
 export type AgendaItem = baseTypes.AgendaItem;
 
-export type Meeting = baseTypes.Meeting & Timestamp & Id & {
+type MeetingBase = Omit<baseTypes.Meeting, 'recordingOrder'> & {
+  recordingOrder?: MeetingRecordingOrderItem[];
+};
+
+export type Meeting = MeetingBase & Timestamp & Id & {
   ownerId?: ObjectId;
   members?: ObjectId[];
   combinedRecording?: Recording | null;
 };
 
-export type MeetingCreate = baseTypes.Meeting;
+export type MeetingCreate = Omit<baseTypes.Meeting, 'recordingOrder'> & {
+  recordingOrder?: MeetingRecordingOrderItem[];
+};
 
 export type MeetingUpdate = Partial<Pick<
   Meeting,
-  '_id' | 
-  'title' | 
-  'summary' | 
-  'status' | 
-  'scheduledStart' | 
-  'finalTranscript' | 
-  'participants'
+  '_id' |
+  'title' |
+  'summary' |
+  'status' |
+  'scheduledStart' |
+  'finalTranscript' |
+  'participants' |
+  'recordingOrder'
 >> & Pick<Meeting, '_id'>;
 
 

@@ -23,6 +23,14 @@ export interface AlignmentItem {
   timestamp: number[][];
 }
 
+export type ObjectIdLike = string | { toString(): string };
+
+export interface MeetingRecordingOrderItem {
+  recordingId: ObjectIdLike;
+  index: number;
+  enabled: boolean;
+}
+
 export interface Recording {
   originalFileName?: string;
   duration?: number;
@@ -95,6 +103,8 @@ export interface Meeting {
   parsedTodos?: TodoItem[];
   disputedIssues?: DisputedIssue[];
   participants?: number;
+  recordings?: Recording[];
+  recordingOrder?: MeetingRecordingOrderItem[];
 }
 
 export interface SegmentationResponse {
