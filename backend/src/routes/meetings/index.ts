@@ -75,7 +75,6 @@ const responseToRecording = (response: RecordingResponse, meetingId: string): Re
   channels: response.channels,
   format: response.format,
   source: response.source || 'concatenated',
-  kind: response.kind || 'concatenated',
   organizedSpeeches: response.organizedSpeeches,
   meetingId: response.meetingId && ObjectId.isValid(response.meetingId)
     ? new ObjectId(response.meetingId)
@@ -520,14 +519,14 @@ router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(a
 
   orderEntries.forEach((id) => {
     const record = recordingsMap.get(id);
-    if (record && record.kind !== 'concatenated' && !seen.has(id)) {
+    if (record && record.source !== 'concatenated' && !seen.has(id)) {
       ordered.push(record);
       seen.add(id);
     }
   });
 
   recordings.forEach((record) => {
-    if (record.kind === 'concatenated') {
+    if (record.source === 'concatenated') {
       return;
     }
     if (!seen.has(record._id)) {
@@ -544,7 +543,7 @@ router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(a
     targets = requestedIds
       .map((id) => {
         const record = recordingsMap.get(id);
-        if (!record || record.kind === 'concatenated') {
+        if (!record || record.source === 'concatenated') {
           missing.push(id);
           return null;
         }
@@ -663,7 +662,6 @@ router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(a
       ownerId,
       meetingId,
       source: 'concatenated',
-      kind: 'concatenated',
     });
 
     const finalFilename = `${newRecording._id}.wav`;
@@ -674,7 +672,6 @@ router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(a
 
     const concatenatedRecording = responseToRecording({
       ...newRecording,
-      kind: newRecording.kind || 'concatenated',
       source: newRecording.source || 'concatenated',
       meetingId,
       ownerId,

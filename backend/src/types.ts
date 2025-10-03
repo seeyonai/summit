@@ -41,7 +41,6 @@ export interface RecordingResponse {
   channels?: number;
   format?: string;
   source?: 'live' | 'upload' | 'concatenated';
-  kind?: 'original' | 'concatenated';
   organizedSpeeches?: Array<{
     speakerIndex: number;
     startTime: number;

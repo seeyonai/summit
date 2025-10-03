@@ -99,7 +99,6 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
     channels: recordingDoc.channels,
     format: recordingDoc.format,
     source: recordingDoc.source,
-    kind: (recordingDoc as any).kind,
     organizedSpeeches: recordingDoc.organizedSpeeches,
   };
 }

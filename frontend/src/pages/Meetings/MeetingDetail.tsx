@@ -230,7 +230,7 @@ function MeetingDetail() {
   const recordingsToShow =
     showConcatenatedRecording && meeting.concatenatedRecording
       ? [meeting.concatenatedRecording]
-      : (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated');
+      : (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated');
 
   return (
     <div className="min-h-screen">

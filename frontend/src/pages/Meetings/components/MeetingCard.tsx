@@ -46,7 +46,7 @@ function MeetingCard({ meeting, onDelete }: MeetingCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const StatusIcon = getStatusIcon(meeting.status);
   const totalTodos = meeting.parsedTodos?.length || 0;
-  const recordingCount = (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated').length;
+  const recordingCount = (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated').length;
 
   return (
     <Card 

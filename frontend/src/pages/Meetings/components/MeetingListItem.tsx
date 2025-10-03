@@ -46,7 +46,7 @@ function MeetingListItem({ meeting, onDelete }: MeetingListItemProps) {
   const StatusIcon = getStatusIcon(meeting.status);
   const completedTodos = meeting.parsedTodos?.filter(t => t.completed).length || 0;
   const totalTodos = meeting.parsedTodos?.length || 0;
-  const recordingCount = (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated').length;
+  const recordingCount = (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated').length;
 
   return (
     <div 

@@ -151,7 +151,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
 
   const [orderEntries, setOrderEntries] = useState<RecordingOrderEntry[]>(() =>
     normalizeRecordingOrder(
-      (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated'),
+      (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated'),
       meeting.recordingOrder
     )
   );
@@ -174,7 +174,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
   }, [meeting.concatenatedRecording]);
 
   const originalRecordings = useMemo(
-    () => recordingsState.filter((recording) => recording.kind !== 'concatenated'),
+    () => recordingsState.filter((recording) => recording.source !== 'concatenated'),
     [recordingsState]
   );
 
@@ -285,7 +285,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
         const nextRecordings = updatedMeeting.recordings || [];
         setRecordingsState(nextRecordings);
         setOrderEntries(normalizeRecordingOrder(
-          nextRecordings.filter((recording) => recording.kind !== 'concatenated'),
+          nextRecordings.filter((recording) => recording.source !== 'concatenated'),
           updatedMeeting.recordingOrder
         ));
         return;
@@ -294,10 +294,10 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
       if (result?.recording) {
         setConcatenatedRecordingState(result.recording);
         setRecordingsState((prev) => {
-          const filtered = prev.filter((recording) => recording.kind !== 'concatenated');
+          const filtered = prev.filter((recording) => recording.source !== 'concatenated');
           const nextRecordings = [...filtered, result.recording];
           setOrderEntries(normalizeRecordingOrder(
-            nextRecordings.filter((recording) => recording.kind !== 'concatenated'),
+            nextRecordings.filter((recording) => recording.source !== 'concatenated'),
             meeting.recordingOrder
           ));
           return nextRecordings;
@@ -406,7 +406,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
         const nextRecordings = updatedMeeting.recordings || [];
         setRecordingsState(nextRecordings);
         setConcatenatedRecordingState(updatedMeeting.concatenatedRecording);
-        const nextOriginals = nextRecordings.filter((recording) => recording.kind !== 'concatenated');
+        const nextOriginals = nextRecordings.filter((recording) => recording.source !== 'concatenated');
         const normalized = normalizeRecordingOrder(nextOriginals, updatedMeeting.recordingOrder);
         setOrderEntries(normalized);
         if (normalized.length !== orderEntries.length) {

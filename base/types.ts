@@ -45,7 +45,6 @@ export interface Recording {
   channels?: number;
   format?: string;
   source?: 'live' | 'upload' | 'concatenated';
-  kind?: 'original' | 'concatenated';
   meeting?: Meeting;
   organizedSpeeches?: OrganizedSpeech[];
   createdAt?: Date;

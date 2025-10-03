@@ -47,7 +47,7 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
     }
   };
 
-  const sourceRecordings = (meeting.recordings || []).filter((recording) => recording.kind !== 'concatenated');
+  const sourceRecordings = (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated');
 
   // Analyze speaker segments if available
   const speakerStats = sourceRecordings.reduce((acc, recording) => {

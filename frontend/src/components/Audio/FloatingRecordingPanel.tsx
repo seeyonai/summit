@@ -137,10 +137,10 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
         
         <div className="flex items-center gap-1">
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-destructive'}`}></div>
-          <Button size="sm" variant="ghost" onClick={startRecording} disabled={isRecording} className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/10">
+          <Button size="sm" variant="ghost" onClick={startRecording} disabled={isRecording} className="h-8 w-8 p-0 text白/80 hover:text白 hover:bg白/10">
             <Mic className="w-4 h-4" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => { stopRecording(); recordingPanelBus.stop(); }} disabled={!isRecording} className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/10">
+          <Button size="sm" variant="ghost" onClick={() => { stopRecording(); recordingPanelBus.stop(); }} disabled={!isRecording} className="h-8 w-8 p-0 text白/80 hover:text白 hover:bg白/10">
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -159,8 +159,8 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
         transform: 'translate(0, 0)',
         transition: isDragging ? 'none' : 'all 0.3s ease',
         background: 'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%)',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 20px 25px -5px hsl(var(--foreground) / 0.1), 0 10px 10px -5px hsl(var(--foreground) / 0.05)'
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 20px 25px -5px hsl(var(--foreground) / 0.3), 0 10px 10px -5px hsl(var(--foreground) / 0.2)'
       }}
       onMouseDown={handleMouseDown}
     >
@@ -178,7 +178,7 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
                 size="sm"
                 variant="ghost"
                 onClick={toggleFullscreen}
-                className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10"
+                className="h-6 w-6 p-0 text-white/80 hover:text白 hover:bg白/10"
                 title={isFullscreen ? "退出大屏模式" : "开始实时大屏模式"}
               >
                 {isFullscreen ? <MonitorOff className="w-3 h-3" /> : <Monitor className="w-3 h-3" />}
@@ -187,7 +187,7 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
                 size="sm"
                 variant="ghost"
                 onClick={minimizePanel}
-                className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10"
+                className="h-6 w-6 p-0 text-white/80 hover:text白 hover:bg白/10"
               >
                 <Minus className="w-3 h-3" />
               </Button>
@@ -195,7 +195,7 @@ function FloatingRecordingPanel({ isVisible }: FloatingRecordingPanelProps) {
                 size="sm"
                 variant="ghost"
                 onClick={closePanel}
-                className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10"
+                className="h-6 w-6 p-0 text-white/80 hover:text白 hover:bg白/10"
               >
                 <X className="w-3 h-3" />
               </Button>
