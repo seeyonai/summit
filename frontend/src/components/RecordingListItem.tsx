@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Recording as BaseRecording } from '@base/types';
 import type { Recording as FrontendRecording } from '@/types';
 
@@ -14,11 +15,16 @@ import {
   CalendarIcon,
   ClockIcon,
   FolderOpenIcon,
-  TrashIcon
+  TrashIcon,
+  UploadIcon,
+  RadioIcon,
+  MergeIcon,
+  HelpCircleIcon
 } from 'lucide-react';
 
 interface RecordingListItemProps {
   recording: Recording;
+  showSource?: boolean;
   actions?: {
     onAssociate?: (recording: Recording, e?: React.MouseEvent) => void;
     onDownload?: (recording: Recording, e?: React.MouseEvent) => void;
@@ -30,6 +36,7 @@ interface RecordingListItemProps {
 
 function RecordingListItem({
   recording,
+  showSource = false,
   actions = {},
   onClick,
   className = ''
@@ -37,6 +44,32 @@ function RecordingListItem({
   const { playingAudio, toggleAudioPlayback } = useAudioPlayback();
   
   const recordingId = ('_id' in recording ? (recording as any)._id : '') as string;
+
+  const getSourceIcon = (source?: 'live' | 'upload' | 'concatenated') => {
+    switch (source) {
+      case 'live':
+        return RadioIcon;
+      case 'upload':
+        return UploadIcon;
+      case 'concatenated':
+        return MergeIcon;
+      default:
+        return HelpCircleIcon;
+    }
+  };
+
+  const getSourceLabel = (source?: 'live' | 'upload' | 'concatenated') => {
+    switch (source) {
+      case 'live':
+        return '实时录制';
+      case 'upload':
+        return '上传文件';
+      case 'concatenated':
+        return '拼接录音';
+      default:
+        return '未知来源';
+    }
+  };
 
   const handleCardClick = () => {
     if (onClick) {
@@ -85,6 +118,24 @@ function RecordingListItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-semibold text-foreground truncate">{(recording as any).originalFileName || recordingId}</h3>
+            {/* Source Icon */}
+            {showSource && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="p-1 rounded-md bg-muted/50 hover:bg-muted transition-colors">
+                      {(() => {
+                        const SourceIcon = getSourceIcon(recording.source);
+                        return <SourceIcon className="w-3.5 h-3.5 text-muted-foreground" />;
+                      })()}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{getSourceLabel(recording.source)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             {recording.transcription && (
               <Badge variant="secondary" className="bg-success/10 text-success border-success/20 text-xs">
                 已转录

@@ -104,7 +104,7 @@ export interface Meeting {
   parsedTodos?: TodoItem[];
   disputedIssues?: DisputedIssue[];
   participants?: number;
-  recordings?: Recording[];
+  // recordings?: Recording[]; // recordings are frontend only
   recordingOrder?: MeetingRecordingOrderItem[];
   concatenatedRecording?: Recording | null;
 }

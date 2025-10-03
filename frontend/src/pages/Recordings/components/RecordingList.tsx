@@ -404,6 +404,7 @@ function RecordingList() {
                   recording={recording}
                   showMeetingInfo={true}
                   showTranscriptionPreview={true}
+                  showSource
                   actions={recordingActions}
                   onClick={handleRecordingClick}
                 />
@@ -415,6 +416,7 @@ function RecordingList() {
                 <RecordingListItem 
                   key={recording._id} 
                   recording={recording}
+                  showSource
                   actions={recordingActions}
                   onClick={handleRecordingClick}
                 />

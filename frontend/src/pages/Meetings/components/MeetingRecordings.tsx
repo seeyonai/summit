@@ -548,7 +548,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
                   }`}
                 >
                   <div className="flex items-center gap-3 text-muted-foreground">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
                       <GripVerticalIcon className="h-4 w-4" />
                     </div>
                     <span className="text-sm font-medium text-muted-foreground/80">{entry.index + 1}</span>

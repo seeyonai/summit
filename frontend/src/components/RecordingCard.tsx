@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import TranscriptionPreview from '@/components/TranscriptionPreview';
 import type { Recording as BaseRecording } from '@base/types';
 import type { Recording as FrontendRecording } from '@/types';
@@ -19,7 +20,11 @@ import {
   LinkIcon,
   CheckCircleIcon,
   UsersIcon,
-  TrashIcon
+  TrashIcon,
+  UploadIcon,
+  RadioIcon,
+  MergeIcon,
+  HelpCircleIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +33,7 @@ interface RecordingCardProps {
   variant?: 'default' | 'concatenated' | 'compact';
   showMeetingInfo?: boolean;
   showTranscriptionPreview?: boolean;
+  showSource?: boolean;
   showActions?: boolean;
   actions?: {
     onView?: (recording: Recording, e?: React.MouseEvent) => void;
@@ -44,6 +50,7 @@ function RecordingCard({
   variant = 'default',
   showMeetingInfo = true,
   showTranscriptionPreview = false,
+  showSource = false,
   showActions = true,
   actions = {},
   onClick,
@@ -56,6 +63,32 @@ function RecordingCard({
   const hasSpeakers = recording.speakerSegments && recording.speakerSegments.length > 0;
   const numSpeakers = recording.numSpeakers || 
     (hasSpeakers ? new Set(recording.speakerSegments?.map(s => s.speakerIndex)).size : 0);
+
+  const getSourceIcon = (source?: 'live' | 'upload' | 'concatenated') => {
+    switch (source) {
+      case 'live':
+        return RadioIcon;
+      case 'upload':
+        return UploadIcon;
+      case 'concatenated':
+        return MergeIcon;
+      default:
+        return HelpCircleIcon;
+    }
+  };
+
+  const getSourceLabel = (source?: 'live' | 'upload' | 'concatenated') => {
+    switch (source) {
+      case 'live':
+        return '实时录制';
+      case 'upload':
+        return '上传文件';
+      case 'concatenated':
+        return '拼接录音';
+      default:
+        return '未知来源';
+    }
+  };
 
   const handleCardClick = () => {
     if (onClick) {
@@ -147,7 +180,26 @@ function RecordingCard({
             )}
           </div>
           
-          <div className="flex gap-1">
+          <div className="flex items-start gap-1">
+            {/* Source Icon */}
+            {showSource && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="p-1.5 rounded-md bg-muted/50 hover:bg-muted transition-colors">
+                      {(() => {
+                        const SourceIcon = getSourceIcon(recording.source);
+                        return <SourceIcon className="w-3.5 h-3.5 text-muted-foreground" />;
+                      })()}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{getSourceLabel(recording.source)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            
             {hasTranscription && (
               <Badge variant="secondary" className="bg-badge-success">
                 <CheckCircleIcon className="w-3 h-3 mr-1" />
