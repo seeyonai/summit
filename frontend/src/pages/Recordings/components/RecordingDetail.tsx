@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import HotwordSelection from '@/components/HotwordSelection';
 import BackButton from '@/components/BackButton';
+import StatisticsCard from '@/components/StatisticsCard';
  
 import RecordingTranscription from './RecordingTranscription';
 import RecordingAlignment from './RecordingAlignment';
@@ -276,55 +277,33 @@ function RecordingDetailRedesign() {
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 mb-6">
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <ActivityIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-xs text-gray-600 dark:text-gray-400">比特率</span>
-                </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {recording.metadata?.bitrate || (recording.fileSize && recording.duration ? Math.round((recording.fileSize / recording.duration) * 8 / 1000) : '-')} kbps
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  {recording.metadata?.codec || recording.format || 'WAV'}
-                </p>
-              </div>
+              <StatisticsCard
+                icon={<ActivityIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+                label="比特率"
+                value={`${recording.metadata?.bitrate || (recording.fileSize && recording.duration ? Math.round((recording.fileSize / recording.duration) * 8 / 1000) : '-')} kbps`}
+                description={recording.metadata?.codec || recording.format || 'WAV'}
+              />
 
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <BarChart3Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-xs text-gray-600 dark:text-gray-400">转录进度</span>
-                </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {recording.transcription ? '100%' : '0%'}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  {recording.transcription ? '已完成' : '待处理'}
-                </p>
-              </div>
+              <StatisticsCard
+                icon={<BarChart3Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+                label="转录进度"
+                value={recording.transcription ? '100%' : '0%'}
+                description={recording.transcription ? '已完成' : '待处理'}
+              />
 
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <FileTextIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-xs text-gray-600 dark:text-gray-400">字数统计</span>
-                </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {recording.transcription ? recording.transcription.length.toLocaleString() : 0}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">总字符</p>
-              </div>
+              <StatisticsCard
+                icon={<FileTextIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+                label="字数统计"
+                value={recording.transcription ? recording.transcription.length.toLocaleString() : 0}
+                description="总字符"
+              />
 
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <UsersIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-xs text-gray-600 dark:text-gray-400">说话人数</span>
-                </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map(s => s.speakerIndex)).size : 0)}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  声道数: {recording.metadata?.channels || recording.channels || '-'}
-                </p>
-              </div>
+              <StatisticsCard
+                icon={<UsersIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+                label="说话人数"
+                value={recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map(s => s.speakerIndex)).size : 0)}
+                description={`声道数: ${recording.metadata?.channels || recording.channels || '-'}`}
+              />
             </div>
 
             {/* Audio Player */}

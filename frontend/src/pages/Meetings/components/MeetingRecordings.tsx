@@ -1,14 +1,16 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import type { Meeting } from '@/types';
 import RecordingCard from '@/components/RecordingCard';
+import StatisticsCard from '@/components/StatisticsCard';
 import { formatDuration } from '@/utils/formatHelpers';
 import {
   FileAudioIcon,
   ClockIcon,
   MicIcon,
   LinkIcon,
-  EyeIcon
+  EyeIcon,
+  Disc3Icon
 } from 'lucide-react';
 
 interface MeetingRecordingsProps {
@@ -23,60 +25,35 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
   return (
     <div className="space-y-6">
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">录音总数</p>
-                <p className="text-2xl font-bold">{recordings.length}</p>
-              </div>
-              <MicIcon className="w-8 h-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatisticsCard
+          icon={<MicIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+          label="录音总数"
+          value={recordings.length}
+          description={`${recordings.length} 个录音文件`}
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">总时长</p>
-                <p className="text-2xl font-bold">
-                  {formatDuration(recordings.reduce<number>((acc, r) => acc + (r.duration || 0), 0))}
-                </p>
-              </div>
-              <ClockIcon className="w-8 h-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatisticsCard
+          icon={<ClockIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+          label="总时长"
+          value={formatDuration(recordings.reduce<number>((acc, r) => acc + (r.duration || 0), 0))}
+          description="累计录音时长"
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">已转录</p>
-                <p className="text-2xl font-bold">
-                  {recordings.filter((r) => Boolean(r.transcription)).length}
-                </p>
-              </div>
-              <FileAudioIcon className="w-8 h-8 text-success" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatisticsCard
+          icon={<FileAudioIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+          label="已转录"
+          value={recordings.filter((r) => Boolean(r.transcription)).length}
+          description={`共 ${recordings.length} 个录音`}
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">合并状态</p>
-                <p className="text-2xl font-bold">
-                  {combinedRecording ? '已合并' : '未合并'}
-                </p>
-              </div>
-              <LinkIcon className="w-8 h-8 text-accent" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatisticsCard
+          icon={<Disc3Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+          label="合并状态"
+          value={combinedRecording ? '已合并' : '未合并'}
+          description={recordings.length > 1 ?
+            combinedRecording ? '可查看完整转录' : '多个录音可合并' : '单个录音无需合并'}
+        />
       </div>
 
       {/* Combined Recording */}

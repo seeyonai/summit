@@ -150,6 +150,9 @@ function Settings() {
                     <div className="text-sm text-muted-foreground">
                       切换浅色和深色主题
                     </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      使用 Ctrl / ⌘ + Shift + X 快速切换
+                    </div>
                   </div>
                 </div>
                 <Switch

@@ -272,8 +272,7 @@ function MeetingDetail() {
             {meeting.status === "in_progress" && (
               <Button
                 onClick={handleToggleMeetingDisplay}
-                variant="outline"
-                className="bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 border-primary/30"
+                variant="fancy"
               >
                 <MaximizeIcon className="w-4 h-4 mr-2" />
                 {showMeetingDisplay ? "退出大屏" : "会议大屏"}
