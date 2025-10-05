@@ -3,29 +3,15 @@ import { useMeetingDetail } from '@/hooks/useMeetingDetail';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircleIcon } from 'lucide-react';
 import OngoingMeetingDisplay from './components/OngoingMeetingDisplay';
-import FloatingRecordingPanel from '@/components/Audio/FloatingRecordingPanel';
-import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
-import type { RecordingInfo } from './components/hooks/useOngoingMeetingRecording';
 
 function OngoingMeetingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { showFloatingPanel, isFullscreen, closePanel } = useRecordingPanel();
   
-  const { meeting, loading, error, handleRecordingComplete } = useMeetingDetail(id);
+  const { meeting, loading, error } = useMeetingDetail(id);
 
   const handleClose = () => {
     navigate(`/meetings/${id}`);
-  };
-
-  const handleMeetingRecordingComplete = (recordingInfo: RecordingInfo) => {
-    if (typeof recordingInfo.duration !== 'number') {
-      return;
-    }
-    handleRecordingComplete({
-      duration: recordingInfo.duration,
-      downloadUrl: recordingInfo.downloadUrl,
-    });
   };
 
   if (loading) {
@@ -59,14 +45,10 @@ function OngoingMeetingPage() {
   }
 
   return (
-    <>
-      <OngoingMeetingDisplay
-        meeting={meeting}
-        onClose={handleClose}
-        onRecordingComplete={handleMeetingRecordingComplete}
-      />
-      <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} onClose={closePanel} />
-    </>
+    <OngoingMeetingDisplay
+      meeting={meeting}
+      onClose={handleClose}
+    />
   );
 }
 

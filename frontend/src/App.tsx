@@ -99,11 +99,12 @@ function AppContent() {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>
-
-                  <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} onClose={closePanel} />
                 </div>
               } />
             </Routes>
+
+            {/* Global Floating Recording Panel - rendered for all routes */}
+            <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} onClose={closePanel} />
           </Router>
         </ThemeProvider>
       </DebugProvider>
