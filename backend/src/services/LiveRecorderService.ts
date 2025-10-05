@@ -51,8 +51,22 @@ export class LiveRecorderService {
         recordingId
       }));
 
-      ws.on('message', (data: Buffer) => {
-        this.handleAudioChunk(recordingId, data);
+      ws.on('message', (data: Buffer | string) => {
+        // Handle text messages (control messages like stop)
+        if (typeof data === 'string' || Buffer.isBuffer(data) && data.length < 1000) {
+          try {
+            const message = JSON.parse(data.toString());
+            if (message.type === 'stop') {
+              debug(`Received stop message for recording ${recordingId}`);
+              this.handleConnectionClose(recordingId);
+              return;
+            }
+          } catch (e) {
+            // Not JSON, treat as audio
+          }
+        }
+        // Handle binary audio data
+        this.handleAudioChunk(recordingId, data as Buffer);
       });
 
       ws.on('close', () => {

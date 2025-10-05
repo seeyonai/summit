@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMeetingDetail } from "@/hooks/useMeetingDetail";
 import { useTodoAdvice } from "@/hooks/useTodoAdvice";
 import { formatDate } from "@/utils/date";
-import { useRecordingPanel } from "@/contexts/RecordingPanelContext";
 import BackButton from "@/components/BackButton";
 import MeetingTranscript from "./components/MeetingTranscript";
 import MeetingRecordings from "./components/MeetingRecordings";
@@ -30,8 +29,6 @@ import {
   FileTextIcon,
   HeadphonesIcon,
 } from "lucide-react";
-import OngoingMeetingDisplay from "./components/OngoingMeetingDisplay";
-import type { RecordingInfo } from './components/hooks/useOngoingMeetingRecording';
 
 function MeetingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -39,11 +36,7 @@ function MeetingDetail() {
   const [success, setSuccess] = useState<string | null>(null);
   const [showAnalysisSuccess, setShowAnalysisSuccess] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const showMeetingDisplay = searchParams.get("display") === "full";
   const activeTab = searchParams.get("tab") || "recordings";
-
-  const { exitFullscreen, enterFullscreen } =
-    useRecordingPanel();
 
   // Use custom hooks
   const {
@@ -86,49 +79,16 @@ function MeetingDetail() {
   }, []);
 
   const handleToggleMeetingDisplay = useCallback(() => {
-    const nextVisible = !showMeetingDisplay;
-    const nextParams = new URLSearchParams(searchParams);
-    if (nextVisible) {
-      nextParams.set("display", "full");
-    } else {
-      nextParams.delete("display");
+    if (id) {
+      navigate(`/meetings/${id}/display`);
     }
-    setSearchParams(nextParams);
-  }, [showMeetingDisplay, searchParams, setSearchParams]);
-
-  const handleExitMeetingDisplay = useCallback(() => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete("display");
-    setSearchParams(nextParams);
-  }, [searchParams, setSearchParams]);
+  }, [id, navigate]);
 
   const handleTabChange = useCallback((value: string) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("tab", value);
     setSearchParams(nextParams);
   }, [searchParams, setSearchParams]);
-
-  const handleMeetingRecordingComplete = useCallback(
-    (recordingInfo: RecordingInfo) => {
-      if (typeof recordingInfo.duration !== 'number') {
-        return;
-      }
-      handleRecordingComplete({
-        duration: recordingInfo.duration,
-        downloadUrl: recordingInfo.downloadUrl,
-      });
-      setSuccess("Recording saved successfully!");
-    },
-    [handleRecordingComplete]
-  );
-
-  useEffect(() => {
-    if (showMeetingDisplay) {
-      enterFullscreen();
-    } else {
-      exitFullscreen();
-    }
-  }, [showMeetingDisplay, enterFullscreen, exitFullscreen]);
 
   useEffect(() => {
     if (success) {
@@ -138,25 +98,6 @@ function MeetingDetail() {
       return () => clearTimeout(timer);
     }
   }, [success]);
-
-  // Render full-screen meeting display if active
-  if (showMeetingDisplay && meeting && meeting.status === "in_progress") {
-    return (
-      <Suspense
-        fallback={
-          <div className="fixed inset-0 z-50 bg-gradient-to-br from-background via-primary/20 to-background flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          </div>
-        }
-      >
-        <OngoingMeetingDisplay
-          meeting={meeting}
-          onClose={handleExitMeetingDisplay}
-          onRecordingComplete={handleMeetingRecordingComplete}
-        />
-      </Suspense>
-    );
-  }
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -273,7 +214,7 @@ function MeetingDetail() {
                 variant="fancy"
               >
                 <MaximizeIcon className="w-4 h-4 mr-2" />
-                {showMeetingDisplay ? "退出大屏" : "会议大屏"}
+                会议大屏
               </Button>
             )}
             <Button

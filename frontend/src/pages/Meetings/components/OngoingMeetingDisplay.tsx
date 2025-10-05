@@ -19,7 +19,6 @@ import { useOngoingMeetingRecording } from './hooks/useOngoingMeetingRecording';
 import type { RecordingInfo } from './hooks/useOngoingMeetingRecording';
 import { MeetingAgenda } from './MeetingAgenda';
 import { RecordingControls } from './RecordingControls';
-import MeetingStats from './MeetingStats';
 import '@/styles/meeting-display.css';
 import LiveTranscript from './LiveTranscript';
 
@@ -30,7 +29,7 @@ interface OngoingMeetingDisplayProps {
 }
 
 function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: OngoingMeetingDisplayProps) {
-  const [isFullscreen, setIsFullscreen] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -49,7 +48,15 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
   } = useOngoingMeetingRecording(onRecordingComplete);
 
   const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+    if (!isFullscreen) {
+      // Enter fullscreen
+      containerRef.current?.requestFullscreen?.().catch(console.error);
+      setIsFullscreen(true);
+    } else {
+      // Exit fullscreen
+      document.exitFullscreen?.().catch(console.error);
+      setIsFullscreen(false);
+    }
   };
 
   const formatTime = (seconds: number): string => {
@@ -62,24 +69,22 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Listen for fullscreen changes
   useEffect(() => {
-    // Enter fullscreen mode on mount
-    if (containerRef.current && isFullscreen) {
-      containerRef.current.requestFullscreen?.().catch(console.error);
-    }
-    
-    return () => {
-      // Exit fullscreen on unmount
-      if (document.fullscreenElement) {
-        document.exitFullscreen?.().catch(console.error);
-      }
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
     };
-  }, [isFullscreen]);
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   return (
     <div 
       ref={containerRef}
-      className={`fixed overflow-y-auto inset-0 z-50 bg-gradient-to-br from-background via-primary/90 to-background ${
+      className={`fixed overflow-y-auto inset-0 z-40 bg-gradient-to-br from-background via-primary/90 to-background ${
         isFullscreen ? '' : 'p-4'
       }`}
     >
@@ -235,11 +240,6 @@ function OngoingMeetingDisplay({ meeting, onClose, onRecordingComplete }: Ongoin
               onConnect={connectWebSocket}
             />
             
-            <MeetingStats
-              transcriptionStats={transcriptionStats}
-              recordingTime={recordingTime}
-              participantCount={meeting.participants || 0}
-            />
           </div>
         </div>
       </div>

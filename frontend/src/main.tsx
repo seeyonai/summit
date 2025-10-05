@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
+import 'sonner/dist/styles.css'
 import './index.css'
 import './styles/animations.css'
 

@@ -86,7 +86,6 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       // Connect to WebSocket
       const wsUrl = options.wsUrl || buildWsUrl('/ws/live-recorder');
       wsRef.current = new WebSocket(wsUrl);
-
       wsRef.current.onopen = () => {
         console.info('🔗 WebSocket connected to backend');
         setState(prev => ({ ...prev, isConnected: true }));
@@ -184,14 +183,61 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
   }, [cleanup, options]);
 
   const stopRecording = useCallback(() => {
-    cleanup();
+    // Stop the timer and audio capture first
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    try {
+      workletNodeRef.current?.disconnect();
+    } catch (error) {
+      console.error('Error disconnecting worklet:', error);
+    }
+    
+    try {
+      streamRef.current?.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      console.error('Error stopping stream:', error);
+    }
+    
+    try {
+      audioContextRef.current?.close();
+    } catch (error) {
+      console.error('Error closing audio context:', error);
+    }
+    
+    audioContextRef.current = null;
+    workletNodeRef.current = null;
+    streamRef.current = null;
     
     setState(prev => ({ 
       ...prev, 
-      isRecording: false,
-      isConnected: false
+      isRecording: false
     }));
-  }, [cleanup]);
+    
+    // Send stop message to backend, then close after receiving response
+    // The backend will save the recording and send recording_saved message
+    try {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'stop' }));
+        
+        // Close WebSocket after a delay to allow backend to process and respond
+        setTimeout(() => {
+          try {
+            if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
+            }
+          } catch (error) {
+            console.error('Error closing WebSocket:', error);
+          }
+        }, 2000); // 2 second timeout for backend to process
+      }
+    } catch (error) {
+      console.error('Error sending stop message:', error);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {

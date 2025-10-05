@@ -12,6 +12,7 @@ import HotwordListPage from './pages/Hotwords/HotwordListPage';
 import Meetings from './pages/Meetings';
 import MeetingDetail from './pages/Meetings/MeetingDetail';
 import MeetingEdit from './pages/Meetings/MeetingEdit';
+import OngoingMeetingPage from './pages/Meetings/OngoingMeetingPage';
 import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
 import LiveRecorderTest from './pages/LiveRecorderTest';
@@ -32,8 +33,8 @@ import { DebugProvider } from '@/contexts/DebugContext';
 
 function AppContent() {
   const { isRecording } = useAudioRecording();
-  const { 
-    showFloatingPanel, 
+  const {
+    showFloatingPanel,
     isFullscreen,
     toggleFloatingPanel,
     closePanel
@@ -66,41 +67,47 @@ function AppContent() {
       <DebugProvider>
         <ThemeProvider>
           <Router>
-            <div className="min-h-screen bg-background">
-              <Toaster />
-              <DebugInfo />
+            <Routes>
+              {/* Fullscreen routes without Header/Layout */}
+              <Route path="/meetings/:id/display" element={<ProtectedRoute><OngoingMeetingPage /></ProtectedRoute>} />
 
-              <Header
-                isRecording={isRecording}
-              />
+              {/* Standard routes with Header/Layout */}
+              <Route path="*" element={
+                <div className="min-h-screen bg-background">
+                  <Toaster />
+                  <DebugInfo />
 
-            <main className="container mx-auto px-4 py-8 animate-fade-in">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/custom-sign-on" element={<CustomSignOn />} />
-                <Route path="/recordings" element={<ProtectedRoute><RecordingManagement /></ProtectedRoute>} />
-                <Route path="/recordings/:id" element={<ProtectedRoute><RecordingDetail /></ProtectedRoute>} />
-                <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
-                <Route path="/meetings/:id" element={<ProtectedRoute><MeetingDetail /></ProtectedRoute>} />
-                <Route path="/meetings/:id/edit" element={<ProtectedRoute><MeetingEdit /></ProtectedRoute>} />
-                <Route path="/hotwords" element={<ProtectedRoute><HotwordListPage /></ProtectedRoute>} />
-                <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-                <Route path="/test-recorder" element={<ProtectedRoute><LiveRecorderTest /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
+                  <Header isRecording={isRecording} />
 
-            <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} />
-          </div>
-        </Router>
-      </ThemeProvider>
-    </DebugProvider>
-  </ColorThemeProvider>
+                  <main className="container mx-auto px-4 py-8 animate-fade-in">
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
+                      <Route path="/custom-sign-on" element={<CustomSignOn />} />
+                      <Route path="/recordings" element={<ProtectedRoute><RecordingManagement /></ProtectedRoute>} />
+                      <Route path="/recordings/:id" element={<ProtectedRoute><RecordingDetail /></ProtectedRoute>} />
+                      <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
+                      <Route path="/meetings/:id" element={<ProtectedRoute><MeetingDetail /></ProtectedRoute>} />
+                      <Route path="/meetings/:id/edit" element={<ProtectedRoute><MeetingEdit /></ProtectedRoute>} />
+                      <Route path="/hotwords" element={<ProtectedRoute><HotwordListPage /></ProtectedRoute>} />
+                      <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                      <Route path="/test-recorder" element={<ProtectedRoute><LiveRecorderTest /></ProtectedRoute>} />
+                      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </main>
+
+                  <FloatingRecordingPanel isVisible={showFloatingPanel && !isFullscreen} onClose={closePanel} />
+                </div>
+              } />
+            </Routes>
+          </Router>
+        </ThemeProvider>
+      </DebugProvider>
+    </ColorThemeProvider>
   );
 }
 
