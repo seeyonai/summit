@@ -23,24 +23,25 @@ export class HotwordService {
   async createHotword(word: string, user: JwtPayload, isPublic?: boolean): Promise<Hotword> {
     const trimmedWord = word.trim();
     const collection = getCollection<HotwordDocument>(COLLECTIONS.HOTWORDS);
-    
+
     // Check if hotword already exists
-    const existing = await collection.findOne({ 
+    const existing = await collection.findOne({
       word: { $regex: new RegExp(`^${trimmedWord}$`, 'i') },
-      isActive: true
+      isActive: true,
     });
-    
+
     if (existing) {
       throw conflict('Hotword already exists', 'hotword.exists');
     }
 
-    const makePublic = user.role === 'admin' ? !!isPublic : false;
+    const makePublic = isPublic === true;
+    const ownerId = new ObjectId(user.userId);
     const hotwordDoc: Omit<HotwordDocument, '_id'> = {
       word: trimmedWord,
       createdAt: new Date(),
       isActive: true,
       isPublic: makePublic,
-      ownerId: makePublic ? undefined : new ObjectId(user.userId),
+      ownerId,
     };
 
     const result = await collection.insertOne(hotwordDoc as any);
@@ -62,15 +63,11 @@ export class HotwordService {
       throw notFound('Hotword not found', 'hotword.not_found');
     }
 
-    // Permission checks
-    if (hotword.isPublic) {
-      if (user.role !== 'admin') throw forbidden('Not allowed', 'hotword.forbidden');
-    } else if (hotword.ownerId) {
-      const isOwner = hotword.ownerId.toString() === user.userId;
-      if (!isOwner && user.role !== 'admin') throw forbidden('Not allowed', 'hotword.forbidden');
-    } else {
-      // If no ownerId and not public, treat as admin-only legacy
-      if (user.role !== 'admin') throw forbidden('Not allowed', 'hotword.forbidden');
+    const isOwner = hotword.ownerId ? hotword.ownerId.toString() === user.userId : false;
+    const isAdmin = user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw forbidden('Not allowed', 'hotword.forbidden');
     }
 
     // Check if new word already exists (excluding current hotword)
@@ -89,15 +86,12 @@ export class HotwordService {
     if (typeof update.word === 'string' && update.word.trim().length > 0) setUpdate.word = update.word.trim();
     if (typeof update.isActive === 'boolean') setUpdate.isActive = update.isActive;
     if (typeof update.isPublic === 'boolean') {
-      if (user.role !== 'admin') throw forbidden('Not allowed', 'hotword.forbidden');
-      setUpdate.isPublic = update.isPublic;
-      // If switching to private, assign ownerId to admin if none
-      if (update.isPublic === false && !hotword.ownerId) {
-        setUpdate.ownerId = new ObjectId(user.userId);
+      if (!isOwner && !isAdmin) {
+        throw forbidden('Not allowed', 'hotword.forbidden');
       }
-      // If switching to public, clear ownerId
-      if (update.isPublic === true) {
-        setUpdate.ownerId = undefined;
+      setUpdate.isPublic = update.isPublic;
+      if (!hotword.ownerId) {
+        setUpdate.ownerId = new ObjectId(user.userId);
       }
     }
 
@@ -122,14 +116,11 @@ export class HotwordService {
       throw notFound('Hotword not found', 'hotword.not_found');
     }
 
-    // Permission checks
-    if (existing.isPublic) {
-      if (user.role !== 'admin') throw forbidden('Not allowed', 'hotword.forbidden');
-    } else if (existing.ownerId) {
-      const isOwner = existing.ownerId.toString() === user.userId;
-      if (!isOwner && user.role !== 'admin') throw forbidden('Not allowed', 'hotword.forbidden');
-    } else {
-      if (user.role !== 'admin') throw forbidden('Not allowed', 'hotword.forbidden');
+    const isOwner = existing.ownerId ? existing.ownerId.toString() === user.userId : false;
+    const isAdmin = user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw forbidden('Not allowed', 'hotword.forbidden');
     }
 
     const result = await collection.findOneAndUpdate(
@@ -153,6 +144,21 @@ export class HotwordService {
         { ownerId: new ObjectId(user.userId) },
       ],
     }).toArray();
+    return hotwords.map(hotwordDocumentToHotword);
+  }
+
+  async getPublicHotwordsForOwner(ownerId: string): Promise<Hotword[]> {
+    if (!ObjectId.isValid(ownerId)) {
+      return [];
+    }
+
+    const collection = getCollection<HotwordDocument>(COLLECTIONS.HOTWORDS);
+    const hotwords = await collection.find({
+      ownerId: new ObjectId(ownerId),
+      isPublic: true,
+      isActive: true,
+    }).toArray();
+
     return hotwords.map(hotwordDocumentToHotword);
   }
 
@@ -191,8 +197,7 @@ export class HotwordService {
 
     const seen = new Set<string>();
 
-    const isAdmin = user.role === 'admin';
-    const makePublic = isAdmin ? !!isPublic : false;
+    const makePublic = isPublic === true;
 
     const validate = (w: string): string | null => {
       const trimmed = w.trim();

@@ -356,9 +356,10 @@ function MeetingList() {
               const isCollapsed = collapsedGroups.has(group.status);
               return (
                 <div key={group.status}>
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => toggleGroupCollapse(group.status)}
-                    className="flex items-center gap-2 mb-4 w-full text-left hover:opacity-70 transition-opacity"
+                    className="flex items-center gap-2 mb-4 w-full text-left hover:opacity-70 transition-opacity h-auto p-0"
                   >
                     {isCollapsed ? (
                       <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -368,7 +369,7 @@ function MeetingList() {
                     <group.icon className="w-5 h-5 text-muted-foreground" />
                     <h2 className="text-lg font-semibold text-foreground">{group.label}</h2>
                     <span className="text-sm text-muted-foreground">({group.meetings.length})</span>
-                  </button>
+                  </Button>
                   {!isCollapsed && (
                     viewMode === 'grid' ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

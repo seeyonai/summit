@@ -3,6 +3,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { authService } from '@/services/auth';
 import { updateProfile } from '@/services/users';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 function Profile() {
   const { user } = useAuth();
@@ -61,56 +64,53 @@ function Profile() {
       <h2 className="text-2xl font-bold mb-6">个人资料</h2>
       <form onSubmit={onSave} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-1">邮箱</label>
-          <input
+          <Label className="block text-sm font-medium mb-1">邮箱</Label>
+          <Input
             type="email"
             value={user?.email || ''}
             disabled
-            className="w-full px-3 py-2 rounded-md border border-border bg-muted/40 text-muted-foreground"
+            className="bg-muted/40 text-muted-foreground"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">显示名称</label>
-          <input
+          <Label className="block text-sm font-medium mb-1">显示名称</Label>
+          <Input
             disabled={saving || user?.role !== 'admin'}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="姓名"
-            className="w-full px-3 py-2 rounded-md border border-input bg-background"
           />
           <p className="text-xs text-muted-foreground mt-1">留空以移除显示名称。</p>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">别称</label>
-          <input
+          <Label className="block text-sm font-medium mb-1">别称</Label>
+          <Input
             disabled={saving || user?.role !== 'admin'}
             type="text"
             value={aliases}
             onChange={(e) => setAliases(e.target.value)}
             placeholder="使用逗号分隔多个别称"
-            className="w-full px-3 py-2 rounded-md border border-input bg-background"
           />
           <p className="text-xs text-muted-foreground mt-1">例如：王局, 张总, 老李, 小明</p>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">角色</label>
-          <input
+          <Label className="block text-sm font-medium mb-1">角色</Label>
+          <Input
             type="text"
             value={user?.role || ''}
             disabled
-            className="w-full px-3 py-2 rounded-md border border-border bg-muted/40 text-muted-foreground"
+            className="bg-muted/40 text-muted-foreground"
           />
         </div>
         {user?.role === 'admin' && (
           <div className="flex gap-3">
-            <button
+            <Button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60"
             >
               {saving ? '保存中...' : '保存更改'}
-            </button>
+            </Button>
           </div>
         )}
       </form>
@@ -120,45 +120,41 @@ function Profile() {
       <h3 className="text-xl font-semibold mb-4">修改密码</h3>
       <form onSubmit={onChangePassword} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-1">当前密码</label>
-          <input
+          <Label className="block text-sm font-medium mb-1">当前密码</Label>
+          <Input
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full px-3 py-2 rounded-md border border-input bg-background"
             autoComplete="current-password"
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">新密码</label>
-            <input
+            <Label className="block text-sm font-medium mb-1">新密码</Label>
+            <Input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border border-input bg-background"
               autoComplete="new-password"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">确认新密码</label>
-            <input
+            <Label className="block text-sm font-medium mb-1">确认新密码</Label>
+            <Input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border border-input bg-background"
               autoComplete="new-password"
             />
           </div>
         </div>
         <div className="flex gap-3">
-          <button
+          <Button
             type="submit"
             disabled={savingPwd}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60"
           >
             {savingPwd ? '更新中...' : '更新密码'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

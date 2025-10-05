@@ -20,6 +20,7 @@ export interface MeetingDocument extends Document {
   participants?: number;
   createdAt: Date;
   updatedAt?: Date;
+  hotwords?: string[];
   recordings?: Recording[];
   concatenatedRecording?: Recording | null;
   recordingOrder?: Meeting['recordingOrder'];

@@ -75,6 +75,7 @@ const responseToRecording = (response: RecordingResponse, meetingId: string): Re
   channels: response.channels,
   format: response.format,
   source: response.source || 'concatenated',
+  hotwords: response.hotwords,
   organizedSpeeches: response.organizedSpeeches,
   meetingId: response.meetingId && ObjectId.isValid(response.meetingId)
     ? new ObjectId(response.meetingId)

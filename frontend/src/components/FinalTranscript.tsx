@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Loader2Icon, FileTextIcon } from 'lucide-react';
 import type { MeetingWithRecordings } from '@/types';
 
 interface FinalTranscriptProps {
@@ -36,65 +38,57 @@ const FinalTranscript: React.FC<FinalTranscriptProps> = ({
       return `${seconds}秒`;
     }
   };
-
   return (
     <div className="bg-card rounded-lg shadow-sm border border-border p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">会议纪要</h3>
         {hasTranscripts && onGenerateFinalTranscript && (
-          <button
+          <Button
             onClick={() => onGenerateFinalTranscript(meeting._id)}
             disabled={isGenerating}
-            className="px-4 py-2 bg-success text-success-foreground rounded-md hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            className="bg-success text-success-foreground hover:bg-success/90"
           >
             {isGenerating ? (
               <>
-                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>生成中...</span>
+                <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                生成中...
               </>
             ) : (
               <>
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span>AI生成会议纪要</span>
+                <FileTextIcon className="w-4 h-4 mr-2" />
+                生成纪要
               </>
             )}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Meeting Info */}
       <div className="bg-muted rounded-lg p-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <span className="font-medium text-muted-foreground">会议时长:</span>
-            <span className="ml-2 text-muted-foreground">
-              {formatDuration()}
-            </span>
-          </div>
-          <div>
-            <span className="font-medium text-muted-foreground">录音数量:</span>
-            <span className="ml-2 text-muted-foreground">
-              {hasRecordings ? meeting.recordings.length : 0} 个
-            </span>
-          </div>
-          <div>
-            <span className="font-medium text-muted-foreground">状态:</span>
-            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-              meeting.status === 'completed' ? 'bg-success/10 text-success' :
-              meeting.status === 'in_progress' ? 'bg-primary/10 text-primary' :
-              meeting.status === 'scheduled' ? 'bg-warning/10 text-warning' :
-              'bg-destructive/10 text-destructive'
-            }`}>
-              {meeting.status === 'completed' ? '已完成' :
-               meeting.status === 'in_progress' ? '进行中' :
-               meeting.status === 'scheduled' ? '已排期' : '失败'}
-            </span>
-          </div>
+        <div>
+          <span className="font-medium text-muted-foreground">会议时长:</span>
+          <span className="ml-2 text-muted-foreground">
+            {formatDuration()}
+          </span>
+        </div>
+        <div>
+          <span className="font-medium text-muted-foreground">录音数量:</span>
+          <span className="ml-2 text-muted-foreground">
+            {hasRecordings ? meeting.recordings.length : 0} 个
+          </span>
+        </div>
+        <div>
+          <span className="font-medium text-muted-foreground">状态:</span>
+          <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+            meeting.status === 'completed' ? 'bg-success/10 text-success' :
+            meeting.status === 'in_progress' ? 'bg-primary/10 text-primary' :
+            meeting.status === 'scheduled' ? 'bg-warning/10 text-warning' :
+            'bg-destructive/10 text-destructive'
+          }`}>
+            {meeting.status === 'completed' ? '已完成' :
+             meeting.status === 'in_progress' ? '进行中' :
+             meeting.status === 'scheduled' ? '已排期' : '失败'}
+          </span>
         </div>
       </div>
 

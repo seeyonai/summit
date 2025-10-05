@@ -28,7 +28,8 @@ function MeetingEdit() {
     summary: '',
     status: 'scheduled' as MeetingStatus,
     scheduledStart: '',
-    participants: ''
+    participants: '',
+    hotwords: ''
   });
 
   useEffect(() => {
@@ -46,7 +47,8 @@ function MeetingEdit() {
           summary: data.summary || '',
           status: data.status || 'scheduled',
           scheduledStart: data.scheduledStart ? new Date(data.scheduledStart).toISOString().slice(0, 16) : '',
-          participants: data.participants?.toString() || ''
+          participants: data.participants?.toString() || '',
+          hotwords: Array.isArray(data.hotwords) ? data.hotwords.join(', ') : ''
         });
         setError(null);
       } catch (err) {
@@ -70,14 +72,20 @@ function MeetingEdit() {
 
     try {
       setSaving(true);
-      
+
+      const hotwordTokens = formData.hotwords
+        .split(/[，,]/u)
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0);
+
       const updateData = {
         _id: meeting._id,
         title: formData.title || undefined,
         summary: formData.summary || undefined,
         status: formData.status || undefined,
         scheduledStart: formData.scheduledStart ? new Date(formData.scheduledStart) : undefined,
-        participants: formData.participants ? parseInt(formData.participants) : undefined
+        participants: formData.participants ? parseInt(formData.participants) : undefined,
+        hotwords: hotwordTokens
       };
 
       await apiService.updateMeeting(id, updateData);
@@ -139,12 +147,8 @@ function MeetingEdit() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={handleCancel}>
-              <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              返回
-            </Button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 编辑会议
@@ -237,6 +241,20 @@ function MeetingEdit() {
                   onChange={(e) => handleInputChange('participants', e.target.value)}
                   placeholder="输入参与人数"
                 />
+              </div>
+
+              {/* Hotwords */}
+              <div className="space-y-2">
+                <Label htmlFor="hotwords">热词（使用逗号分隔）</Label>
+                <Input
+                  id="hotwords"
+                  value={formData.hotwords}
+                  onChange={(e) => handleInputChange('hotwords', e.target.value)}
+                  placeholder="输入热词，使用逗号分隔。"
+                />
+                <p className="text-sm text-muted-foreground">
+                  成员加入会议或录音关联后，系统会自动合并他们的姓名、别名和公开热词，无需重复填写。
+                </p>
               </div>
 
               {/* Action Buttons */}

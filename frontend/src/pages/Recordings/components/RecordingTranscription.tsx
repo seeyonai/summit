@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import SearchInput from '@/components/SearchInput';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 /* tooltip and tabs imports removed */
 import {
   Dialog,
@@ -342,15 +344,16 @@ function RecordingTranscription({
             </Button>
             {/* Alignment actions moved to 对齐 tab */}
             
-            <select
-              value={fontSize}
-              onChange={(e) => setFontSize(e.target.value as 'sm' | 'base' | 'lg')}
-              className="px-2 py-1 border border-border rounded-md text-sm"
-            >
-              <option value="sm">小</option>
-              <option value="base">中</option>
-              <option value="lg">大</option>
-            </select>
+            <Select value={fontSize} onValueChange={(value: 'sm' | 'base' | 'lg') => setFontSize(value)}>
+              <SelectTrigger className="w-[80px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sm">小</SelectItem>
+                <SelectItem value="base">中</SelectItem>
+                <SelectItem value="lg">大</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Export Controls */}
             {recording.transcription && !isEditing && (
@@ -363,14 +366,15 @@ function RecordingTranscription({
                   <CopyIcon className="w-4 h-4 mr-2" />
                   复制
                 </Button>
-                <select
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value as 'txt' | 'docx')}
-                  className="px-2 py-1 border border-gray-200 dark:border-gray-600 rounded-md text-sm"
-                >
-                  <option value="txt">TXT</option>
-                  <option value="docx">DOCX</option>
-                </select>
+                <Select value={exportFormat} onValueChange={(value: 'txt' | 'docx') => setExportFormat(value)}>
+                  <SelectTrigger className="w-[100px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="txt">TXT</SelectItem>
+                    <SelectItem value="docx">DOCX</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button
                   onClick={exportTranscription}
                   variant="outline"
@@ -423,11 +427,10 @@ function RecordingTranscription({
                   {getWordStats(editForm.transcription || '').words} 词 · {getWordStats(editForm.transcription || '').characters} 字符
                 </div>
               </div>
-              <textarea
+              <Textarea
                 value={editForm.transcription || ''}
                 onChange={(e) => setEditForm({...editForm, transcription: e.target.value})}
-                className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 min-h-[300px] focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
-                  ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}
+                className={`min-h-[300px] ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}
                 placeholder="输入转录文本"
               />
             </div>
@@ -440,11 +443,10 @@ function RecordingTranscription({
                     {getWordStats(editForm.verbatimTranscript || '').words} 词 · {getWordStats(editForm.verbatimTranscript || '').characters} 字符
                   </div>
                 </div>
-                <textarea
+                <Textarea
                   value={editForm.verbatimTranscript || ''}
                   onChange={(e) => setEditForm({...editForm, verbatimTranscript: e.target.value})}
-                  className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
-                    ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}
+                  className={`min-h-[200px] ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}
                   placeholder="输入逐字稿"
                 />
               </div>

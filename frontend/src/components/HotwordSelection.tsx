@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import SearchInput from '@/components/SearchInput';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/utils/api';
 import type { Hotword } from '@/types';
-import { api } from '@/services/api';
+import SearchInput from '@/components/SearchInput';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { XIcon } from 'lucide-react';
 
 interface HotwordSelectionProps {
   isOpen: boolean;
@@ -103,14 +106,14 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
             <h2 className="text-xl font-semibold text-foreground">
               选择热词
             </h2>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              <XIcon className="w-5 h-5" />
+            </Button>
           </div>
         </div>
 
@@ -127,33 +130,34 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
 
             {/* Quick Actions */}
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleSelectAll}
-                className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                className="bg-primary/10 text-primary hover:bg-primary/20"
               >
                 全选
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleClearAll}
-                className="px-3 py-2 text-sm bg-muted text-foreground rounded-lg hover:bg-muted/60 transition-colors"
               >
-                清除
-              </button>
+                清空
+              </Button>
             </div>
           </div>
 
           {/* Use All Hotwords Toggle */}
-          <div className="mt-4 flex items-center">
-            <input
-              type="checkbox"
+          <div className="mt-4 flex items-center space-x-2">
+            <Checkbox
               id="useAllHotwords"
               checked={useAllHotwords}
-              onChange={(e) => setUseAllHotwords(e.target.checked)}
-              className="mr-2"
+              onCheckedChange={(checked) => setUseAllHotwords(checked === true)}
             />
-            <label htmlFor="useAllHotwords" className="text-sm font-medium text-foreground">
-              使用所有热词 ({hotwords.length} 个)
-            </label>
+            <Label htmlFor="useAllHotwords" className="text-sm font-medium text-foreground">
+              使用所有热词（忽略选择）
+            </Label>
           </div>
         </div>
 
@@ -174,10 +178,9 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
                       : 'border-border hover:border-primary/40'
                   }`}
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selectedHotwords.has(hotword._id) || useAllHotwords}
-                    onChange={() => handleHotwordToggle(hotword._id)}
+                    onCheckedChange={() => handleHotwordToggle(hotword._id)}
                     disabled={useAllHotwords}
                     className="mr-2"
                   />
@@ -197,19 +200,18 @@ const HotwordSelection: React.FC<HotwordSelectionProps> = ({
               已选择 {useAllHotwords ? hotwords.length : selectedHotwords.size} 个热词
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="outline"
                 onClick={onClose}
-                className="px-4 py-2 text-foreground bg-muted rounded-lg hover:bg-muted/60 transition-colors"
               >
                 取消
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleApply}
                 disabled={selectedHotwords.size === 0 && !useAllHotwords}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 应用
-              </button>
+              </Button>
             </div>
           </div>
         </div>

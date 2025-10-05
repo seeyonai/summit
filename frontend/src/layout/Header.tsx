@@ -5,6 +5,7 @@ import UserMenu from '@/components/UserMenu';
 import AppLogo from '@/components/AppLogo';
 import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
 import { useAuthOptional } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 export const Header: React.FC<{
   isRecording: boolean;
@@ -19,7 +20,9 @@ export const Header: React.FC<{
       <div className="container mx-auto px-4 py-4">
         <div className={`flex items-center ${onAuthPage ? 'justify-center' : 'justify-between'}`}>
           <div className="flex items-center space-x-8">
-            <AppLogo />
+            <Link to="/" className="flex items-center">
+              <AppLogo />
+            </Link>
             <Navigation />
           </div>
           <div className="flex items-center space-x-2">

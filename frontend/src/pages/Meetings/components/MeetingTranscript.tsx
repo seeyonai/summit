@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Meeting, OrganizedSpeech } from '@/types';
 import {
   FileTextIcon,
@@ -166,14 +167,15 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
                   <CopyIcon className="w-4 h-4 mr-2" />
                   复制
                 </Button>
-                <select
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value as 'txt' | 'docx')}
-                  className="px-3 py-1 border border-border rounded-md text-sm"
-                >
-                  <option value="txt">TXT</option>
-                  <option value="docx">DOCX</option>
-                </select>
+                <Select value={exportFormat} onValueChange={(value: 'txt' | 'docx') => setExportFormat(value)}>
+                  <SelectTrigger className="w-[100px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="txt">TXT</SelectItem>
+                    <SelectItem value="docx">DOCX</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button
                   onClick={exportTranscript}
                   variant="outline"

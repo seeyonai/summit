@@ -42,6 +42,7 @@ export interface RecordingResponse {
   channels?: number;
   format?: string;
   source?: 'live' | 'upload' | 'concatenated';
+  hotwords?: string[];
   organizedSpeeches?: Array<{
     speakerIndex: number;
     startTime: number;
@@ -101,7 +102,8 @@ export type MeetingUpdate = Partial<Pick<
   'scheduledStart' |
   'finalTranscript' |
   'participants' |
-  'recordingOrder'
+  'recordingOrder' |
+  'hotwords'
 >>;
 
 

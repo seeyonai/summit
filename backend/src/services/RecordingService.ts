@@ -12,6 +12,8 @@ import { getFilesBaseDir, makeRelativeToBase, resolveExistingPathFromCandidate }
 import { badRequest, internal, notFound } from '../utils/errors';
 import { getMimeType, normalizeTranscriptText } from '../utils/recordingHelpers';
 import { debug } from '../utils/logger';
+import { normalizeHotwords } from '../utils/hotwordUtils';
+import { mergeHotwordsIntoMeeting } from './meetingHotwordHelpers';
 
 interface LiveRecordingStartResponse {
   id: string;
@@ -248,8 +250,10 @@ export async function createRecording(recordingData: {
   ownerId?: string;
   meetingId?: string;
   source?: 'live' | 'upload' | 'concatenated';
+  hotwords?: string[];
 }): Promise<RecordingResponse> {
   const now = new Date();
+  const normalizedHotwords = normalizeHotwords(recordingData.hotwords);
 
   const document: Omit<RecordingDocument, '_id'> = {
     originalFileName: recordingData.originalFileName,
@@ -269,6 +273,7 @@ export async function createRecording(recordingData: {
       ? new ObjectId(recordingData.ownerId)
       : undefined,
     meetingId: recordingData.meetingId && ObjectId.isValid(recordingData.meetingId) ? new ObjectId(recordingData.meetingId) : undefined,
+    hotwords: normalizedHotwords && normalizedHotwords.length > 0 ? normalizedHotwords : undefined,
   };
 
   const collection = recordingsCollection();
@@ -277,6 +282,10 @@ export async function createRecording(recordingData: {
 
   if (!inserted) {
     throw internal('Failed to persist recording', 'recording.persist_failed');
+  }
+
+  if (inserted.meetingId) {
+    await mergeHotwordsIntoMeeting(inserted.meetingId, inserted.hotwords);
   }
 
   return recordingDocumentToResponse(inserted);
@@ -315,6 +324,10 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
 
   if (!inserted) {
     throw internal('Failed to persist recording', 'recording.persist_failed');
+  }
+
+  if (inserted.meetingId) {
+    await mergeHotwordsIntoMeeting(inserted.meetingId, inserted.hotwords);
   }
 
   return {
@@ -356,6 +369,12 @@ export async function updateRecording(recordingId: string, updateData: Recording
     remoteUpdates.alignmentItems = updateData.alignmentItems;
   }
 
+  if (Object.prototype.hasOwnProperty.call(updateData, 'hotwords')) {
+    const normalizedHotwords = normalizeHotwords(updateData.hotwords);
+    updates.hotwords = normalizedHotwords && normalizedHotwords.length > 0 ? normalizedHotwords : [];
+    remoteUpdates.hotwords = updates.hotwords;
+  }
+
   if (Object.keys(updates).length === 0) {
     return { message: '未应用更改' };
   }
@@ -394,6 +413,8 @@ export async function addRecordingToMeeting(meetingId: string, recordingId: stri
     { _id: recording._id },
     { $set: { meetingId: new ObjectId(meetingId) } },
   );
+
+  await mergeHotwordsIntoMeeting(meetingId, recording.hotwords);
   return { message: '录音已附加到会议' };
 }
 

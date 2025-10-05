@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -65,23 +67,19 @@ const HotwordEditForm: React.FC<HotwordEditFormProps> = ({
             <Input
               value={word}
               onChange={(e) => setWord(e.target.value)}
-              placeholder="输入热词..."
               disabled={isLoading || isSubmitting || isReadOnlyPublic}
             />
           </div>
           
           <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
+            <Checkbox
               id="isActive"
               checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              disabled={isLoading || isSubmitting || isReadOnlyPublic}
-              className="rounded"
+              onCheckedChange={(checked) => setIsActive(checked === true)}
             />
-            <label htmlFor="isActive" className="text-sm font-medium">
-              启用状态
-            </label>
+            <Label htmlFor="isActive" className="text-sm font-medium">
+              启用热词
+            </Label>
             <Badge variant={isActive ? 'default' : 'secondary'}>
               {isActive ? '启用' : '禁用'}
             </Badge>
@@ -89,17 +87,14 @@ const HotwordEditForm: React.FC<HotwordEditFormProps> = ({
 
           {isAdmin && (
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="isPublic"
                 checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
-                disabled={isLoading || isSubmitting}
-                className="rounded"
+                onCheckedChange={(checked) => setIsPublic(checked === true)}
               />
-              <label htmlFor="isPublic" className="text-sm font-medium">
-                公开（所有人只读）
-              </label>
+              <Label htmlFor="isPublic" className="text-sm font-medium">
+                公开热词
+              </Label>
               <Badge variant={isPublic ? 'default' : 'secondary'}>
                 {isPublic ? '公开' : '私有'}
               </Badge>
@@ -112,7 +107,6 @@ const HotwordEditForm: React.FC<HotwordEditFormProps> = ({
               disabled={!word.trim() || isLoading || isSubmitting}
               className="flex-1"
             >
-              <Save className="w-4 h-4 mr-2" />
               {isSubmitting ? '保存中...' : '保存'}
             </Button>
             <Button 

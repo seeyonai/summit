@@ -105,8 +105,10 @@ function MeetingCard({ meeting, onDelete }: MeetingCardProps) {
                         }}
                       />
                       <div className="absolute right-0 top-full mt-1 z-20 w-32 rounded-md border border-border bg-popover shadow-md">
-                        <button
-                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md h-auto justify-start"
                           onClick={(e) => {
                             e.stopPropagation();
                             setShowMenu(false);
@@ -115,13 +117,12 @@ function MeetingCard({ meeting, onDelete }: MeetingCardProps) {
                         >
                           <TrashIcon className="h-4 w-4" />
                           删除
-                        </button>
+                        </Button>
                       </div>
                     </>
                   )}
                 </div>
               </>
-            )}
           </div>
         </div>
       </CardHeader>

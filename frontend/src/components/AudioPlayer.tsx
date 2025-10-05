@@ -1,12 +1,13 @@
-import { useMemo, useRef } from 'react';
-import type { Recording as BaseRecording } from '@base/types';
-import { fileUrlFor } from '@/services/api';
-import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
+import React, { useRef, useMemo } from 'react';
 import { RadioIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { Recording } from '@/types';
+import { fileUrlFor } from '@/utils/apiHelpers';
+import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
 
 interface AudioPlayerProps {
+  recording: Recording;
   showFilename?: boolean;
-  recording: BaseRecording;
   timestamps?: { time: number; label: string }[];
   onTimestampClick?: (time: number) => void;
 }
@@ -56,13 +57,15 @@ function AudioPlayer({ recording, onTimestampClick, showFilename = true }: Audio
             </div>
             <div className="flex flex-wrap gap-2">
               {recording.speakerSegments.map((segment, index) => (
-                <button
+                <Button
                   key={index}
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleSeek(segment.startTime)}
-                  className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs hover:bg-green-200 transition-colors"
+                  className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs hover:bg-green-200 transition-colors h-auto"
                 >
                   {getSpeakerDisplayName(segment.speakerIndex, speakerNameMap)}: {formatTime(segment.startTime)}-{formatTime(segment.endTime)}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -75,12 +78,14 @@ function AudioPlayer({ recording, onTimestampClick, showFilename = true }: Audio
             <div className="space-y-2">
               {recording.timeStampedNotes.map((note, index) => (
                 <div key={index} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleSeek(note.timestamp)}
-                    className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs hover:bg-yellow-300 transition-colors flex-shrink-0"
+                    className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs hover:bg-yellow-300 transition-colors flex-shrink-0 h-auto"
                   >
                     {formatTime(note.timestamp)}
-                  </button>
+                  </Button>
                   <p className="text-sm text-gray-700 flex-1">{note.text}</p>
                 </div>
               ))}

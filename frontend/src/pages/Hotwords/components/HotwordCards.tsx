@@ -59,16 +59,13 @@ const HotwordCards: React.FC<HotwordCardsProps> = ({
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium font-serif text-xl flex-grow">{hotword.word}</span>
+                  <span className="font-medium font-serif text-2xl flex-grow">{hotword.word}</span>
                   <Badge variant={hotword.isActive ? 'default' : 'secondary'} className="flex-shrink-0">
                     {hotword.isActive ? '启用' : '禁用'}
                   </Badge>
                   {hotword.isPublic && (
                     <Badge variant="secondary">公开</Badge>
                   )}
-                </div>
-                <div className="text-sm text-gray-500">
-                  创建时间: {new Date(hotword.createdAt).toLocaleDateString()}
                 </div>
               </div>
             </div>

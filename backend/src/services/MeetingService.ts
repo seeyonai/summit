@@ -5,8 +5,13 @@ import { COLLECTIONS, MeetingDocument } from '../types/documents';
 import { meetingDocumentToMeeting } from '../utils/mongoMappers';
 import { getRecordingsByMeetingId } from './RecordingService';
 import { internal } from '../utils/errors';
+import { normalizeHotwords } from '../utils/hotwordUtils';
+import { mergeHotwordsIntoMeeting } from './meetingHotwordHelpers';
+import { getById as getUserById } from './UserService';
+import { HotwordService } from './HotwordService';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
+const hotwordService = new HotwordService();
 
 const normalizeRecordingOrderEntries = (
   order: MeetingRecordingOrderItem[] | undefined
@@ -173,6 +178,7 @@ export const getMeetingById = async (id: string, options: { includeRecordings?: 
 export const createMeeting = async (request: MeetingCreate, ownerId?: string): Promise<Meeting> => {
   const collection = getMeetingsCollection();
   const now = new Date();
+  const normalizedHotwords = normalizeHotwords(request.hotwords);
 
   const meetingDoc: Omit<MeetingDocument, '_id'> = {
     title: request.title,
@@ -189,6 +195,10 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
     members: [],
   };
 
+  if (normalizedHotwords !== undefined) {
+    meetingDoc.hotwords = normalizedHotwords;
+  }
+
   const result = await collection.insertOne(meetingDoc as any);
   const insertedMeeting = await collection.findOne({ _id: result.insertedId });
 
@@ -204,6 +214,9 @@ export const updateMeeting = async (id: string, request: MeetingUpdate): Promise
   const updateData = { ...request };
   if ('_id' in updateData) {
     delete updateData._id;
+  }
+  if (request.hotwords !== undefined) {
+    updateData.hotwords = normalizeHotwords(request.hotwords) ?? [];
   }
   // Always use the id from the URL parameter, not from the request body
   const updateFields: Partial<MeetingDocument> = { ...updateData, updatedAt: new Date() };
@@ -298,15 +311,68 @@ export const getUpcomingMeetings = async (): Promise<Meeting[]> => {
 
 export async function addMember(meetingId: string, userId: string): Promise<Meeting | null> {
   const collection = getMeetingsCollection();
-  const result = await collection.findOneAndUpdate(
-    { _id: new ObjectId(meetingId) },
-    {
-      $addToSet: { members: new ObjectId(userId) },
-      $set: { updatedAt: new Date() },
-    },
-    { returnDocument: 'after' }
+  const meetingObjectId = new ObjectId(meetingId);
+  const memberObjectId = new ObjectId(userId);
+
+  const existingMeeting = await collection.findOne(
+    { _id: meetingObjectId },
+    { projection: { members: 1 } as any }
   );
-  return result ? meetingDocumentToMeeting(result) : null;
+
+  if (!existingMeeting) {
+    return null;
+  }
+
+  const members = Array.isArray(existingMeeting.members) ? existingMeeting.members : [];
+  const alreadyMember = members.some((member) => {
+    if (member instanceof ObjectId) {
+      return member.equals(memberObjectId);
+    }
+    if (typeof member === 'string') {
+      return member === userId;
+    }
+    if (member && typeof (member as any).toString === 'function') {
+      return (member as any).toString() === userId;
+    }
+    return false;
+  });
+
+  await collection.updateOne(
+    { _id: meetingObjectId },
+    {
+      $addToSet: { members: memberObjectId } as any,
+      $set: { updatedAt: new Date() },
+    }
+  );
+
+  if (!alreadyMember) {
+    const user = await getUserById(userId);
+    const additions: string[] = [];
+
+    if (user?.name && user.name.trim().length > 0) {
+      additions.push(user.name.trim());
+    }
+
+    if (user?.aliases) {
+      const aliasHotwords = normalizeHotwords(user.aliases);
+      if (aliasHotwords && aliasHotwords.length > 0) {
+        additions.push(...aliasHotwords);
+      }
+    }
+
+    const publicHotwords = await hotwordService.getPublicHotwordsForOwner(userId);
+    if (publicHotwords.length > 0) {
+      additions.push(...publicHotwords.map((hotword) => hotword.word));
+    }
+
+    if (additions.length > 0) {
+      await mergeHotwordsIntoMeeting(meetingObjectId, additions);
+    }
+  }
+
+  const updatedMeeting = await collection.findOne({ _id: meetingObjectId });
+
+  return updatedMeeting ? meetingDocumentToMeeting(updatedMeeting as MeetingDocument) : null;
 }
 
 export async function removeMember(meetingId: string, userId: string): Promise<Meeting | null> {

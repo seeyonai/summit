@@ -54,6 +54,7 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     disputedIssues: meetingDoc.disputedIssues,
     summary: meetingDoc.summary,
     participants: meetingDoc.participants,
+    hotwords: Array.isArray(meetingDoc.hotwords) ? meetingDoc.hotwords : undefined,
     ownerId: meetingDoc.ownerId,
     members: meetingDoc.members,
     recordings: normalizeRecordings(meetingDoc.recordings),
@@ -127,6 +128,7 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
     format: recordingDoc.format,
     source: recordingDoc.source,
     speakerNames: recordingDoc.speakerNames,
+    hotwords: recordingDoc.hotwords,
     organizedSpeeches: recordingDoc.organizedSpeeches,
   };
 }

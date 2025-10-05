@@ -113,6 +113,7 @@ export interface Meeting {
   // recordings?: Recording[]; // recordings are frontend only
   recordingOrder?: MeetingRecordingOrderItem[];
   concatenatedRecording?: Recording | null;
+  hotwords?: string[];
 }
 
 export interface SegmentationResponse {

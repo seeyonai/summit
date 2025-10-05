@@ -37,7 +37,7 @@
 ### Component structure
 - Plan pages by listing top-level sections; implement page-level component and split major sections into separate files.
 - Break large components into smaller subcomponents and colocate related files in the same folder.
-- Put custom components in `src/components` (not `src/components/ui`).
+- Put custom components in `src/components` (not `src/components/ui`, which is for SHADCN components only).
 - Keep data-fetching separate from UI/presentational components.
 - Use named function components and default-export them on the last line.
 - File names: PascalCase (`.jsx`/`.tsx`).
