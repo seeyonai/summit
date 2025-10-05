@@ -1,7 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, no-console */
+
 import { ObjectId } from 'mongodb';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument, HotwordDocument, RecordingDocument } from '../types/documents';
 import { RecordingCreate, MeetingCreate, HotwordCreate } from '../types';
+
+const isMeetingDocumentCandidate = (value: unknown): value is MeetingDocument => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as Partial<MeetingDocument>;
+  return candidate._id instanceof ObjectId
+    && typeof candidate.title === 'string'
+    && typeof candidate.status === 'string'
+    && candidate.createdAt instanceof Date;
+};
 
 export interface SeedData {
   meetings: Array<MeetingCreate & { recordings?: RecordingCreate[] }>;
@@ -239,6 +252,7 @@ export class DataSeeder {
 
     for (const meeting of this.mockData.meetings) {
       const { recordings, ...meetingData } = meeting;
+      delete (meetingData as { concatenatedRecording?: unknown }).concatenatedRecording;
       // Delete existing meeting
       await collection.deleteOne({ title: meetingData.title });
       const meetingIds = [
@@ -248,12 +262,24 @@ export class DataSeeder {
       ];
       const meetingId = meetingIds[this.mockData.meetings.indexOf(meeting)];
       
-      const result = await collection.insertOne({
+      const now = new Date();
+      const meetingDocument: Omit<MeetingDocument, '_id'> = {
         ...meetingData,
+        createdAt: now,
+        updatedAt: now,
+        recordings: [],
+      };
+
+      const documentToInsert = {
+        ...meetingDocument,
         _id: new ObjectId(meetingId),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+      };
+
+      if (!isMeetingDocumentCandidate(documentToInsert)) {
+        throw new Error('Invalid meeting document payload during seeding');
+      }
+
+      const result = await collection.insertOne(documentToInsert);
       console.log(`📋 Seeded meeting ${meetingData.title}`);
       if (Array.isArray(recordings)) {
         const meetingId = result.insertedId;

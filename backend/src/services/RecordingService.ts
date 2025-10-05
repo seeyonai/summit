@@ -6,7 +6,7 @@ import { getCollection } from '../config/database';
 import { COLLECTIONS, RecordingDocument, MeetingDocument } from '../types/documents';
 import { recordingDocumentToResponse, meetingDocumentToMeeting } from '../utils/mongoMappers';
 import { SegmentationService } from './SegmentationService';
-import { ensureTrailingSlash, HttpError, requestJson, uploadMultipart } from '../utils/httpClient';
+import { ensureTrailingSlash, requestJson, uploadMultipart } from '../utils/httpClient';
 import type { JsonRequestOptions } from '../utils/httpClient';
 import { getFilesBaseDir, makeRelativeToBase, resolveExistingPathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';

@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function Login() {
   const navigate = useNavigate();
@@ -36,44 +40,67 @@ function Login() {
   };
 
   return (
-    <div className="max-w-md mx-auto py-10">
-      <div className="flex justify-center mb-6">
-        <img
-          src="/logo-square.png"
-          alt="Summit AI"
-          className="h-16 w-auto"
-        />
+    <div className="flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-8">
+          <img
+            src="/logo-square.png"
+            alt="Summit AI"
+            className="h-16 w-auto"
+          />
+        </div>
+        
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">登录</CardTitle>
+            <CardDescription>
+              欢迎回到 Summit AI
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">邮箱</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">密码</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? '登录中...' : '登录'}
+              </Button>
+            </form>
+            
+            <div className="mt-6 text-center text-sm">
+              还没有账号？{' '}
+              <Link to="/register" className="text-primary hover:underline">
+                注册
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-      <h1 className="text-2xl font-semibold mb-6 text-center">登录</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm mb-1">邮箱</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm mb-1">密码</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-            required
-          />
-        </div>
-        {error && <div className="text-destructive text-sm">{error}</div>}
-        <Button type="submit" disabled={loading}>
-          {loading ? '登录中...' : '登录'}
-        </Button>
-      </form>
-      <p className="mt-4 text-sm">
-        还没有账号？ <Link to="/register" className="text-primary">注册</Link>
-      </p>
     </div>
   );
 }

@@ -201,8 +201,10 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
 
 export const updateMeeting = async (id: string, request: MeetingUpdate): Promise<Meeting | null> => {
   const collection = getMeetingsCollection();
-  const { _id: _ignoredId, ...updateData } = request;
-
+  const updateData = { ...request };
+  if ('_id' in updateData) {
+    delete updateData._id;
+  }
   // Always use the id from the URL parameter, not from the request body
   const updateFields: Partial<MeetingDocument> = { ...updateData, updatedAt: new Date() };
 

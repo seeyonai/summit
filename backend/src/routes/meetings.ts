@@ -35,9 +35,7 @@ const serializeMeeting = (meeting: MeetingWithRecordings) => ({
   recordingOrder: Array.isArray(meeting.recordingOrder)
     ? meeting.recordingOrder
         .map((entry) => ({
-          recordingId: entry.recordingId instanceof ObjectId
-            ? entry.recordingId.toString()
-            : entry.recordingId.toString(),
+          recordingId: entry.recordingId.toString(),
           index: entry.index,
           enabled: entry.enabled !== false,
         }))

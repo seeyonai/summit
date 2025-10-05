@@ -25,6 +25,7 @@ router.get('/', asyncHandler(async (req, res) => {
     _id: u._id.toString(),
     email: u.email,
     name: u.name,
+    aliases: u.aliases,
     role: u.role,
   })) });
 }));
@@ -49,12 +50,14 @@ router.put('/:userId/profile', asyncHandler(async (req, res) => {
     throw forbidden('Not allowed', 'user.profile_forbidden');
   }
   const name = typeof req.body?.name === 'string' ? req.body.name : undefined;
-  const updated = await userService.updateProfile(targetUserId, { name });
+  const aliases = typeof req.body?.aliases === 'string' ? req.body.aliases : undefined;
+  const updated = await userService.updateProfile(targetUserId, { name, aliases });
   res.json({
     user: {
       _id: updated._id.toString(),
       email: updated.email,
       name: updated.name,
+      aliases: updated.aliases,
       role: updated.role,
     },
   });
@@ -72,7 +75,7 @@ router.put('/:userId/role', requireAdmin, asyncHandler(async (req, res) => {
     throw forbidden('Cannot change own role', 'user.cannot_change_self_role');
   }
   const updated = await userService.updateRole(userId, role);
-  res.json({ user: { _id: updated._id.toString(), email: updated.email, name: updated.name, role: updated.role } });
+  res.json({ user: { _id: updated._id.toString(), email: updated.email, name: updated.name, aliases: updated.aliases, role: updated.role } });
 }));
 
 export default router;

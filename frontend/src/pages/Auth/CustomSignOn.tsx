@@ -45,7 +45,7 @@ function CustomSignOn() {
   }, [location.search, navigate, customSignOn]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex items-center justify-center bg-background">
       <div className="text-center w-full max-w-md p-6">
         {isLoading ? (
           <>

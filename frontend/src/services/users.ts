@@ -5,6 +5,7 @@ export interface UserListItem {
   _id: string;
   email: string;
   name?: string;
+  aliases?: string;
   role: 'admin' | 'user';
 }
 
@@ -13,7 +14,7 @@ export async function searchUsers(q: string): Promise<UserListItem[]> {
   return result.users;
 }
 
-export async function updateProfile(userId: string, updates: { name?: string }): Promise<AuthUser> {
+export async function updateProfile(userId: string, updates: { name?: string; aliases?: string }): Promise<AuthUser> {
   const result = await api<{ user: AuthUser }>(`/api/users/${userId}/profile`, {
     method: 'PUT',
     body: JSON.stringify(updates),

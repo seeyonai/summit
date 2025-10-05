@@ -7,6 +7,7 @@ import { updateProfile } from '@/services/users';
 function Profile() {
   const { user } = useAuth();
   const [name, setName] = useState<string>('');
+  const [aliases, setAliases] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
   const [currentPassword, setCurrentPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
@@ -15,13 +16,14 @@ function Profile() {
 
   useEffect(() => {
     setName(user?.name || '');
-  }, [user?.name, user?._id]);
+    setAliases(user?.aliases || '');
+  }, [user?.name, user?.aliases, user?._id]);
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
     try {
       setSaving(true);
-      await updateProfile(user?._id || '', { name });
+      await updateProfile(user?._id || '', { name, aliases });
       toast.success('个人资料已更新');
     } catch {
       // api layer will toast errors
@@ -78,6 +80,18 @@ function Profile() {
             className="w-full px-3 py-2 rounded-md border border-input bg-background"
           />
           <p className="text-xs text-muted-foreground mt-1">留空以移除显示名称。</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">别称</label>
+          <input
+            disabled={saving || user?.role !== 'admin'}
+            type="text"
+            value={aliases}
+            onChange={(e) => setAliases(e.target.value)}
+            placeholder="使用逗号分隔多个别称"
+            className="w-full px-3 py-2 rounded-md border border-input bg-background"
+          />
+          <p className="text-xs text-muted-foreground mt-1">例如：王局, 张总, 老李, 小明</p>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">角色</label>

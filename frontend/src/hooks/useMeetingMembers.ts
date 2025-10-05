@@ -28,10 +28,11 @@ function useMeetingMembers({ meetingId, ownerId, members = [], onChanged }: UseM
     setLoading(true);
     api<{ users: UserListItem[] }>(`/api/users?ids=${ids.join(',')}`)
       .then((data) => {
-        const list: UserListItem[] = (data?.users || []).map((u: { _id: string; email: string; name?: string; role: string }) => ({
+        const list: UserListItem[] = (data?.users || []).map((u: { _id: string; email: string; name?: string; aliases?: string; role: string }) => ({
           _id: u._id,
           email: u.email,
           name: u.name,
+          aliases: u.aliases,
           role: u.role as 'admin' | 'user'
         }));
         const owner = list.find((u) => u._id === ownerId) || null;

@@ -23,7 +23,7 @@ export const Navigation: React.FC = () => {
   const navigationItems = useMemo(() => {
     if (!user) {
       // Logged out: show only public home
-      return [{ path: '/', label: '首页', icon: LayoutDashboard }];
+      return [];
     }
     if (user.role === 'admin') {
       return [...baseItems, { path: '/admin/users', label: '管理', icon: Wrench }];

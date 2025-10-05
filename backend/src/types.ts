@@ -86,6 +86,7 @@ export type Meeting = MeetingBase & Timestamp & Id & {
   ownerId?: ObjectId;
   members?: ObjectId[];
   concatenatedRecording?: Recording | null;
+  recordings?: Recording[];
 };
 
 export type MeetingCreate = Omit<baseTypes.Meeting, 'recordingOrder'> & {
@@ -94,7 +95,6 @@ export type MeetingCreate = Omit<baseTypes.Meeting, 'recordingOrder'> & {
 
 export type MeetingUpdate = Partial<Pick<
   Meeting,
-  '_id' |
   'title' |
   'summary' |
   'status' |
@@ -102,7 +102,7 @@ export type MeetingUpdate = Partial<Pick<
   'finalTranscript' |
   'participants' |
   'recordingOrder'
->> & Pick<Meeting, '_id'>;
+>>;
 
 
 export interface SegmentationResponse {

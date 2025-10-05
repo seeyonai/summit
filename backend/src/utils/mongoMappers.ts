@@ -1,6 +1,7 @@
 import {
   Meeting,
   Hotword,
+  Recording,
   RecordingResponse,
   MeetingStatus,
 } from '../types';
@@ -12,6 +13,32 @@ import {
 import { ObjectId } from 'mongodb';
 
 const toIsoString = (value?: Date): string | undefined => (value ? value.toISOString() : undefined);
+
+const normalizeRecording = (recording?: Recording | null): Recording | null | undefined => {
+  if (recording === undefined || recording === null) {
+    return recording;
+  }
+  const createdAt = recording.createdAt instanceof Date
+    ? recording.createdAt
+    : new Date(recording.createdAt);
+  const updatedAt = recording.updatedAt instanceof Date || recording.updatedAt === undefined
+    ? recording.updatedAt
+    : new Date(recording.updatedAt);
+  return {
+    ...recording,
+    createdAt,
+    updatedAt,
+  };
+};
+
+const normalizeRecordings = (recordings?: Recording[] | null): Recording[] | undefined => {
+  if (!recordings) {
+    return undefined;
+  }
+  return recordings
+    .map((recording) => normalizeRecording(recording))
+    .filter((value): value is Recording => value !== undefined && value !== null);
+};
 
 export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
   return {
@@ -29,8 +56,8 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     participants: meetingDoc.participants,
     ownerId: meetingDoc.ownerId,
     members: meetingDoc.members,
-    recordings: meetingDoc.recordings,
-    concatenatedRecording: meetingDoc.concatenatedRecording || undefined,
+    recordings: normalizeRecordings(meetingDoc.recordings),
+    concatenatedRecording: normalizeRecording(meetingDoc.concatenatedRecording),
     recordingOrder: Array.isArray(meetingDoc.recordingOrder)
       ? meetingDoc.recordingOrder
           .map((entry, idx) => {
@@ -84,7 +111,7 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
     _id: recordingDoc._id.toHexString(),
     meetingId: toHex(recordingDoc.meetingId),
     ownerId: toHex(recordingDoc.ownerId),
-    originalFileName: (recordingDoc as any).originalFileName,
+    originalFileName: recordingDoc.originalFileName,
     createdAt: recordingDoc.createdAt.toISOString(),
     updatedAt: toIsoString(recordingDoc.updatedAt),
     duration: recordingDoc.duration,

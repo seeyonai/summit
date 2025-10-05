@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { ObjectId, type Filter } from 'mongodb';
 import { asyncHandler } from '../middleware/errorHandler';
 import type { RequestWithUser } from '../types/auth';
 import { verifyJwt } from '../utils/jwt';
@@ -15,13 +16,9 @@ const router = Router();
 
 async function findRecordingById(id: string): Promise<RecordingDocument | null> {
   const col = getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
-  try {
-    const { ObjectId } = await import('mongodb');
-    if (!ObjectId.isValid(id)) return null;
-    return col.findOne({ _id: new ObjectId(id) } as any);
-  } catch {
-    return null;
-  }
+  if (!ObjectId.isValid(id)) return null;
+  const filter: Filter<RecordingDocument> = { _id: new ObjectId(id) };
+  return col.findOne(filter);
 }
 
 async function userHasAccess(rec: RecordingDocument, userId: string, role?: string): Promise<boolean> {
@@ -34,7 +31,9 @@ async function userHasAccess(rec: RecordingDocument, userId: string, role?: stri
   if (!rec.meetingId) {
     return false;
   }
-  const meeting = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: rec.meetingId } as any);
+  const meetingCollection = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
+  const meetingFilter: Filter<MeetingDocument> = { _id: rec.meetingId };
+  const meeting = await meetingCollection.findOne(meetingFilter);
   if (!meeting) return false;
   const isOwner = meeting.ownerId && meeting.ownerId.toString() === userId;
   const isMember = Array.isArray(meeting.members) && meeting.members.some((m) => m.toString() === userId);
@@ -77,7 +76,7 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   }
 
   const baseDir = getFilesBaseDir();
-  const ext = (rec as any).format ? String((rec as any).format) : 'wav';
+  const ext = rec.format ?? 'wav';
   const storedName = `${rec._id.toString()}.${ext}`;
   const absolutePath = await resolveExistingPathFromCandidate(baseDir, storedName);
 

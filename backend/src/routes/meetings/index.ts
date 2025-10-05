@@ -110,18 +110,18 @@ const serializeMeeting = (meeting: Meeting) => ({
   createdAt: toIsoString(meeting.createdAt),
   updatedAt: toIsoString(meeting.updatedAt),
   scheduledStart: toIsoString(meeting.scheduledStart),
-  // @ts-ignore
   recordings: meeting.recordings?.map(serializeRecording) || [],
-  // @ts-ignore
-  concatenatedRecording: meeting.concatenatedRecording ? serializeRecording(meeting.concatenatedRecording) : undefined,
+  concatenatedRecording: meeting.concatenatedRecording
+    ? serializeRecording(meeting.concatenatedRecording)
+    : undefined,
   ownerId: meeting.ownerId ? meeting.ownerId.toString() : undefined,
-  members: Array.isArray(meeting.members) ? meeting.members.map((m: any) => m?.toString?.() || m) : [],
+  members: Array.isArray(meeting.members)
+    ? meeting.members.map((member) => member.toString())
+    : [],
   recordingOrder: Array.isArray(meeting.recordingOrder)
     ? meeting.recordingOrder
         .map((entry) => ({
-          recordingId: entry.recordingId instanceof ObjectId
-            ? entry.recordingId.toString()
-            : entry.recordingId.toString(),
+          recordingId: entry.recordingId.toString(),
           index: entry.index,
           enabled: entry.enabled !== false,
         }))
@@ -504,13 +504,7 @@ router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(a
     ? meeting.recordingOrder
         .filter((entry) => entry && entry.enabled !== false)
         .sort((a, b) => a.index - b.index)
-        .map((entry) => {
-          const value = entry.recordingId;
-          if (value instanceof ObjectId) {
-            return value.toString();
-          }
-          return typeof value === 'string' ? value : value?.toString?.();
-        })
+        .map((entry) => entry.recordingId.toString())
         .filter((value): value is string => typeof value === 'string' && value.length > 0)
     : [];
 

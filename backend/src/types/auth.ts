@@ -14,6 +14,6 @@ export interface AuthResponseUser {
   _id: string;
   email: string;
   name?: string;
+  aliases?: string;
   role: 'admin' | 'user';
 }
-

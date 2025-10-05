@@ -7,10 +7,10 @@ interface AuthResult {
 }
 
 export const authService = {
-  async register(email: string, password: string, name?: string): Promise<AuthResult> {
+  async register(email: string, password: string, name?: string, aliases?: string): Promise<AuthResult> {
     return api<AuthResult>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, aliases }),
       headers: {
         'Content-Type': 'application/json',
       },

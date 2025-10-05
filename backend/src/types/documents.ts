@@ -53,6 +53,7 @@ export interface UserDocument extends Document {
   _id: ObjectId;
   email: string;
   name?: string;
+  aliases?: string;
   role: 'admin' | 'user';
   passwordHash: string;
   salt: string;

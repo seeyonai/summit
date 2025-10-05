@@ -10,8 +10,38 @@ import { getPreferredLang } from '../utils/lang';
 
 const router = Router();
 
-function toAuthUser(u: { _id: any; email: string; name?: string; role: 'admin' | 'user' }): AuthResponseUser {
-  return { _id: u._id.toString(), email: u.email, name: u.name, role: u.role };
+interface CustomSignOnResponse {
+  valid: boolean;
+  error?: string;
+  token?: string;
+}
+
+const isCustomSignOnResponse = (value: unknown): value is CustomSignOnResponse => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as Partial<CustomSignOnResponse>;
+  return typeof candidate.valid === 'boolean'
+    && (candidate.error === undefined || typeof candidate.error === 'string')
+    && (candidate.token === undefined || typeof candidate.token === 'string');
+};
+
+interface AuthUserSource {
+  _id: { toString(): string };
+  email: string;
+  name?: string;
+  aliases?: string;
+  role: 'admin' | 'user';
+}
+
+function toAuthUser(u: AuthUserSource): AuthResponseUser {
+  return {
+    _id: u._id.toString(),
+    email: u.email,
+    name: u.name,
+    aliases: u.aliases,
+    role: u.role,
+  };
 }
 
 router.post('/register', asyncHandler(async (req, res) => {
@@ -19,7 +49,12 @@ router.post('/register', asyncHandler(async (req, res) => {
   if (!body?.email || !body?.password) {
     throw badRequest('Email and password are required', 'auth.invalid_payload');
   }
-  const user = await userService.createUser(body.email, body.password, body.name);
+  const user = await userService.createUser(
+    body.email,
+    body.password,
+    body.name,
+    typeof body.aliases === 'string' ? body.aliases : undefined
+  );
   const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
   res.status(201).json({ token, user: toAuthUser(user) });
 }));
@@ -93,7 +128,14 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
     }),
   });
 
-  const loginResult = await loginResponse.json();
+  const loginResultJson = await loginResponse.json();
+
+  if (!isCustomSignOnResponse(loginResultJson)) {
+    console.error('Unexpected login response format:', loginResultJson);
+    throw badRequest('Invalid login response', 'auth.external_invalid_response');
+  }
+
+  const loginResult = loginResultJson;
 
   if (isDev) {
     console.log('Login service response:', loginResult);

@@ -26,7 +26,7 @@ function generateSalt(): string {
   return crypto.randomBytes(16).toString('hex');
 }
 
-export async function createUser(email: string, password: string, name?: string) {
+export async function createUser(email: string, password: string, name?: string, aliases?: string) {
   const emailNorm = email.trim().toLowerCase();
   if (!emailNorm || !password) {
     throw badRequest('Email and password are required', 'user.invalid_payload');
@@ -43,6 +43,7 @@ export async function createUser(email: string, password: string, name?: string)
   const doc: Omit<UserDocument, '_id'> = {
     email: emailNorm,
     name,
+    ...(typeof aliases === 'string' ? { aliases: aliases.trim() } : {}),
     role,
     passwordHash,
     salt,
@@ -109,7 +110,7 @@ export function verifyPassword(user: UserDocument, password: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
 }
 
-export async function searchUsers(q: string, limit: number = 20): Promise<Array<Pick<UserDocument, '_id' | 'email' | 'name' | 'role'>>> {
+export async function searchUsers(q: string, limit: number = 20): Promise<Array<Pick<UserDocument, '_id' | 'email' | 'name' | 'aliases' | 'role'>>> {
   const col = usersCollection();
   const query: Record<string, unknown> = {};
   if (q && q.trim().length > 0) {
@@ -120,10 +121,10 @@ export async function searchUsers(q: string, limit: number = 20): Promise<Array<
     ];
   }
   const docs = await col.find(query).limit(limit).toArray();
-  return docs.map((u) => ({ _id: u._id, email: u.email, name: u.name, role: u.role }));
+  return docs.map((u) => ({ _id: u._id, email: u.email, name: u.name, aliases: u.aliases, role: u.role }));
 }
 
-export async function findByIds(ids: string[]): Promise<Array<Pick<UserDocument, '_id' | 'email' | 'name' | 'role'>>> {
+export async function findByIds(ids: string[]): Promise<Array<Pick<UserDocument, '_id' | 'email' | 'name' | 'aliases' | 'role'>>> {
   const objectIds = ids
     .map((id) => {
       try { return new ObjectId(id); } catch { return null; }
@@ -132,10 +133,10 @@ export async function findByIds(ids: string[]): Promise<Array<Pick<UserDocument,
   if (objectIds.length === 0) return [];
   const col = usersCollection();
   const docs = await col.find({ _id: { $in: objectIds } }).toArray();
-  return docs.map((u) => ({ _id: u._id, email: u.email, name: u.name, role: u.role }));
+  return docs.map((u) => ({ _id: u._id, email: u.email, name: u.name, aliases: u.aliases, role: u.role }));
 }
 
-export async function updateRole(userId: string, role: 'admin' | 'user'): Promise<Pick<UserDocument, '_id' | 'email' | 'name' | 'role'>> {
+export async function updateRole(userId: string, role: 'admin' | 'user'): Promise<Pick<UserDocument, '_id' | 'email' | 'name' | 'aliases' | 'role'>> {
   const col = usersCollection();
   const result = await col.findOneAndUpdate(
     { _id: new ObjectId(userId) },
@@ -145,18 +146,21 @@ export async function updateRole(userId: string, role: 'admin' | 'user'): Promis
   if (!result) {
     throw notFound('User not found', 'user.not_found');
   }
-  return { _id: result._id, email: result.email, name: result.name, role: result.role };
+  return { _id: result._id, email: result.email, name: result.name, aliases: result.aliases, role: result.role };
 }
 
 export async function updateProfile(
   userId: string,
-  updates: { name?: string }
-): Promise<Pick<UserDocument, '_id' | 'email' | 'name' | 'role'>> {
+  updates: { name?: string; aliases?: string }
+): Promise<Pick<UserDocument, '_id' | 'email' | 'name' | 'aliases' | 'role'>> {
   const col = usersCollection();
   const setDoc: Partial<UserDocument> = { updatedAt: new Date() };
   if (typeof updates.name === 'string') {
     // allow empty string to clear name
     setDoc.name = updates.name.trim();
+  }
+  if (typeof updates.aliases === 'string') {
+    setDoc.aliases = updates.aliases.trim();
   }
   const result = await col.findOneAndUpdate(
     { _id: new ObjectId(userId) },
@@ -166,7 +170,7 @@ export async function updateProfile(
   if (!result) {
     throw notFound('User not found', 'user.not_found');
   }
-  return { _id: result._id, email: result.email, name: result.name, role: result.role };
+  return { _id: result._id, email: result.email, name: result.name, aliases: result.aliases, role: result.role };
 }
 
 export async function updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {

@@ -1,10 +1,11 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import fs from 'fs';
-import path from 'path';
+import type { Server as HttpServer } from 'http';
+import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { getFilesBaseDir, resolveWithinBase } from '../utils/filePaths';
 import { getCollection } from '../config/database';
-import { Recording } from '../types';
+import { COLLECTIONS, RecordingDocument } from '../types/documents';
 import { debug, debugWarn } from '../utils/logger';
 
 interface ActiveRecording {
@@ -18,7 +19,7 @@ export class LiveRecorderService {
   private wss: WebSocketServer;
   private activeRecordings: Map<string, ActiveRecording> = new Map();
 
-  constructor(server: any) {
+  constructor(server: HttpServer) {
     this.wss = new WebSocketServer({ 
       server,
       path: '/ws/live-recorder'
@@ -59,7 +60,7 @@ export class LiveRecorderService {
         this.handleConnectionClose(recordingId);
       });
 
-      ws.on('error', (error) => {
+      ws.on('error', (error: Error) => {
         console.error(`WebSocket error for recording ${recordingId}:`, error);
         debug('WebSocket connection failed from client on port 2591');
         this.handleConnectionClose(recordingId);
@@ -148,9 +149,11 @@ export class LiveRecorderService {
       // Create Recording document in database first to get ID
       let insertedId: string | null = null;
       try {
-        const collection = await getCollection('recordings');
+        const collection = await getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
         const now = new Date();
-        const recordingDocument: Omit<Recording, '_id'> = {
+        const recordingObjectId = new ObjectId();
+        const recordingDocument: RecordingDocument = {
+          _id: recordingObjectId,
           // originalFileName not set for live recordings
           duration,
           fileSize: wavBuffer.length,
@@ -160,10 +163,10 @@ export class LiveRecorderService {
           format: 'wav',
           createdAt: now,
           updatedAt: now
-        } as any;
+        };
 
         const result = await collection.insertOne(recordingDocument);
-        insertedId = result.insertedId.toString();
+        insertedId = result.insertedId.toHexString();
         debug(`Recording document created with ID: ${insertedId}`);
       } catch (dbError) {
         console.error('Error creating Recording document:', dbError);
