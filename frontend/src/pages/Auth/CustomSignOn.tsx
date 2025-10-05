@@ -27,7 +27,7 @@ function CustomSignOn() {
         await customSignOn(searchParams);
 
         // User and token are automatically set by the auth context
-        console.log('Now redirecting to home page');
+        console.info('🏠 Now redirecting to home page');
         navigate('/dashboard');
       } catch (error) {
         console.error('Failed to connect to authentication service:', error);

@@ -21,6 +21,8 @@ export default tseslint.config([
     },
     rules: {
       'react-hooks/exhaustive-deps': 'off',
+      'no-console': ['warn', { allow: ['info', 'warn', 'error', 'table'] }],
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ])

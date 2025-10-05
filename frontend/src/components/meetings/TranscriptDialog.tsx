@@ -5,7 +5,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-import type { Recording } from '@base/types';
+import type { Recording } from '@/types';
 
 interface TranscriptDialogProps {
   open: boolean;

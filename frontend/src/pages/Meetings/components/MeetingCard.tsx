@@ -123,6 +123,7 @@ function MeetingCard({ meeting, onDelete }: MeetingCardProps) {
                   )}
                 </div>
               </>
+            )}
           </div>
         </div>
       </CardHeader>

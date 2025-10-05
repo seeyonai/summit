@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Save, X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import type { Hotword, HotwordUpdate } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 

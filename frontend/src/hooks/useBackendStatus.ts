@@ -35,7 +35,7 @@ export function useBackendStatus() {
         wsRef.current.onerror = () => {
           setStatus('disconnected');
         };
-      } catch (error) {
+      } catch {
         setStatus('disconnected');
       }
     };

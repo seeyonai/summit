@@ -1,5 +1,5 @@
-import { ObjectId } from 'mongodb';
-import { Meeting, MeetingCreate, MeetingUpdate, Recording, MeetingRecordingOrderItem } from '../types';
+import { ObjectId, OptionalUnlessRequiredId, UpdateFilter } from 'mongodb';
+import { Meeting, MeetingCreate, MeetingUpdate, Recording, MeetingRecordingOrderItem, RecordingResponse } from '../types';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument } from '../types/documents';
 import { meetingDocumentToMeeting } from '../utils/mongoMappers';
@@ -12,6 +12,37 @@ import { HotwordService } from './HotwordService';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
 const hotwordService = new HotwordService();
+
+const toObjectIdOrUndefined = (value?: string): ObjectId | undefined => {
+  if (!value || !ObjectId.isValid(value)) {
+    return undefined;
+  }
+  return new ObjectId(value);
+};
+
+const recordingResponseToRecording = (recording: RecordingResponse): Recording => ({
+  _id: toObjectIdOrUndefined(recording._id) ?? new ObjectId(),
+  originalFileName: recording.originalFileName,
+  createdAt: new Date(recording.createdAt),
+  updatedAt: recording.updatedAt ? new Date(recording.updatedAt) : undefined,
+  duration: recording.duration,
+  fileSize: recording.fileSize,
+  transcription: recording.transcription,
+  verbatimTranscript: recording.verbatimTranscript,
+  speakerSegments: recording.speakerSegments,
+  timeStampedNotes: recording.timeStampedNotes,
+  alignmentItems: recording.alignmentItems,
+  numSpeakers: recording.numSpeakers,
+  sampleRate: recording.sampleRate,
+  channels: recording.channels,
+  format: recording.format,
+  source: recording.source,
+  speakerNames: recording.speakerNames,
+  hotwords: recording.hotwords,
+  organizedSpeeches: recording.organizedSpeeches,
+  meetingId: toObjectIdOrUndefined(recording.meetingId),
+  ownerId: toObjectIdOrUndefined(recording.ownerId),
+});
 
 const normalizeRecordingOrderEntries = (
   order: MeetingRecordingOrderItem[] | undefined
@@ -103,8 +134,8 @@ export const getMeetingsForUser = async (
     pipeline.push({ $limit: limitCount });
   }
 
-  const meetings = await meetingsCollection.aggregate(pipeline).toArray();
-  return meetings.map((doc) => meetingDocumentToMeeting(doc as MeetingDocument));
+  const meetings = await meetingsCollection.aggregate<MeetingDocument>(pipeline).toArray();
+  return meetings.map(meetingDocumentToMeeting);
 };
 
 export const getAllMeetings = async (limit?: number | 'all'): Promise<Meeting[]> => {
@@ -148,8 +179,8 @@ export const getAllMeetings = async (limit?: number | 'all'): Promise<Meeting[]>
     pipeline.push({ $limit: limitCount });
   }
 
-  const meetings = await meetingsCollection.aggregate(pipeline).toArray();
-  return meetings.map((doc) => meetingDocumentToMeeting(doc as MeetingDocument));
+  const meetings = await meetingsCollection.aggregate<MeetingDocument>(pipeline).toArray();
+  return meetings.map(meetingDocumentToMeeting);
 };
 
 export const getMeetingById = async (id: string, options: { includeRecordings?: boolean } = {}): Promise<Meeting | null> => {
@@ -163,16 +194,8 @@ export const getMeetingById = async (id: string, options: { includeRecordings?: 
     return meetingDocumentToMeeting(meeting);
   }
   const recordings = await getRecordingsByMeetingId(id);
-  // Convert RecordingResponse[] to Recording[]
-  const recordingDocs = recordings.map(recording => {
-    return {
-      ...recording,
-      _id: recording._id,
-      createdAt: new Date(recording.createdAt),
-      updatedAt: recording.updatedAt ? new Date(recording.updatedAt) : undefined
-    };
-  });
-  return meetingDocumentToMeeting({ ...meeting, recordings: recordingDocs as any });
+  const recordingDocs = recordings.map(recordingResponseToRecording);
+  return meetingDocumentToMeeting({ ...meeting, recordings: recordingDocs });
 };
 
 export const createMeeting = async (request: MeetingCreate, ownerId?: string): Promise<Meeting> => {
@@ -180,7 +203,7 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
   const now = new Date();
   const normalizedHotwords = normalizeHotwords(request.hotwords);
 
-  const meetingDoc: Omit<MeetingDocument, '_id'> = {
+  const meetingDoc: OptionalUnlessRequiredId<MeetingDocument> = {
     title: request.title,
     summary: request.summary,
     status: 'scheduled',
@@ -199,7 +222,7 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
     meetingDoc.hotwords = normalizedHotwords;
   }
 
-  const result = await collection.insertOne(meetingDoc as any);
+  const result = await collection.insertOne(meetingDoc);
   const insertedMeeting = await collection.findOne({ _id: result.insertedId });
 
   if (!insertedMeeting) {
@@ -250,12 +273,14 @@ export const removeRecordingFromMeeting = async (
 ): Promise<Meeting | null> => {
   const collection = getMeetingsCollection();
 
+  const update: UpdateFilter<MeetingDocument> = {
+    $pull: { recordings: { _id: new ObjectId(recordingId) } },
+    $set: { updatedAt: new Date() },
+  };
+
   const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(meetingId) },
-    {
-      $pull: { recordings: { _id: new ObjectId(recordingId) } } as any,
-      $set: { updatedAt: new Date() }
-    },
+    update,
     { returnDocument: 'after' }
   );
 
@@ -292,9 +317,9 @@ export const updateConcatenatedRecording = async (meetingId: string, recording: 
   return meetingDocumentToMeeting(result);
 };
 
-export const getMeetingsByStatus = async (status: string): Promise<Meeting[]> => {
+export const getMeetingsByStatus = async (status: Meeting['status']): Promise<Meeting[]> => {
   const collection = getMeetingsCollection();
-  const meetings = await collection.find({ status: status as any }).toArray();
+  const meetings = await collection.find({ status }).toArray();
   return meetings.map(meetingDocumentToMeeting);
 };
 
@@ -316,7 +341,7 @@ export async function addMember(meetingId: string, userId: string): Promise<Meet
 
   const existingMeeting = await collection.findOne(
     { _id: meetingObjectId },
-    { projection: { members: 1 } as any }
+    { projection: { members: 1 } }
   );
 
   if (!existingMeeting) {
@@ -331,19 +356,23 @@ export async function addMember(meetingId: string, userId: string): Promise<Meet
     if (typeof member === 'string') {
       return member === userId;
     }
-    if (member && typeof (member as any).toString === 'function') {
-      return (member as any).toString() === userId;
+    if (
+      member
+      && typeof member === 'object'
+      && 'toString' in member
+      && typeof member.toString === 'function'
+    ) {
+      return member.toString() === userId;
     }
     return false;
   });
 
-  await collection.updateOne(
-    { _id: meetingObjectId },
-    {
-      $addToSet: { members: memberObjectId } as any,
-      $set: { updatedAt: new Date() },
-    }
-  );
+  const update: UpdateFilter<MeetingDocument> = {
+    $addToSet: { members: memberObjectId },
+    $set: { updatedAt: new Date() },
+  };
+
+  await collection.updateOne({ _id: meetingObjectId }, update);
 
   if (!alreadyMember) {
     const user = await getUserById(userId);
@@ -372,18 +401,19 @@ export async function addMember(meetingId: string, userId: string): Promise<Meet
 
   const updatedMeeting = await collection.findOne({ _id: meetingObjectId });
 
-  return updatedMeeting ? meetingDocumentToMeeting(updatedMeeting as MeetingDocument) : null;
+  return updatedMeeting ? meetingDocumentToMeeting(updatedMeeting) : null;
 }
 
 export async function removeMember(meetingId: string, userId: string): Promise<Meeting | null> {
   const collection = getMeetingsCollection();
+  const update: UpdateFilter<MeetingDocument> = {
+    $pull: { members: new ObjectId(userId) },
+    $set: { updatedAt: new Date() },
+  };
+
   const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(meetingId) },
-    {
-      // Mongo types can be overly strict here; the runtime accepts this shape
-      $pull: { members: new ObjectId(userId) } as any,
-      $set: { updatedAt: new Date() },
-    },
+    update,
     { returnDocument: 'after' }
   );
   return result ? meetingDocumentToMeeting(result) : null;
@@ -391,14 +421,17 @@ export async function removeMember(meetingId: string, userId: string): Promise<M
 
 export async function isOwner(meetingId: string, userId: string): Promise<boolean> {
   const collection = getMeetingsCollection();
-  const doc = await collection.findOne({ _id: new ObjectId(meetingId) }, { projection: { ownerId: 1 } as any });
+  const doc = await collection.findOne({ _id: new ObjectId(meetingId) }, { projection: { ownerId: 1 } });
   return !!doc && !!doc.ownerId && doc.ownerId.toString() === userId;
 }
 
 export async function isMember(meetingId: string, userId: string): Promise<boolean> {
   const collection = getMeetingsCollection();
   const uid = new ObjectId(userId);
-  const doc = await collection.findOne({ _id: new ObjectId(meetingId), members: { $elemMatch: { $eq: uid } } }, { projection: { _id: 1 } as any });
+  const doc = await collection.findOne(
+    { _id: new ObjectId(meetingId), members: { $elemMatch: { $eq: uid } } },
+    { projection: { _id: 1 } }
+  );
   return !!doc;
 }
 

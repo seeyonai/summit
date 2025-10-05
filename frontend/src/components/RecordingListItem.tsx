@@ -1,10 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Recording as BaseRecording } from '@base/types';
-import type { Recording as FrontendRecording } from '@/types';
+import type { Recording } from '@/types';
 
-type Recording = BaseRecording | FrontendRecording;
 import { formatDuration, formatFileSize, formatDate } from '@/utils/formatHelpers';
 import { useAudioPlayback, audioUrlFor } from '@/hooks/useAudioPlayback';
 import {

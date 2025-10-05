@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PencilIcon, SaveIcon, XIcon, RotateCcwIcon, UsersIcon } from 'lucide-react';
-import type { SpeakerName } from '@base/types';
 import { cn } from '../lib/utils';
+import type { SpeakerName } from '@/types';
 
 interface SpeakerNameEditorProps {
   speakerIndices: number[];
@@ -40,7 +40,6 @@ function SpeakerNameEditor({ speakerIndices, currentSpeakerNames = [], onSave, d
       });
       setEditedNames(updatedNames);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSpeakerNames]);
 
   const handleEdit = () => {

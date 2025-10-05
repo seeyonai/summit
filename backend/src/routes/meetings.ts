@@ -2,9 +2,8 @@ import { Router, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import meetingService from '../services/MeetingService';
 import transcriptExtractionService from '../services/TranscriptExtractionService';
-import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse, Recording } from '../types';
+import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse, Recording, MeetingStatus } from '../types';
 import recordingService from '../services/RecordingService';
-import * as baseTypes from '@base/types';
 
 const router = Router();
 
@@ -15,14 +14,14 @@ const toIsoString = (value?: Date | string): string | undefined => {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 };
 
-const serializeRecording = (recording: Recording | baseTypes.Recording) => ({
+const serializeRecording = (recording: Recording) => ({
   ...recording,
   _id: ('_id' in recording) ? recording._id.toString() : '',
   createdAt: toIsoString(recording.createdAt),
   updatedAt: 'updatedAt' in recording ? toIsoString(recording.updatedAt) : undefined,
 });
 
-type MeetingWithRecordings = Meeting & { recordings?: baseTypes.Recording[] };
+type MeetingWithRecordings = Meeting & { recordings?: Recording[] };
 
 const serializeMeeting = (meeting: MeetingWithRecordings) => ({
   ...meeting,
@@ -53,7 +52,7 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const all = typeof req.query.all === 'string' && ['true', '1', 'yes'].includes(req.query.all.toLowerCase());
     const desired = all ? 'all' : 101;
-    const list = await meetingService.getAllMeetings(desired as any);
+    const list = await meetingService.getAllMeetings(desired);
     const overLimit = !all && list.length > 100;
     const meetings = overLimit ? list.slice(0, 100) : list;
     const fetchedAll = all || !overLimit;
@@ -179,7 +178,7 @@ router.delete('/:id/recordings/:recordingId', async (req: Request, res: Response
 router.get('/status/:status', async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const meetings = await meetingService.getMeetingsByStatus(status);
+    const meetings = await meetingService.getMeetingsByStatus(status as MeetingStatus);
     res.json(meetings.map(serializeMeeting));
   } catch (error) {
     console.error('Error getting meetings by status:', error);
@@ -222,7 +221,7 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request,
     // For now, just add some placeholder text
     recording.verbatimTranscript = `[逐字稿 - 待实现]\n原始转录: ${recording.transcription}\n\n这里将会生成包含语气词、停顿、重复等原始语音特征的逐字稿。`;
     
-    const updatedMeeting = await meetingService.updateMeeting(meetingId, { _id: meeting._id } as any);
+    const updatedMeeting = await meetingService.updateMeeting(meetingId, {});
     
     res.json({
       success: true,
@@ -277,9 +276,8 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
 *此纪要由AI自动生成，仅供参考。*`;
     
     await meetingService.updateMeeting(meetingId, {
-      _id: meeting._id,
       finalTranscript: meeting.finalTranscript
-    } as any);
+    });
     
     res.json({
       success: true,

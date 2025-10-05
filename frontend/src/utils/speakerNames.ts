@@ -1,4 +1,4 @@
-import type { SpeakerName } from '@base/types';
+import type { SpeakerName } from "@/types";
 
 export type SpeakerNameMap = Record<number, string>;
 

@@ -4,7 +4,6 @@ import { useTheme } from '@/layout/useTheme';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import SearchInput from '@/components/SearchInput';
 import PageHeader from '@/components/PageHeader';
 import ColorCustomizer from './ColorCustomizer';
@@ -19,7 +18,6 @@ import {
   Database,
   Zap,
   Globe,
-  User,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';

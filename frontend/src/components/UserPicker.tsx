@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import SearchInput from '@/components/SearchInput';
 import { searchUsers, type UserListItem } from '@/services/users';
 import { cn } from '@/lib/utils';

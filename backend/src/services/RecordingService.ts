@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { ObjectId } from 'mongodb';
+import { ObjectId, OptionalUnlessRequiredId } from 'mongodb';
 import { RecordingResponse, RecordingUpdate, SpeakerSegment, Meeting } from '../types';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, RecordingDocument, MeetingDocument } from '../types/documents';
@@ -140,13 +140,13 @@ function inferExtension(format?: string): string {
 }
 
 async function resolveAbsoluteFilePath(document: RecordingDocument): Promise<string> {
-  const ext = inferExtension((document as any).format);
+  const ext = inferExtension(document.format);
   const candidate = `${document._id.toString()}.${ext}`;
   return resolveExistingPathFromCandidate(RECORDINGS_DIR, candidate);
 }
 
 function getRelativeFilePath(document: RecordingDocument): string {
-  const ext = inferExtension((document as any).format);
+  const ext = inferExtension(document.format);
   const candidate = `${document._id.toString()}.${ext}`;
   return makeRelativeToBase(RECORDINGS_DIR, candidate);
 }
@@ -193,7 +193,7 @@ export async function getRecordingsForUser(
   const meetingsCol = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
   const uid = new ObjectId(userId);
   const accessibleMeetingIds = await meetingsCol
-    .find({ $or: [ { ownerId: uid }, { members: { $elemMatch: { $eq: uid } } } ] }, { projection: { _id: 1 } as any })
+    .find({ $or: [ { ownerId: uid }, { members: { $elemMatch: { $eq: uid } } } ] }, { projection: { _id: 1 } })
     .toArray();
   const ids = accessibleMeetingIds.map((m) => m._id);
   const collection = recordingsCollection();
@@ -255,7 +255,7 @@ export async function createRecording(recordingData: {
   const now = new Date();
   const normalizedHotwords = normalizeHotwords(recordingData.hotwords);
 
-  const document: Omit<RecordingDocument, '_id'> = {
+  const document: OptionalUnlessRequiredId<RecordingDocument> = {
     originalFileName: recordingData.originalFileName,
     createdAt: recordingData.createdAt,
     updatedAt: now,
@@ -277,7 +277,7 @@ export async function createRecording(recordingData: {
   };
 
   const collection = recordingsCollection();
-  const insertResult = await collection.insertOne(document as any);
+  const insertResult = await collection.insertOne(document);
   const inserted = await collection.findOne({ _id: insertResult.insertedId });
 
   if (!inserted) {
@@ -301,7 +301,7 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
   const now = new Date();
   // No on-disk filename is stored; the file is saved as <_id>.<ext>
 
-  const document: Omit<RecordingDocument, '_id'> = {
+  const document: OptionalUnlessRequiredId<RecordingDocument> = {
     createdAt: now,
     updatedAt: now,
     duration: undefined,
@@ -319,7 +319,7 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
   };
 
   const collection = recordingsCollection();
-  const insertResult = await collection.insertOne(document as any);
+  const insertResult = await collection.insertOne(document);
   const inserted = await collection.findOne({ _id: insertResult.insertedId });
 
   if (!inserted) {

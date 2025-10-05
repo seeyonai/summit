@@ -41,7 +41,7 @@ const withOrderedRecordings = (
   meeting: MeetingWithRecordings
 ): MeetingWithRecordings => {
   const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
-  const recordingOrder = sanitizeRecordingOrder(meeting.recordingOrder);
+  const recordingOrder = sanitizeRecordingOrder(meeting.recordingOrder) || [];
 
   if (recordings.length === 0) {
     return {

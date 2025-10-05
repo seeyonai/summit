@@ -88,7 +88,7 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('WebSocket connected to backend');
+        console.info('🔗 WebSocket connected to backend');
         setState(prev => ({ ...prev, isConnected: true }));
       };
 
@@ -123,13 +123,13 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       };
 
       wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected from backend');
+        console.info('🔌 WebSocket disconnected from backend');
         setState(prev => ({ ...prev, isConnected: false }));
       };
 
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
-        console.log('WebSocket connection failed to backend');
+        console.info('⚠️ WebSocket connection failed to backend');
         setState(prev => ({ 
           ...prev, 
           error: 'WebSocket connection error',

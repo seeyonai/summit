@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '@/utils/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { api } from '@/services/api';
 import type { Hotword } from '@/types';
 import SearchInput from '@/components/SearchInput';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { XIcon } from 'lucide-react';
+import LoadingSpinner from './ui/LoadingSpinner';
 
 interface HotwordSelectionProps {
   isOpen: boolean;

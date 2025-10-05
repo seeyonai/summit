@@ -49,7 +49,7 @@ const transcriptAnalysisSchema: SchemaField = {
             type: 'array',
             description: 'Parties involved in the dispute (if mentioned)',
             items: { type: 'string' }
-          } as any
+          } satisfies SchemaField
         }
       }
     },
@@ -105,7 +105,7 @@ interface ExtractionResult {
 }
 
 class TranscriptExtractionService {
-  private intext: any;
+  private intext: ReturnType<typeof createIntext> | null = null;
   private isInitialized: boolean = false;
 
   async initialize() {
@@ -138,6 +138,10 @@ class TranscriptExtractionService {
 
     if (!transcript || transcript.trim().length === 0) {
       throw badRequest('Transcript text is required', 'analysis.transcript_required');
+    }
+
+    if (!this.intext) {
+      throw internal('Transcript extraction service not initialized', 'analysis.not_initialized');
     }
 
     const result = await this.intext.extract(transcript, {

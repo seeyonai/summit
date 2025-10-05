@@ -18,6 +18,6 @@ module.exports = {
   rules: {
     '@typescript-eslint/no-unused-vars': 'error',
     '@typescript-eslint/no-explicit-any': 'warn',
-    'no-console': 'warn',
+    'no-console': ['warn', { allow: ['info', 'warn', 'error', 'table'] }],
   },
 };

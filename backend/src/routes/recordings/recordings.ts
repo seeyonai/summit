@@ -22,8 +22,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const all = typeof req.query.all === 'string' && ['true', '1', 'yes'].includes(req.query.all.toLowerCase());
   const desired = all ? 'all' : 101;
   const list = r.user.role === 'admin'
-    ? await recordingService.getAllRecordings(desired as any)
-    : await recordingService.getRecordingsForUser(r.user.userId, true, desired as any);
+    ? await recordingService.getAllRecordings(desired)
+    : await recordingService.getRecordingsForUser(r.user.userId, true, desired);
   const overLimit = !all && list.length > 100;
   const recordings = overLimit ? list.slice(0, 100) : list;
   const fetchedAll = all || !overLimit;

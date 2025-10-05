@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { apiService } from '@/services/api';
 import type { Meeting, MeetingStatus } from '@/types';
 import {
-  ArrowLeftIcon,
   SaveIcon,
   AlertCircleIcon
 } from 'lucide-react';

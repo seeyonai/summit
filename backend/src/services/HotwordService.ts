@@ -1,10 +1,16 @@
 import { Hotword } from '../types';
-import { ObjectId } from 'mongodb';
+import { ObjectId, OptionalUnlessRequiredId } from 'mongodb';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, HotwordDocument } from '../types/documents';
 import { hotwordDocumentToHotword } from '../utils/mongoMappers';
 import { conflict, forbidden, internal, notFound } from '../utils/errors';
 import type { JwtPayload } from '../types/auth';
+
+const hasErrorCode = (value: unknown): value is { code: unknown } => (
+  typeof value === 'object'
+  && value !== null
+  && 'code' in value
+);
 
 export class HotwordService {
   async getHotwordsForUser(user: JwtPayload): Promise<Hotword[]> {
@@ -36,7 +42,7 @@ export class HotwordService {
 
     const makePublic = isPublic === true;
     const ownerId = new ObjectId(user.userId);
-    const hotwordDoc: Omit<HotwordDocument, '_id'> = {
+    const hotwordDoc: OptionalUnlessRequiredId<HotwordDocument> = {
       word: trimmedWord,
       createdAt: new Date(),
       isActive: true,
@@ -44,7 +50,7 @@ export class HotwordService {
       ownerId,
     };
 
-    const result = await collection.insertOne(hotwordDoc as any);
+    const result = await collection.insertOne(hotwordDoc);
     const insertedHotword = await collection.findOne({ _id: result.insertedId });
     
     if (!insertedHotword) {
@@ -235,8 +241,8 @@ export class HotwordService {
         created.push(hotword);
       } catch (err) {
         // Map known conflicts to a stable reason; others as generic failure
-        const reason = err && typeof err === 'object' && 'code' in (err as any)
-          ? ((err as any).code === 'hotword.exists' ? 'exists' : 'failed')
+        const reason = hasErrorCode(err) && typeof err.code === 'string'
+          ? (err.code === 'hotword.exists' ? 'exists' : 'failed')
           : 'failed';
         skipped.push({ word, reason });
       }

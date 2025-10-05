@@ -3,12 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Expand } from 'lucide-react';
 
 interface MinimalModeToggleProps {
-  isDarkMode: boolean;
   onExitMinimal: () => void;
 }
 
 const MinimalModeToggle: React.FC<MinimalModeToggleProps> = ({
-  isDarkMode,
   onExitMinimal
 }) => {
   return (

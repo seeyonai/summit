@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -321,8 +320,11 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
                   <p className="text-sm text-muted-foreground">各说话人的发言时长与占比分析</p>
                 </div>
                 <div className="flex flex-wrap gap-4">
-                  {Array.from(new Set(recording.speakerSegments.map(s => s.speakerIndex))).map(speakerIndex => {
-                    const segments = recording.speakerSegments!.filter(s => s.speakerIndex === speakerIndex);
+                  {Array.from(new Set(recording.speakerSegments?.map(s => s.speakerIndex))).map(speakerIndex => {
+                    if (!recording.speakerSegments) {
+                      return null;
+                    }
+                    const segments = recording.speakerSegments.filter(s => s.speakerIndex === speakerIndex);
                     const totalTime = segments.reduce((acc, s) => acc + (s.endTime - s.startTime), 0);
                     const percentage = (totalTime / (recording.duration || 1)) * 100;
                     const avgSegmentTime = totalTime / segments.length;

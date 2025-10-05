@@ -34,7 +34,7 @@ export function authenticate(req: RequestWithUser, res: Response, next: NextFunc
 
 export function requireOwner() {
   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
-    const meetingId = (req.params as any).id || (req.params as any).meetingId;
+    const meetingId = req.params.id || req.params.meetingId;
     if (!req.user || !meetingId) {
       debugWarn('requireOwner: unauthorized or missing meetingId');
       next(unauthorized('Unauthorized', 'auth.unauthorized'));
@@ -64,7 +64,7 @@ export function requireOwner() {
 
 export function requireMemberOrOwner() {
   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
-    const meetingId = (req.params as any).id || (req.params as any).meetingId;
+    const meetingId = req.params.id || req.params.meetingId;
     if (!req.user || !meetingId) {
       debugWarn('requireMemberOrOwner: unauthorized or missing meetingId');
       next(unauthorized('Unauthorized', 'auth.unauthorized'));
@@ -112,7 +112,7 @@ export function requireAdmin(req: RequestWithUser, res: Response, next: NextFunc
 async function findRecordingByIdentifier(recordingId: string): Promise<RecordingDocument | null> {
   const col = getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
   if (ObjectId.isValid(recordingId)) {
-    const byId = await col.findOne({ _id: new ObjectId(recordingId) } as any);
+    const byId = await col.findOne({ _id: new ObjectId(recordingId) });
     if (byId) return byId;
   }
   return null;
@@ -141,7 +141,7 @@ export function requireRecordingReadAccess() {
         next();
         return;
       }
-      const { recordingId } = req.params as any;
+      const { recordingId } = req.params;
       const rec = await findRecordingByIdentifier(recordingId);
       if (!rec) {
         next(notFound('Recording not found', 'recording.not_found'));
@@ -179,7 +179,7 @@ export function requireRecordingWriteAccess() {
         next();
         return;
       }
-      const { recordingId } = req.params as any;
+      const { recordingId } = req.params;
       const rec = await findRecordingByIdentifier(recordingId);
       if (!rec) {
         next(notFound('Recording not found', 'recording.not_found'));

@@ -26,7 +26,11 @@ import {
   Loader2Icon
 } from 'lucide-react';
 
-type RecordingOrderEntry = MeetingRecordingOrderItem;
+type RecordingOrderEntry = {
+  recordingId: string;
+  index: number;
+  enabled: boolean;
+};
 
 type OrderedRecording = {
   entry: RecordingOrderEntry;
@@ -35,7 +39,7 @@ type OrderedRecording = {
 
 type DropPosition = 'before' | 'after' | 'end';
 
-const toRecordingId = (value: RecordingOrderEntry['recordingId']): string => {
+const toRecordingId = (value: MeetingRecordingOrderItem['recordingId']): string => {
   if (typeof value === 'string') {
     return value;
   }
@@ -47,7 +51,7 @@ const toRecordingId = (value: RecordingOrderEntry['recordingId']): string => {
 
 const normalizeRecordingOrder = (
   recordings: Recording[],
-  order: RecordingOrderEntry[] | undefined
+  order: MeetingRecordingOrderItem[] | undefined
 ): RecordingOrderEntry[] => {
   if (!Array.isArray(recordings) || recordings.length === 0) {
     return [];
@@ -73,10 +77,10 @@ const normalizeRecordingOrder = (
             enabled: entry.enabled !== false,
           } satisfies RecordingOrderEntry;
         })
-        .filter((value): value is RecordingOrderEntry => value !== null)
+        .filter((value): value is NonNullable<typeof value> => value !== null)
     : [];
 
-  const existingIds = new Set(sanitized.map((entry) => entry.recordingId));
+  const existingIds = new Set(sanitized.map((entry) => entry ? toRecordingId(entry.recordingId) : '').filter(Boolean));
 
   const missing = recordings
     .filter((recording) => !existingIds.has(recording._id))
@@ -87,7 +91,7 @@ const normalizeRecordingOrder = (
     }));
 
   return [...sanitized, ...missing]
-    .sort((a, b) => a.index - b.index)
+    .sort((a, b) => (a?.index || 0) - (b?.index || 0))
     .map((entry, idx) => ({
       ...entry,
       index: idx,
@@ -104,7 +108,7 @@ const reorderOrderEntries = (
     return entries;
   }
 
-  const sourceIndex = entries.findIndex((entry) => entry.recordingId === sourceId);
+  const sourceIndex = entries.findIndex((entry) => toRecordingId(entry.recordingId) === sourceId);
   if (sourceIndex === -1) {
     return entries;
   }
@@ -118,7 +122,7 @@ const reorderOrderEntries = (
   if (position === 'end' || targetId === null) {
     updated.push(moved);
   } else {
-    let targetIndex = updated.findIndex((entry) => entry.recordingId === targetId);
+    let targetIndex = updated.findIndex((entry) => toRecordingId(entry.recordingId) === targetId);
     if (targetIndex === -1) {
       updated.push(moved);
     } else {
@@ -135,7 +139,7 @@ const reorderOrderEntries = (
   }));
 
   const unchanged = entries.length === reordered.length
-    && entries.every((entry, idx) => entry.recordingId === reordered[idx]?.recordingId);
+    && entries.every((entry, idx) => toRecordingId(entry.recordingId) === toRecordingId(reordered[idx]?.recordingId || ''));
 
   return unchanged ? entries : reordered;
 };
@@ -208,7 +212,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
 
     return orderEntries
       .map((entry) => {
-        const recording = recordingMap.get(entry.recordingId);
+        const recording = recordingMap.get(toRecordingId(entry.recordingId));
         if (!recording) {
           return null;
         }
@@ -230,10 +234,10 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
     }
 
     const payload = nextOrder.map((entry, idx) => ({
-      recordingId: entry.recordingId,
+      recordingId: toRecordingId(entry.recordingId),
       index: idx,
       enabled: entry.enabled !== false,
-    }));
+    })) as { recordingId: string; index: number; enabled: boolean; }[];
 
     apiService
       .updateMeeting(meeting._id, { recordingOrder: payload })
@@ -415,7 +419,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
       } else {
         setRecordingsState((prev) => prev.filter((recording) => recording._id !== recordingId));
         setOrderEntries((prev) => {
-          const filtered = prev.filter((entry) => entry.recordingId !== recordingId);
+          const filtered = prev.filter((entry) => toRecordingId(entry.recordingId) !== recordingId);
           if (filtered.length === prev.length) {
             return prev;
           }

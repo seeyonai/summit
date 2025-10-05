@@ -143,8 +143,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const all = typeof req.query.all === 'string' && ['true', '1', 'yes'].includes(req.query.all.toLowerCase());
   const desired = all ? 'all' : 101;
   const list = r.user?.role === 'admin'
-    ? await meetingService.getAllMeetings(desired as any)
-    : await meetingService.getMeetingsForUser(userId, desired as any);
+    ? await meetingService.getAllMeetings(desired)
+    : await meetingService.getMeetingsForUser(userId, desired);
   const overLimit = !all && list.length > 100;
   const meetings = overLimit ? list.slice(0, 100) : list;
   const fetchedAll = all || !overLimit;
@@ -252,7 +252,7 @@ router.get('/status/:status', asyncHandler(async (req: Request, res: Response) =
   const base = r.user?.role === 'admin'
     ? await meetingService.getAllMeetings('all')
     : await meetingService.getMeetingsForUser(userId, 'all');
-  const meetings = base.filter((m) => m.status === status as any);
+  const meetings = base.filter((m) => m.status === status);
   res.json(meetings.map(serializeMeeting));
 }));
 
@@ -293,7 +293,7 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', requireOwner(), asyn
 
   recording.verbatimTranscript = `[逐字稿 - 待实现]\n原始转录: ${recording.transcription}\n\n这里将会生成包含语气词、停顿、重复等原始语音特征的逐字稿。`;
 
-  const updatedMeeting = await meetingService.updateMeeting(meetingId, { _id: meeting._id } as any);
+  const updatedMeeting = await meetingService.updateMeeting(meetingId, {});
 
   {
     const lang = getPreferredLang(req);
@@ -344,9 +344,8 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
 *此纪要由AI自动生成，仅供参考。*`;
 
   await meetingService.updateMeeting(meetingId, {
-    _id: meeting._id,
     finalTranscript: meeting.finalTranscript
-  } as any);
+  });
 
   {
     const lang = getPreferredLang(req);
@@ -630,8 +629,8 @@ router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(a
     let ownerId: string | undefined = meeting.ownerId instanceof ObjectId
       ? meeting.ownerId.toHexString()
       : undefined;
-    if (!ownerId && meeting.ownerId && typeof (meeting.ownerId as any).toString === 'function') {
-      const candidate = (meeting.ownerId as any).toString();
+    if (!ownerId && meeting.ownerId) {
+      const candidate = meeting.ownerId.toString();
       ownerId = ObjectId.isValid(candidate) ? candidate : undefined;
     }
     if (!ownerId) {

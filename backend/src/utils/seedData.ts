@@ -285,7 +285,10 @@ export class DataSeeder {
         const meetingId = result.insertedId;
         const recordingCollection = getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
         for (const recording of recordings) {
-          await recordingCollection.deleteMany({ originalFileName: (recording as any).originalFileName });
+          const { originalFileName } = recording;
+          if (originalFileName) {
+            await recordingCollection.deleteMany({ originalFileName });
+          }
           const recordingIds = [
             '507f1f77bcf86cd799439014', // Product meeting recording 1
             '507f1f77bcf86cd799439015', // Product meeting recording 2
@@ -301,16 +304,16 @@ export class DataSeeder {
           };
           
           // For recordings associated with meetings, use a predictable ID
-          if (meeting.title === '产品规划会议' && (recording as any).originalFileName === 'product-meeting.wav') {
+          if (meeting.title === '产品规划会议' && originalFileName === 'product-meeting.wav') {
             recordingData._id = new ObjectId(recordingIds[0]);
-          } else if (meeting.title === '产品规划会议' && (recording as any).originalFileName === 'product-meeting-2.wav') {
+          } else if (meeting.title === '产品规划会议' && originalFileName === 'product-meeting-2.wav') {
             recordingData._id = new ObjectId(recordingIds[1]);
-          } else if (meeting.title === '技术架构评审' && (recording as any).originalFileName === 'tech-review.wav') {
+          } else if (meeting.title === '技术架构评审' && originalFileName === 'tech-review.wav') {
             recordingData._id = new ObjectId(recordingIds[2]);
           }
-          
+
           await recordingCollection.insertOne(recordingData);
-          console.log(`🎵 Seeded recording ${(recording as any).originalFileName}`);
+          console.log(`🎵 Seeded recording ${originalFileName ?? '<unknown>'}`);
         }
       }
     }
@@ -364,9 +367,12 @@ export class DataSeeder {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      await collection.deleteMany({ originalFileName: (recording as any).originalFileName });
+      const { originalFileName } = recording;
+      if (originalFileName) {
+        await collection.deleteMany({ originalFileName });
+      }
       await collection.insertOne(recordingData);
-      console.log(`🎵 Seeded recording ${(recording as any).originalFileName}`);
+      console.log(`🎵 Seeded recording ${originalFileName ?? '<unknown>'}`);
     }
     console.log(`🎵 Seeded ${this.mockData.recordings.length} recordings`);
   }

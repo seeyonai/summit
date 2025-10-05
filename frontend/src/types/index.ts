@@ -131,7 +131,7 @@ export type AgendaItem = baseTypes.AgendaItem;
 export type OrganizedSpeech = baseTypes.OrganizedSpeech;
 
 export interface MeetingRecordingOrderItem {
-  recordingId: string;
+  recordingId: baseTypes.ObjectIdLike;
   index: number;
   enabled: boolean;
 }
@@ -164,3 +164,5 @@ export interface AppCustomization {
   logoDarkUrl?: string | null;
   faviconUrl?: string | null;
 }
+
+export type SpeakerName = baseTypes.SpeakerName;

@@ -275,7 +275,7 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
             break;
             
           case 'chunk_received':
-            console.log('Chunk acknowledged by server:', data.chunkSize, 'bytes, total:', data.totalChunks);
+            console.info('📦 Chunk acknowledged by server:', data.chunkSize, 'bytes, total:', data.totalChunks);
             break;
             
           case 'recording_saved': {
@@ -301,7 +301,7 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
             break;
             
           default:
-            console.log('Received message:', data);
+            console.info('💬 Received message:', data);
         }
       };
 

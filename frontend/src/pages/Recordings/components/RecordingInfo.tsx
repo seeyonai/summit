@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import type { Recording } from '@/types';
 import {
   FileAudioIcon,
-  HashIcon,
   CalendarIcon,
   ClockIcon,
   HardDriveIcon,

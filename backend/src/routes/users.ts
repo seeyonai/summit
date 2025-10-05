@@ -35,7 +35,7 @@ router.put('/:userId/profile', asyncHandler(async (req, res) => {
   if (!r.user) {
     throw unauthorized('Unauthorized', 'auth.unauthorized');
   }
-  const { userId: rawUserId } = req.params as { userId: string };
+  const { userId: rawUserId } = req.params;
   const paramUserId = typeof rawUserId === 'string' ? rawUserId.trim() : '';
   if (!paramUserId) {
     throw badRequest('Invalid user id', 'user.invalid_id');
@@ -65,13 +65,14 @@ router.put('/:userId/profile', asyncHandler(async (req, res) => {
 
 // Admin: update role
 router.put('/:userId/role', requireAdmin, asyncHandler(async (req, res) => {
-  const { userId } = req.params as { userId: string };
-  const role = (req.body?.role as string) as 'admin' | 'user';
+  const request = req as RequestWithUser;
+  const { userId } = req.params;
+  const role = req.body?.role as 'admin' | 'user';
   if (role !== 'admin' && role !== 'user') {
     throw badRequest('Invalid role', 'user.invalid_role');
   }
   // prevent self-demotion to avoid lockout
-  if ((req as any).user?.userId === userId && role !== 'admin') {
+  if (request.user?.userId === userId && role !== 'admin') {
     throw forbidden('Cannot change own role', 'user.cannot_change_self_role');
   }
   const updated = await userService.updateRole(userId, role);

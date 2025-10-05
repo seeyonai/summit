@@ -2,7 +2,7 @@ import React, { useRef, useMemo } from 'react';
 import { RadioIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Recording } from '@/types';
-import { fileUrlFor } from '@/utils/apiHelpers';
+import { fileUrlFor } from '@/services/api';
 import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
 
 interface AudioPlayerProps {

@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Users } from 'lucide-react';
 import { useMeetings } from '@/hooks/useMeetings';
-import type { Meeting } from '@/types';
 
 interface IncomingMeetingsProps {
   className?: string;

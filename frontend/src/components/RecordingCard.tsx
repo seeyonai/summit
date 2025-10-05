@@ -3,10 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import TranscriptionPreview from '@/components/TranscriptionPreview';
-import type { Recording as BaseRecording } from '@base/types';
-import type { Recording as FrontendRecording } from '@/types';
+import type { Recording } from '@/types';
 
-type Recording = BaseRecording | FrontendRecording;
 import { formatDuration, formatFileSize, formatDate } from '@/utils/formatHelpers';
 import { useAudioPlayback, audioUrlFor } from '@/hooks/useAudioPlayback';
 import {
@@ -39,7 +37,6 @@ interface RecordingCardProps {
     onDelete?: (recording: Recording, e?: React.MouseEvent) => void;
   };
   onClick?: (recording: Recording) => void;
-  className?: string;
 }
 
 function RecordingCard({
@@ -50,8 +47,7 @@ function RecordingCard({
   showSource = false,
   showActions = true,
   actions = {},
-  onClick,
-  className = ''
+  onClick
 }: RecordingCardProps) {
   const { playingAudio, toggleAudioPlayback } = useAudioPlayback();
   const navigate = useNavigate();

@@ -14,7 +14,7 @@ import type { Recording } from '@/types';
 const Dashboard: React.FC = () => {
   const { meetings, loading } = useMeetings();
   const [recordings, setRecordings] = useState<Recording[]>([]);
-  const [recentRecordings, setRecentRecordings] = useState<string[]>([]);
+  const [recentRecordings] = useState<string[]>([]);
 
   // Fetch recordings on mount
   useEffect(() => {

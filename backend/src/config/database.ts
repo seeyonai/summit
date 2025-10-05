@@ -35,7 +35,7 @@ export async function connectToDatabase(): Promise<Db> {
     client = new MongoClient(MONGODB_URI);
     await client.connect();
     db = client.db(DB_NAME);
-    console.log('✅ Connected to MongoDB');
+    console.info('✅ Connected to MongoDB');
     debug('MongoDB connected', { dbName: DB_NAME });
     return db;
   } catch (error) {
@@ -48,7 +48,7 @@ export async function connectToDatabase(): Promise<Db> {
 export async function disconnectFromDatabase(): Promise<void> {
   if (client) {
     await client.close();
-    console.log('🔌 Disconnected from MongoDB');
+    console.info('🔌 Disconnected from MongoDB');
     debug('MongoDB client closed');
   }
 }

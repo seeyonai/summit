@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, Calendar, FileAudio } from 'lucide-react';
 import { useMeetings } from '@/hooks/useMeetings';
-import type { Meeting } from '@/types';
 
 interface PendingItem {
   id: string;

@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface ThemeColors {
@@ -29,7 +31,8 @@ function hexToHsl(hex: string): string {
 
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
 
   if (max !== min) {
     const d = max - min;
@@ -49,7 +52,7 @@ function hslToHex(hsl: string): string {
   const matches = hsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
   if (!matches) return '#000000';
 
-  const [_, h, s, l] = matches.map(Number);
+  const [, h, s, l] = matches.map(Number);
   const hDecimal = l / 100;
   const a = (s * Math.min(hDecimal, 1 - hDecimal)) / 100;
   const f = (n: number) => {
@@ -70,8 +73,8 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
       try {
         const parsed = JSON.parse(savedColors);
         setColors({ ...defaultColors, ...parsed });
-      } catch (error) {
-        console.error('Failed to parse saved theme colors:', error);
+      } catch {
+        console.error('Failed to parse saved theme colors');
       }
     }
   }, []);

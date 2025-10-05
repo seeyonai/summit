@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId, OptionalUnlessRequiredId } from 'mongodb';
 import crypto from 'crypto';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, UserDocument } from '../types/documents';
@@ -40,7 +40,7 @@ export async function createUser(email: string, password: string, name?: string,
   const passwordHash = hashPassword(password, salt);
   const role: 'admin' | 'user' = (await countUsers()) === 0 ? 'admin' : 'user';
   const now = new Date();
-  const doc: Omit<UserDocument, '_id'> = {
+  const doc: OptionalUnlessRequiredId<UserDocument> = {
     email: emailNorm,
     name,
     ...(typeof aliases === 'string' ? { aliases: aliases.trim() } : {}),
@@ -51,7 +51,7 @@ export async function createUser(email: string, password: string, name?: string,
     createdAt: now,
     updatedAt: now,
   };
-  const result = await col.insertOne(doc as any);
+  const result = await col.insertOne(doc);
   const inserted = await col.findOne({ _id: result.insertedId });
   if (!inserted) {
     throw internal('Failed to create user', 'user.create_failed');
@@ -71,7 +71,7 @@ export async function createExternalUser(email: string, name: string, externalUs
   }
   const role: 'admin' | 'user' = (await countUsers()) === 0 ? 'admin' : 'user';
   const now = new Date();
-  const doc: Omit<UserDocument, '_id'> = {
+  const doc: OptionalUnlessRequiredId<UserDocument> = {
     email: emailNorm,
     name,
     role,
@@ -82,7 +82,7 @@ export async function createExternalUser(email: string, name: string, externalUs
     createdAt: now,
     updatedAt: now,
   };
-  const result = await col.insertOne(doc as any);
+  const result = await col.insertOne(doc);
   const inserted = await col.findOne({ _id: result.insertedId });
   if (!inserted) {
     throw internal('Failed to create user', 'user.create_failed');

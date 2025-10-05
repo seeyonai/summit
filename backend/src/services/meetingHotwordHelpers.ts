@@ -24,7 +24,7 @@ export const mergeHotwordsIntoMeeting = async (
 
   const id = resolveMeetingId(meetingId);
   const collection = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
-  const meeting = await collection.findOne({ _id: id }, { projection: { hotwords: 1 } as any });
+  const meeting = await collection.findOne({ _id: id }, { projection: { hotwords: 1 } });
   if (!meeting) {
     return;
   }

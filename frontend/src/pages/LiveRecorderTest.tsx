@@ -375,7 +375,7 @@ function LiveRecorderTest() {
             break;
             
           case 'chunk_received':
-            console.log('Chunk acknowledged by server:', data.chunkSize, 'bytes, total:', data.totalChunks);
+            console.info('📦 Chunk acknowledged by server:', data.chunkSize, 'bytes, total:', data.totalChunks);
             break;
             
           case 'recording_saved':
@@ -396,7 +396,7 @@ function LiveRecorderTest() {
             break;
             
           default:
-            console.log('Received message:', data);
+            console.info('💬 Received message:', data);
         }
       };
 
@@ -470,7 +470,7 @@ function LiveRecorderTest() {
       // Connect to WebSocket for sending audio chunks
       workletNodeRef.current.port.onmessage = (event) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          console.log('Sending audio chunk:', event.data.byteLength, 'bytes');
+          // console.log('Sending audio chunk:', event.data.byteLength, 'bytes');
           wsRef.current.send(event.data);
         }
 
