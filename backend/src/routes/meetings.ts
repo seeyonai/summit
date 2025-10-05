@@ -354,9 +354,7 @@ router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) 
     if (!transcript) {
       try {
         transcript = await transcriptExtractionService.buildTranscriptFromOrganizedSpeeches(meetingId);
-        console.log('Built transcript from organized speeches for analysis');
-      } catch (error) {
-        console.log('Could not build transcript from organized speeches:', error);
+      } catch (_error) {
         return res.status(400).json({ 
           error: 'Meeting must have a final transcript or organized speeches from recordings before analysis can be performed' 
         });

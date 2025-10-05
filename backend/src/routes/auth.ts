@@ -110,11 +110,6 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
 
   const payload = req.body;
   const authMethod = process.env.AUTH_METHOD || 'V5_MD5';
-  const isDev = process.env.NODE_ENV !== 'production';
-
-  if (isDev) {
-    console.log('Custom sign-on request:', { authMethod, payload });
-  }
 
   // Call the external auth service
   const loginResponse = await fetch(`${unsafeAuthServiceBaseURL}/auth/custom-sign-on`, {
@@ -137,10 +132,6 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
 
   const loginResult = loginResultJson;
 
-  if (isDev) {
-    console.log('Login service response:', loginResult);
-  }
-
   if (!loginResult.valid) {
     throw unauthorized(loginResult.error || 'Authentication failed', 'auth.external_failed');
   }
@@ -155,15 +146,8 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
   const payloadPartEncoded = tokenEncoded.split('.')[1];
   const payloadPartDecoded = Buffer.from(payloadPartEncoded, 'base64').toString('utf-8');
 
-  if (isDev) {
-    console.log('payloadPartDecoded:', payloadPartDecoded);
-  }
-
   // Extract user information from payload
   const parsedPayload = JSON.parse(payloadPartDecoded);
-  if (isDev) {
-    console.log('parsedPayload:', parsedPayload);
-  }
 
   const { email, name, id } = parsedPayload.user;
 
@@ -175,21 +159,13 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
   // Find user by external user ID or email, or create if not exists
   let user = await userService.findByExternalUserId(id) || await userService.findByEmail(email);
 
-  if (isDev) {
-    console.log('User lookup result:', { found: !!user, email, externalUserId: id });
-  }
-
   if (!user) {
     // Create new user with external auth
     user = await userService.createExternalUser(email, name, id);
-
-    if (isDev) console.log('Created new user:', { id: user._id, email });
   }
 
   // Generate token for the user
   const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
-
-  if (isDev) console.log('[custom-sign-on] token:', token);
 
   res.status(200).json({ token, user: toAuthUser(user), message: 'Authentication successful' });
 }));
