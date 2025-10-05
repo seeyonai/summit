@@ -12,12 +12,13 @@ export interface AuthUser {
 
 interface AuthContextValue {
   user: AuthUser | null;
+  setUser: (user: AuthUser | null) => void;
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
+  customSignOn: (params: Record<string, string>) => Promise<void>;
   logout: () => void;
-  updateProfile: (updates: { name?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -66,6 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(u);
   };
 
+  const customSignOn = async (params: Record<string, string>) => {
+    const { token: t, user: u } = await authService.customSignOn(params);
+    localStorage.setItem('auth_token', t);
+    setToken(t);
+    setUser(u);
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -74,12 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateProfile = async (updates: { name?: string }) => {
-    const updated = await authService.updateMe(updates);
-    setUser(updated);
-  };
-
-  const value = useMemo(() => ({ user, token, loading, login, register, logout, updateProfile }), [user, token, loading]);
+  const value = useMemo(() => ({ user, setUser, token, loading, login, register, customSignOn, logout }), [user, token, loading]);
 
   return (
     <AuthContext.Provider value={value}>
@@ -89,8 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
+export function useAuthOptional() {
+  return useContext(AuthContext);
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
-  const ctx = useContext(AuthContext);
+  const ctx = useAuthOptional();
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }

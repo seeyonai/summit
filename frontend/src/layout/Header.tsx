@@ -4,13 +4,14 @@ import { ThemeToggle } from './ThemeToggle';
 import UserMenu from '@/components/UserMenu';
 import AppLogo from '@/components/AppLogo';
 import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthOptional } from '@/contexts/AuthContext';
 
 export const Header: React.FC<{
   isRecording: boolean;
 }> = ({ isRecording }) => {
   const { toggleFloatingPanel, showFloatingPanel } = useRecordingPanel();
-  const { user } = useAuth();
+  const auth = useAuthOptional();
+  const user = auth?.user ?? null;
   return (
     <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
@@ -30,7 +31,7 @@ export const Header: React.FC<{
               </button>
             )}
             <ThemeToggle />
-            <UserMenu />
+            <UserMenu user={user} onLogout={auth?.logout} />
           </div>
         </div>
       </div>

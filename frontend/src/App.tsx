@@ -21,6 +21,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Auth/Login';
 import Register from '@/pages/Auth/Register';
+import CustomSignOn from '@/pages/Auth/CustomSignOn';
 import AdminRoute from '@/components/AdminRoute';
 import AdminUsers from '@/pages/Admin/Users';
 import Profile from '@/pages/Profile';
@@ -79,6 +80,7 @@ function AppContent() {
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/custom-sign-on" element={<CustomSignOn />} />
                 <Route path="/recordings" element={<ProtectedRoute><RecordingManagement /></ProtectedRoute>} />
                 <Route path="/recordings/:id" element={<ProtectedRoute><RecordingDetail /></ProtectedRoute>} />
                 <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />

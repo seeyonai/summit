@@ -56,6 +56,8 @@ export interface UserDocument extends Document {
   role: 'admin' | 'user';
   passwordHash: string;
   salt: string;
+  externalUserId?: string;
+  authType?: 'local' | 'unsafe_auth';
   createdAt: Date;
   updatedAt?: Date;
 }

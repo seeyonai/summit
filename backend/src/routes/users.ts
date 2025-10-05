@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import userService from '../services/UserService';
 import { requireAdmin } from '../middleware/auth';
-import { badRequest, forbidden } from '../utils/errors';
+import { badRequest, forbidden, unauthorized } from '../utils/errors';
+import type { RequestWithUser } from '../types/auth';
 
 const router = Router();
 
@@ -26,6 +27,37 @@ router.get('/', asyncHandler(async (req, res) => {
     name: u.name,
     role: u.role,
   })) });
+}));
+
+router.put('/:userId/profile', asyncHandler(async (req, res) => {
+  const r = req as RequestWithUser;
+  if (!r.user) {
+    throw unauthorized('Unauthorized', 'auth.unauthorized');
+  }
+  const { userId: rawUserId } = req.params as { userId: string };
+  const paramUserId = typeof rawUserId === 'string' ? rawUserId.trim() : '';
+  if (!paramUserId) {
+    throw badRequest('Invalid user id', 'user.invalid_id');
+  }
+  const targetUserId = paramUserId === 'me' ? r.user.userId : paramUserId;
+  if (!targetUserId) {
+    throw badRequest('Invalid user id', 'user.invalid_id');
+  }
+  const isSelf = targetUserId === r.user.userId;
+  const isAdmin = r.user.role === 'admin';
+  if (!isSelf && !isAdmin) {
+    throw forbidden('Not allowed', 'user.profile_forbidden');
+  }
+  const name = typeof req.body?.name === 'string' ? req.body.name : undefined;
+  const updated = await userService.updateProfile(targetUserId, { name });
+  res.json({
+    user: {
+      _id: updated._id.toString(),
+      email: updated.email,
+      name: updated.name,
+      role: updated.role,
+    },
+  });
 }));
 
 // Admin: update role

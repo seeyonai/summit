@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, LogOut, LogIn, UserPlus, Wrench, User, Flame, Settings } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import type { AuthUser } from '@/contexts/AuthContext';
+
+interface UserMenuProps {
+  user: AuthUser | null;
+  onLogout?: () => void;
+}
 
 function getInitials(name?: string, email?: string) {
   if (name && name.trim()) {
@@ -13,19 +18,21 @@ function getInitials(name?: string, email?: string) {
   return 'U';
 }
 
-function UserMenu() {
-  const { user, logout } = useAuth();
+function UserMenu({ user, onLogout }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
     function onDocClick(e: MouseEvent) {
       if (!ref.current) return;
       if (!ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
-  }, []);
+  }, [user]);
 
   if (!user) {
     return (
@@ -87,7 +94,7 @@ function UserMenu() {
           </div>
           <div className="py-1 border-t border-border">
             <button
-              onClick={() => { setOpen(false); logout(); }}
+              onClick={() => { setOpen(false); onLogout?.(); }}
               className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50 text-destructive"
             >
               <LogOut className="w-4 h-4" /> 退出登录

@@ -1,4 +1,5 @@
 import { api } from '@/services/api';
+import type { AuthUser } from '../contexts/AuthContext';
 
 export interface UserListItem {
   _id: string;
@@ -12,3 +13,10 @@ export async function searchUsers(q: string): Promise<UserListItem[]> {
   return result.users;
 }
 
+export async function updateProfile(userId: string, updates: { name?: string }): Promise<AuthUser> {
+  const result = await api<{ user: AuthUser }>(`/api/users/${userId}/profile`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+  return result.user;
+}

@@ -25,21 +25,20 @@ export const authService = {
       },
     });
   },
+  async customSignOn(params: Record<string, string>): Promise<AuthResult> {
+    return api<AuthResult>('/api/auth/custom-sign-on', {
+      method: 'POST',
+      body: JSON.stringify(params),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  },
   async me(token: string): Promise<AuthUser> {
     const result = await api<{ user: AuthUser }>('/api/auth/me', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
-      },
-    });
-    return result.user;
-  },
-  async updateMe(updates: { name?: string }): Promise<AuthUser> {
-    const result = await api<{ user: AuthUser }>('/api/auth/me', {
-      method: 'PUT',
-      body: JSON.stringify(updates),
-      headers: {
-        'Content-Type': 'application/json',
       },
     });
     return result.user;

@@ -46,6 +46,38 @@ export async function createUser(email: string, password: string, name?: string)
     role,
     passwordHash,
     salt,
+    authType: 'local',
+    createdAt: now,
+    updatedAt: now,
+  };
+  const result = await col.insertOne(doc as any);
+  const inserted = await col.findOne({ _id: result.insertedId });
+  if (!inserted) {
+    throw internal('Failed to create user', 'user.create_failed');
+  }
+  return inserted;
+}
+
+export async function createExternalUser(email: string, name: string, externalUserId: string, authType: 'unsafe_auth' = 'unsafe_auth') {
+  const emailNorm = email.trim().toLowerCase();
+  if (!emailNorm || !name || !externalUserId) {
+    throw badRequest('Email, name, and external user ID are required', 'user.invalid_payload');
+  }
+  const col = usersCollection();
+  const existing = await col.findOne({ email: emailNorm });
+  if (existing) {
+    throw conflict('Email already registered', 'user.email_taken');
+  }
+  const role: 'admin' | 'user' = (await countUsers()) === 0 ? 'admin' : 'user';
+  const now = new Date();
+  const doc: Omit<UserDocument, '_id'> = {
+    email: emailNorm,
+    name,
+    role,
+    externalUserId,
+    authType,
+    passwordHash: '',
+    salt: '',
     createdAt: now,
     updatedAt: now,
   };
@@ -60,6 +92,11 @@ export async function createUser(email: string, password: string, name?: string)
 export async function findByEmail(email: string): Promise<UserDocument | null> {
   const col = usersCollection();
   return col.findOne({ email: email.trim().toLowerCase() });
+}
+
+export async function findByExternalUserId(externalUserId: string): Promise<UserDocument | null> {
+  const col = usersCollection();
+  return col.findOne({ externalUserId });
 }
 
 export async function getById(id: string): Promise<UserDocument | null> {
@@ -154,7 +191,9 @@ export async function updatePassword(userId: string, currentPassword: string, ne
 
 export const userService = {
   createUser,
+  createExternalUser,
   findByEmail,
+  findByExternalUserId,
   getById,
   verifyPassword,
   searchUsers,

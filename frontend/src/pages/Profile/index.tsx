@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { authService } from '@/services/auth';
+import { updateProfile } from '@/services/users';
 
 function Profile() {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const [name, setName] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
   const [currentPassword, setCurrentPassword] = useState<string>('');
@@ -20,7 +21,7 @@ function Profile() {
     e.preventDefault();
     try {
       setSaving(true);
-      await updateProfile({ name });
+      await updateProfile(user?._id || '', { name });
       toast.success('个人资料已更新');
     } catch {
       // api layer will toast errors
@@ -69,10 +70,11 @@ function Profile() {
         <div>
           <label className="block text-sm font-medium mb-1">显示名称</label>
           <input
+            disabled={saving || user?.role !== 'admin'}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="您的姓名"
+            placeholder="姓名"
             className="w-full px-3 py-2 rounded-md border border-input bg-background"
           />
           <p className="text-xs text-muted-foreground mt-1">留空以移除显示名称。</p>
@@ -86,15 +88,17 @@ function Profile() {
             className="w-full px-3 py-2 rounded-md border border-border bg-muted/40 text-muted-foreground"
           />
         </div>
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60"
-          >
-            {saving ? '保存中...' : '保存更改'}
-          </button>
-        </div>
+        {user?.role === 'admin' && (
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60"
+            >
+              {saving ? '保存中...' : '保存更改'}
+            </button>
+          </div>
+        )}
       </form>
 
       <div className="h-px w-full my-8 bg-border" />

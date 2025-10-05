@@ -100,14 +100,14 @@ export async function api<T = unknown>(endpoint: string, options: RequestInit = 
     if (token && !headers.Authorization) {
       headers.Authorization = `Bearer ${token}`;
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    console.error('Failed to get auth token:', e);
   }
   const response = await fetch(url, {
+    ...options,
     headers: {
       ...headers,
     },
-    ...options,
   });
   const contentType = response.headers.get('content-type') || '';
   const isJson = contentType.includes('application/json');
