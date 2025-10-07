@@ -3,21 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { X, Maximize2, Minimize2, MessageSquare, CheckCircle2, Circle, Volume2, Sparkles, Mic, MicOff, RadioIcon } from 'lucide-react';
-import { formatDate } from '@/utils/date';
 import type { MeetingWithRecordings, AgendaItem } from '@/types';
 import { useOngoingMeetingTranscription } from './hooks/useOngoingMeetingTranscription';
 
 interface OngoingMeetingDisplayProps {
   meeting: MeetingWithRecordings;
   onClose: () => void;
-}
-
-interface TranscriptionSegment {
-  text: string;
-  startTime: number | null;
-  endTime?: number;
-  isPartial: boolean;
-  speaker?: string;
 }
 
 function OngoingMeetingDisplay({ meeting, onClose }: OngoingMeetingDisplayProps) {

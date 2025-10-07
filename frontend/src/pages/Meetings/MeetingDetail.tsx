@@ -48,7 +48,6 @@ function MeetingDetail() {
     setShowTranscript,
     setShowConcatenatedRecording,
     deleteMeeting,
-    handleRecordingComplete,
     refresh,
   } = useMeetingDetail(id);
 
