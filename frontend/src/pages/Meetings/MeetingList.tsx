@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import SearchInput from '@/components/SearchInput';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -278,6 +279,7 @@ function MeetingList() {
               </SelectContent>
             </Select>
             
+            {/* XXX: Button Group */}
             <div className="flex border border-border dark:border-border rounded-lg">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -391,19 +393,21 @@ function MeetingList() {
 
         {/* Empty State */}
         {!loading && !error && filteredMeetings.length === 0 && (
-          <Card className="p-12">
-            <div className="text-center">
-              <div className="mx-auto h-12 w-12 text-muted-foreground dark:text-muted-foreground mb-4">
-                <Calendar className="w-full h-full" />
-              </div>
-              <h3 className="text-lg font-medium text-foreground dark:text-foreground mb-2">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Calendar />
+              </EmptyMedia>
+              <EmptyTitle>
                 {searchQuery || filterStatus !== 'all' ? '没有找到匹配的会议' : '暂无会议'}
-              </h3>
-              <p className="text-muted-foreground dark:text-muted-foreground mb-6">
-                {searchQuery || filterStatus !== 'all' 
+              </EmptyTitle>
+              <EmptyDescription>
+                {searchQuery || filterStatus !== 'all'
                   ? '尝试调整搜索条件或筛选器'
                   : '点击"创建会议"开始您的第一个会议'}
-              </p>
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
               {(searchQuery || filterStatus !== 'all') ? (
                 <Button
                   variant="outline"
@@ -420,8 +424,8 @@ function MeetingList() {
                   创建会议
                 </Button>
               )}
-            </div>
-          </Card>
+            </EmptyContent>
+          </Empty>
         )}
 
         {/* Create Meeting Modal */}
