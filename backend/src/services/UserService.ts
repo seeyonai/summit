@@ -41,6 +41,7 @@ export async function createUser(email: string, password: string, name?: string,
   const role: 'admin' | 'user' = (await countUsers()) === 0 ? 'admin' : 'user';
   const now = new Date();
   const doc: OptionalUnlessRequiredId<UserDocument> = {
+    _id: new ObjectId(),
     email: emailNorm,
     name,
     ...(typeof aliases === 'string' ? { aliases: aliases.trim() } : {}),
@@ -72,6 +73,7 @@ export async function createExternalUser(email: string, name: string, externalUs
   const role: 'admin' | 'user' = (await countUsers()) === 0 ? 'admin' : 'user';
   const now = new Date();
   const doc: OptionalUnlessRequiredId<UserDocument> = {
+    _id: new ObjectId(),
     email: emailNorm,
     name,
     role,

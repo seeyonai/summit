@@ -1,4 +1,4 @@
-import { createIntext, SchemaField } from 'intext';
+import { createIntext, SchemaField, ExtractResult } from 'intext';
 import recordingService from './RecordingService';
 import { badRequest, internal } from '../utils/errors';
 
@@ -37,19 +37,27 @@ const transcriptAnalysisSchema: SchemaField = {
       items: {
         type: 'object',
         properties: {
-          text: { 
+          text: {
             type: 'string',
             description: 'Brief description of the disputed issue or conflict'
           },
           severity: {
             type: 'string',
-            description: 'Severity level: low, medium, high (one of: low, medium, high)'
+            description: 'Severity level, e.g. low, medium, high'
           },
           parties: {
             type: 'array',
             description: 'Parties involved in the dispute (if mentioned)',
-            items: { type: 'string' }
-          } satisfies SchemaField
+            items: {
+              type: 'object',
+              properties: {
+                name: {
+                  type: 'string',
+                  description: 'Name of the party involved in the dispute'
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -59,7 +67,7 @@ const transcriptAnalysisSchema: SchemaField = {
       items: {
         type: 'object',
         properties: {
-          text: { 
+          text: {
             type: 'string',
             description: 'Description of the action item or task'
           },
@@ -73,7 +81,7 @@ const transcriptAnalysisSchema: SchemaField = {
           },
           priority: {
             type: 'string',
-            description: 'Priority level: low, medium, high (one of: low, medium, high)'
+            description: 'Priority level, e.g. low, medium, high'
           }
         }
       }
@@ -81,28 +89,7 @@ const transcriptAnalysisSchema: SchemaField = {
   }
 };
 
-interface ExtractedAnalysis {
-  disputedIssues: Array<{
-    text: string;
-    severity: 'low' | 'medium' | 'high';
-    parties: string[];
-  }>;
-  todos: Array<{
-    text: string;
-    assignee?: string;
-    dueDate?: string;
-    priority: 'low' | 'medium' | 'high';
-  }>;
-}
-
-interface ExtractionResult {
-  json: ExtractedAnalysis;
-  metadata: {
-    chunkCount: number;
-    perFieldProvenance: Record<string, { sourceChunks: number[] }>;
-    rawChunkResults: Array<{ chunkId: number; parsed: Record<string, any>; raw?: string }>;
-  };
-}
+type ExtractionResult = ExtractResult;
 
 class TranscriptExtractionService {
   private intext: ReturnType<typeof createIntext> | null = null;
@@ -230,20 +217,43 @@ class TranscriptExtractionService {
     const { json, metadata } = extractionResult;
 
     // Convert extracted data to meeting-compatible format
-    const disputedIssues = json.disputedIssues?.map((issue: any, index: number) => ({
-      id: `issue_${Date.now()}_${index}`,
-      text: issue.text,
-      severity: issue.severity || 'medium',
-      parties: issue.parties || []
-    })) || [];
+    const disputedIssues = json.disputedIssues?.map((issue: any, index: number) => {
+      const parties = Array.isArray(issue.parties)
+        ? issue.parties
+            .map((party: any) => {
+              if (typeof party === 'string') {
+                return party.trim();
+              }
+              if (party && typeof party === 'object') {
+                if (typeof party.name === 'string') {
+                  return party.name.trim();
+                }
+                if (typeof party.toString === 'function') {
+                  return party.toString();
+                }
+              }
+              return undefined;
+            })
+            .filter((value: string | undefined): value is string => typeof value === 'string' && value.length > 0)
+        : [];
+
+      const severity = typeof issue.severity === 'string' ? issue.severity : 'medium';
+
+      return {
+        id: `issue_${Date.now()}_${index}`,
+        text: issue.text,
+        severity,
+        parties,
+      };
+    }) || [];
 
     const todos = json.todos?.map((todo: any, index: number) => ({
       id: `todo_${Date.now()}_${index}`,
       text: todo.text,
       completed: false,
-      assignee: todo.assignee,
-      dueDate: todo.dueDate,
-      priority: todo.priority || 'medium',
+      assignee: typeof todo.assignee === 'string' ? todo.assignee : undefined,
+      dueDate: typeof todo.dueDate === 'string' ? todo.dueDate : undefined,
+      priority: typeof todo.priority === 'string' ? todo.priority : 'medium',
     })) || [];
 
     return {

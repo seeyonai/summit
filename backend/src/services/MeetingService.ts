@@ -13,6 +13,10 @@ import { HotwordService } from './HotwordService';
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
 const hotwordService = new HotwordService();
 
+type MeetingMemberBase = NonNullable<MeetingDocument['members']>[number];
+
+type MeetingMemberEntry = MeetingMemberBase | string | { toString: () => string };
+
 const toObjectIdOrUndefined = (value?: string): ObjectId | undefined => {
   if (!value || !ObjectId.isValid(value)) {
     return undefined;
@@ -203,7 +207,9 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
   const now = new Date();
   const normalizedHotwords = normalizeHotwords(request.hotwords);
 
+  const meetingId = new ObjectId();
   const meetingDoc: OptionalUnlessRequiredId<MeetingDocument> = {
+    _id: meetingId,
     title: request.title,
     summary: request.summary,
     status: 'scheduled',
@@ -272,12 +278,10 @@ export const removeRecordingFromMeeting = async (
   recordingId: string
 ): Promise<Meeting | null> => {
   const collection = getMeetingsCollection();
-
-  const update: UpdateFilter<MeetingDocument> = {
+  const update = {
     $pull: { recordings: { _id: new ObjectId(recordingId) } },
     $set: { updatedAt: new Date() },
-  };
-
+  } as unknown as UpdateFilter<MeetingDocument>;
   const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(meetingId) },
     update,
@@ -348,7 +352,9 @@ export async function addMember(meetingId: string, userId: string): Promise<Meet
     return null;
   }
 
-  const members = Array.isArray(existingMeeting.members) ? existingMeeting.members : [];
+  const members = Array.isArray(existingMeeting.members)
+    ? (existingMeeting.members as MeetingMemberEntry[])
+    : [];
   const alreadyMember = members.some((member) => {
     if (member instanceof ObjectId) {
       return member.equals(memberObjectId);
@@ -356,13 +362,8 @@ export async function addMember(meetingId: string, userId: string): Promise<Meet
     if (typeof member === 'string') {
       return member === userId;
     }
-    if (
-      member
-      && typeof member === 'object'
-      && 'toString' in member
-      && typeof member.toString === 'function'
-    ) {
-      return member.toString() === userId;
+    if (member && typeof (member as { toString?: unknown }).toString === 'function') {
+      return (member as { toString: () => string }).toString() === userId;
     }
     return false;
   });
@@ -406,11 +407,10 @@ export async function addMember(meetingId: string, userId: string): Promise<Meet
 
 export async function removeMember(meetingId: string, userId: string): Promise<Meeting | null> {
   const collection = getMeetingsCollection();
-  const update: UpdateFilter<MeetingDocument> = {
+  const update = {
     $pull: { members: new ObjectId(userId) },
     $set: { updatedAt: new Date() },
-  };
-
+  } as unknown as UpdateFilter<MeetingDocument>;
   const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(meetingId) },
     update,

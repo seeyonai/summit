@@ -16,14 +16,16 @@ export const Header: React.FC<{
   const onAuthPage = !user;
 
   return (
-    <header className={`${onAuthPage ? 'bg-transparent' : 'bg-card border-b border-border shadow-sm'} sticky top-0 z-50`}>
+    <header className={`${onAuthPage ? 'bg-background' : 'bg-card border-b border-border shadow-sm'} sticky top-0 z-50`}>
       <div className="container mx-auto px-4 py-4">
-        <div className={`flex items-center ${onAuthPage ? 'justify-center' : 'justify-between'}`}>
-          <div className="flex items-center space-x-8">
+        <div className={`flex items-center justify-between`}>
+          <div className="flex items-center space-x-8 flex-grow-1">
             <Link to="/" className="flex items-center">
               <AppLogo />
             </Link>
-            <Navigation />
+            <div className="flex items-center grow-2 bg-red-500">
+              <Navigation />
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             {user && (

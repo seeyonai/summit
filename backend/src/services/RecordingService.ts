@@ -256,6 +256,7 @@ export async function createRecording(recordingData: {
   const normalizedHotwords = normalizeHotwords(recordingData.hotwords);
 
   const document: OptionalUnlessRequiredId<RecordingDocument> = {
+    _id: new ObjectId(),
     originalFileName: recordingData.originalFileName,
     createdAt: recordingData.createdAt,
     updatedAt: now,
@@ -302,6 +303,7 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
   // No on-disk filename is stored; the file is saved as <_id>.<ext>
 
   const document: OptionalUnlessRequiredId<RecordingDocument> = {
+    _id: new ObjectId(),
     createdAt: now,
     updatedAt: now,
     duration: undefined,

@@ -43,6 +43,7 @@ export class HotwordService {
     const makePublic = isPublic === true;
     const ownerId = new ObjectId(user.userId);
     const hotwordDoc: OptionalUnlessRequiredId<HotwordDocument> = {
+      _id: new ObjectId(),
       word: trimmedWord,
       createdAt: new Date(),
       isActive: true,
