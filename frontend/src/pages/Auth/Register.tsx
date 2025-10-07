@@ -68,7 +68,7 @@ function Register() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="张三"
+                  placeholder="真实姓名"
                 />
               </div>
               
