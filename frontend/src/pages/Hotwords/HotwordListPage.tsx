@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { AlertCircle as AlertCircleIcon, PlusIcon, TrendingUp, Clock, Users, FolderOpenIcon } from 'lucide-react';
 import type { Hotword, HotwordUpdate, HotwordCreate } from '@/types';
 import createHotwordService from '@/services/hotwordService';
@@ -229,18 +230,19 @@ function HotwordListPage() {
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <Card className="p-12">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 text-muted-foreground mb-4">
-              {/* icon placeholder */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v8m-4-4h8" /></svg>
-            </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <PlusIcon />
+            </EmptyMedia>
+            <EmptyTitle>
               {searchTerm || statusFilter !== 'all' ? '没有找到匹配的热词' : '暂无热词'}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {searchTerm || statusFilter !== 'all' ? '尝试调整搜索条件或筛选器' : '点击“添加热词”开始创建'}
-            </p>
+            </EmptyTitle>
+            <EmptyDescription>
+              {searchTerm || statusFilter !== 'all' ? '尝试调整搜索条件或筛选器' : '点击"添加热词"开始创建'}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
             {(searchTerm || statusFilter !== 'all') ? (
               <Button
                 variant="outline"
@@ -257,8 +259,8 @@ function HotwordListPage() {
                 添加热词
               </Button>
             )}
-          </div>
-        </Card>
+          </EmptyContent>
+        </Empty>
       )}
 
       <HotwordBulkActions hotwords={hotwords} onImport={handleImport} onExport={handleExport} isLoading={loading} />

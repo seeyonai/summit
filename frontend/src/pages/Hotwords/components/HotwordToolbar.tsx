@@ -45,6 +45,7 @@ function HotwordToolbar({
           </SelectContent>
         </Select>
 
+        {/* XXX: Button Group */}
         <div className="flex border border-border dark:border-border rounded-lg">
           <Button
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
