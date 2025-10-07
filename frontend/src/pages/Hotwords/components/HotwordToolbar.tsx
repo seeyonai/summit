@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import SearchInput from '@/components/SearchInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FilterIcon, GridIcon, ListIcon, RefreshCwIcon } from 'lucide-react';
@@ -45,23 +46,22 @@ function HotwordToolbar({
           </SelectContent>
         </Select>
 
-        {/* XXX: Button Group */}
-        <div className="flex border border-border dark:border-border rounded-lg">
+        <ButtonGroup>
           <Button
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             onClick={() => onViewModeChange('grid')}
-            className={`rounded-r-none ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : ''}`}
+            size="sm"
           >
             <GridIcon className="w-4 h-4" />
           </Button>
           <Button
             variant={viewMode === 'list' ? 'default' : 'ghost'}
             onClick={() => onViewModeChange('list')}
-            className={`rounded-l-none ${viewMode === 'list' ? 'bg-accent text-accent-foreground' : ''}`}
+            size="sm"
           >
             <ListIcon className="w-4 h-4" />
           </Button>
-        </div>
+        </ButtonGroup>
 
         <Button onClick={onRefresh} variant="outline" size="default" className="h-11">
           <RefreshCwIcon className="w-4 h-4 mr-2" />

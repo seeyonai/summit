@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import SearchInput from '@/components/SearchInput';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiService } from '@/services/api';
 import { recordingPanelBus } from '@/services/recordingPanelBus';
@@ -301,23 +302,22 @@ function RecordingList() {
               </SelectContent>
             </Select>
             
-            {/* XXX: Button Group */}
-            <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
+            <ButtonGroup>
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 onClick={() => setViewMode('grid')}
-                className={`rounded-r-none ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : ''}`}
+                size="sm"
               >
                 <GridIcon className="w-4 h-4" />
               </Button>
               <Button
                 variant={viewMode === 'list' ? 'default' : 'ghost'}
                 onClick={() => setViewMode('list')}
-                className={`rounded-l-none ${viewMode === 'list' ? 'bg-accent text-accent-foreground' : ''}`}
+                size="sm"
               >
                 <ListIcon className="w-4 h-4" />
               </Button>
-            </div>
+            </ButtonGroup>
             
             <Button
               onClick={fetchRecordings}
