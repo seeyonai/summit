@@ -13,10 +13,11 @@ NGINX_ENABLED="/etc/nginx/sites-enabled/summit"
 confirm() {
   local prompt="$1";
   local response;
-  read -r -p "$prompt [y/N]: " response;
+  read -n 1 -r -p "$prompt [y/N]: " response;
+  echo;
   case "$response" in
-    [yY]|[yY][eE][sS]) return 0 ;;
-    *) echo "Skipped."; return 1 ;;
+    [yY]) return 0 ;;
+    *) echo "⏭️  Skipped."; return 1 ;;
   esac;
 }
 
@@ -27,85 +28,131 @@ header() {
 
 ensure_frontend_dir() {
   if [ ! -d "$FRONTEND_DIR" ]; then
-    echo "Frontend directory not found at $FRONTEND_DIR";
+    echo "❌ Frontend directory not found at $FRONTEND_DIR";
     exit 1;
   fi;
 }
 
 ensure_frontend_dir;
 
-header "Build frontend";
-if confirm "Run frontend build (npm run build)?"; then
+header "🔨 Build frontend";
+if confirm "📦 Run frontend build (npm run build)?"; then
   (cd "$FRONTEND_DIR" && npm run build);
 fi;
 
-header "Prepare remote directory";
+header "📁 Prepare remote directory";
 if ssh "$REMOTE_HOST" "test -d '$REMOTE_PATH'"; then
-  echo "Remote directory $REMOTE_PATH already exists.";
+  echo "✓ Remote directory $REMOTE_PATH already exists.";
 else
-  if confirm "Create remote directory $REMOTE_PATH on $REMOTE_HOST?"; then
+  if confirm "📂 Create remote directory $REMOTE_PATH on $REMOTE_HOST?"; then
     ssh "$REMOTE_HOST" "sudo mkdir -p '$REMOTE_PATH'";
   fi;
 fi;
 
-header "Rsync frontend artifacts";
+header "🔄 Rsync frontend artifacts";
 if [ ! -d "$FRONTEND_DIR/dist" ]; then
-  echo "Build output not found at $FRONTEND_DIR/dist.";
-  echo "Run the build step before syncing.";
+  echo "⚠️  Build output not found at $FRONTEND_DIR/dist.";
+  echo "💡 Run the build step before syncing.";
 else
-  if confirm "Sync frontend dist to $REMOTE_HOST:$REMOTE_PATH?"; then
+  if confirm "📤 Sync frontend dist to $REMOTE_HOST:$REMOTE_PATH?"; then
     rsync -avz --delete "$FRONTEND_DIR/dist/" "$REMOTE_HOST:$REMOTE_PATH/";
-    if [ -f "$FRONTEND_DIR/package.json" ]; then
-      if confirm "Sync frontend package.json for reference?"; then
-        rsync -avz "$FRONTEND_DIR/package.json" "$REMOTE_HOST:$REMOTE_PATH/package.json";
-      fi;
-    fi;
-    if [ -f "$FRONTEND_DIR/package-lock.json" ]; then
-      if confirm "Sync frontend package-lock.json for reference?"; then
-        rsync -avz "$FRONTEND_DIR/package-lock.json" "$REMOTE_HOST:$REMOTE_PATH/package-lock.json";
-      fi;
-    fi;
   fi;
 fi;
 
-header "Ensure nginx configuration";
+header "🌐 Ensure nginx configuration";
 if ssh "$REMOTE_HOST" "test -f '$NGINX_AVAILABLE'"; then
-  echo "Nginx config already exists at $NGINX_AVAILABLE.";
-else
-  if confirm "Create nginx site config for frontend (server_name $SERVER_NAME)?"; then
-    ssh "$REMOTE_HOST" "sudo tee '$NGINX_AVAILABLE' >/dev/null" <<EOF
+  echo "ℹ️  Existing nginx config detected at $NGINX_AVAILABLE.";
+fi;
+
+if confirm "⚙️  Install or update nginx site config for frontend (server_name $SERVER_NAME)?"; then
+  ssh "$REMOTE_HOST" "sudo tee '$NGINX_AVAILABLE' >/dev/null" <<EOF
 server {
   listen 80;
   server_name $SERVER_NAME;
-  root /var/www/summit;
+
+  root $REMOTE_PATH;
   index index.html;
+  client_max_body_size 100M;
+
+  location /api/ws {
+    proxy_pass http://127.0.0.1:2592;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header Origin \$http_origin;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location /api/ {
+    proxy_pass http://127.0.0.1:2591;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header Origin \$http_origin;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location /files/ {
+    proxy_pass http://127.0.0.1:2591;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header Origin \$http_origin;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location /ws/ {
+    proxy_pass http://127.0.0.1:2591;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host \$host;
+    proxy_set_header Origin \$http_origin;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_read_timeout 600s;
+    proxy_send_timeout 600s;
+  }
+
+  location = /health {
+    proxy_pass http://127.0.0.1:2591/health;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header Origin \$http_origin;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
 
   location / {
     try_files \$uri \$uri/ /index.html;
   }
 }
 EOF
-  fi;
 fi;
 
 if ssh "$REMOTE_HOST" "test -L '$NGINX_ENABLED'"; then
-  echo "Nginx site already enabled at $NGINX_ENABLED.";
+  echo "✓ Nginx site already enabled at $NGINX_ENABLED.";
 else
   if ssh "$REMOTE_HOST" "test -f '$NGINX_AVAILABLE'"; then
-    if confirm "Enable nginx site by creating symlink?"; then
+    if confirm "🔗 Enable nginx site by creating symlink?"; then
       ssh "$REMOTE_HOST" "sudo ln -sf '$NGINX_AVAILABLE' '$NGINX_ENABLED'";
     fi;
   else
-    echo "Nginx site config missing; skipping enable step.";
+    echo "⏭️  Nginx site config missing; skipping enable step.";
   fi;
 fi;
 
-header "Reload nginx";
-if confirm "Test nginx configuration on $REMOTE_HOST?"; then
+header "🔄 Reload nginx";
+if confirm "🧪 Test nginx configuration on $REMOTE_HOST?"; then
   ssh "$REMOTE_HOST" "sudo nginx -t";
 fi;
-if confirm "Reload nginx on $REMOTE_HOST?"; then
+if confirm "♻️  Reload nginx on $REMOTE_HOST?"; then
   ssh "$REMOTE_HOST" "sudo systemctl reload nginx";
 fi;
 
-header "Frontend deployment script complete";
+header "✅ Frontend deployment script complete";
