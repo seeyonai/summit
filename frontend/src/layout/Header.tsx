@@ -23,7 +23,7 @@ export const Header: React.FC<{
             <Link to="/" className="flex items-center">
               <AppLogo />
             </Link>
-            <div className="flex items-center grow-2 bg-red-500">
+            <div className="flex items-center grow-2">
               <Navigation />
             </div>
           </div>
