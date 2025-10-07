@@ -221,10 +221,11 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
   };
 
   const empty = !recording.speakerSegments || recording.speakerSegments.length === 0;
+  const isTooShort = (recording.duration || 0) < 30;
   const primaryButton = (
     <Button
       onClick={handleAnalysisClick}
-      disabled={segmenting}
+      disabled={segmenting || isTooShort}
       size={empty ? 'lg' : 'sm'}
       variant={empty ? 'default' : 'outline'}
     >
@@ -305,7 +306,7 @@ function RecordingAnalysis({ recording, onRefresh, setSuccess, setError }: Recor
         primaryButton={primaryButton}
         isEmpty={empty}
         emptyIcon={<UsersIcon className="w-12 h-12" />}
-        emptyMessage="暂无说话人分析结果"
+        emptyMessage={isTooShort ? "录音时长过短，无法进行说话人分析（需要至少30秒）" : "暂无说话人分析结果"}
       >
       {!empty && (
         <div className="space-y-6">
