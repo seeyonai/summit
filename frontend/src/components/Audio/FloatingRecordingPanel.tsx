@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Mic, X, Pause, Square, Play, ExternalLink, Loader2, CheckCircle2, GroupIcon, Calendar as MeetingCalendarIcon, UsersIcon } from 'lucide-react';
+import { X, Pause, Square, ExternalLink, Loader2, CheckCircle2, UsersIcon } from 'lucide-react';
 import { useAudioRecording } from '@/hooks/useAudioRecording';
 import { useMeetings } from '@/hooks/useMeetings';
 import { apiService } from '@/services/api';
@@ -20,7 +20,6 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
   const [isPaused, setIsPaused] = useState(false);
   const [showMeetingMenu, setShowMeetingMenu] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-  const [associating, setAssociating] = useState(false);
   const [displayTime, setDisplayTime] = useState(0);
   const [showStopDialog, setShowStopDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -308,7 +307,6 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
                           <button
                             key={meeting._id}
                             onClick={() => handleMeetingSelect(meeting)}
-                            disabled={associating}
                             className="w-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left disabled:opacity-50"
                           >
                             <div className="flex items-start justify-between gap-2">
