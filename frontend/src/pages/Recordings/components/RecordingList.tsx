@@ -17,6 +17,10 @@ import { useRecordingList } from './hooks/useRecordingList';
 import RecordingCard from '@/components/RecordingCard';
 import RecordingListItem from '@/components/RecordingListItem';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
+import {
+  ItemGroup,
+  ItemSeparator
+} from '@/components/ui/item';
 import PageHeader from '@/components/PageHeader';
 import {
   MicIcon,
@@ -304,18 +308,20 @@ function RecordingList() {
             
             <ButtonGroup>
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
                 onClick={() => setViewMode('grid')}
-                size="sm"
+                size="icon"
+                className="w-10 h-10"
               >
-                <GridIcon className="w-4 h-4" />
+                <GridIcon className="w-5 h-5" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                variant={viewMode === 'list' ? 'default' : 'outline'}
                 onClick={() => setViewMode('list')}
-                size="sm"
+                size="icon"
+                className="w-10 h-10"
               >
-                <ListIcon className="w-4 h-4" />
+                <ListIcon className="w-5 h-5" />
               </Button>
             </ButtonGroup>
             
@@ -388,17 +394,19 @@ function RecordingList() {
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredRecordings.map((recording) => (
-                <RecordingListItem 
-                  key={recording._id} 
-                  recording={recording}
-                  showSource
-                  actions={recordingActions}
-                  onClick={handleRecordingClick}
-                />
+            <ItemGroup>
+              {filteredRecordings.map((recording, index) => (
+                <div key={recording._id}>
+                  <RecordingListItem
+                    recording={recording}
+                    showSource
+                    actions={recordingActions}
+                    onClick={handleRecordingClick}
+                  />
+                  {index < filteredRecordings.length - 1 && <ItemSeparator />}
+                </div>
               ))}
-            </div>
+            </ItemGroup>
           )
         )}
 

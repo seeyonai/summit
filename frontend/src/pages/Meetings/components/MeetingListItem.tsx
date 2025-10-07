@@ -2,6 +2,16 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Item,
+  ItemMedia,
+  ItemContent,
+  ItemTitle,
+  ItemDescription,
+  ItemActions,
+  ItemGroup,
+  ItemSeparator
+} from '@/components/ui/item';
 import { formatDate } from '@/utils/date';
 import type { Meeting, MeetingStatus } from '@/types';
 import { Users, Mic, Calendar, Clock, CheckCircle, PlayIcon, ChevronRightIcon, TrashIcon, MoreVertical } from 'lucide-react';
@@ -49,29 +59,32 @@ function MeetingListItem({ meeting, onDelete }: MeetingListItemProps) {
   const recordingCount = (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated').length;
 
   return (
-    <div 
-      className="group bg-background dark:bg-background rounded-lg border border-border dark:border-border hover:shadow-md transition-all duration-300 p-4 cursor-pointer"
+    <Item
+      variant="outline"
       onClick={() => navigate(`/meetings/${meeting._id}`)}
+      asChild
     >
-      <div className="flex items-center gap-4">
-        {/* Status Icon */}
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-          meeting.status === 'in_progress' ? 'bg-success' :
-          meeting.status === 'completed' ? 'bg-completed' :
-          'bg-primary'
-        } text-white`}>
-          <StatusIcon className="w-5 h-5" />
-        </div>
+      <div className="cursor-pointer">
+        {/* Status Icon as Media */}
+        <ItemMedia>
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+            meeting.status === 'in_progress' ? 'bg-success' :
+            meeting.status === 'completed' ? 'bg-completed' :
+            'bg-primary'
+          } text-white`}>
+            <StatusIcon className="w-5 h-5" />
+          </div>
+        </ItemMedia>
 
-        {/* Meeting Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-foreground dark:text-foreground truncate">{meeting.title}</h3>
+        {/* Meeting Content */}
+        <ItemContent>
+          <ItemTitle>
+            {meeting.title}
             {meeting.status === 'in_progress' ? (
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-success/10 hover:bg-success/20 text-success dark:bg-success/20 dark:hover:bg-success/30 dark:text-success/80"
+                className="bg-success/10 hover:bg-success/20 text-success dark:bg-success/20 dark:hover:bg-success/30 dark:text-success/80 ml-2"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/meetings/${meeting._id}`);
@@ -81,39 +94,42 @@ function MeetingListItem({ meeting, onDelete }: MeetingListItemProps) {
                 进入会议
               </Button>
             ) : (
-              <Badge variant="outline" className={getStatusColor(meeting.status)}>
+              <Badge variant="outline" className={getStatusColor(meeting.status) + ' ml-2'}>
                 {getStatusText(meeting.status)}
               </Badge>
             )}
             {totalTodos > 0 && (
-              <Badge variant="secondary" className="bg-success/10 text-success text-xs dark:bg-success/20 dark:text-success/80">
+              <Badge variant="secondary" className="bg-success/10 text-success text-xs dark:bg-success/20 dark:text-success/80 ml-2">
                 {completedTodos}/{totalTodos} 任务
               </Badge>
             )}
-          </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {formatDate(meeting.scheduledStart)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="w-3 h-3" />
-              {meeting.participants || 0} 人
-            </span>
-            <span className="flex items-center gap-1">
-              <Mic className="w-3 h-3" />
-              {recordingCount} 录音
-            </span>
-          </div>
-          {meeting.summary && (
-            <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground line-clamp-1">
-              {meeting.summary}
-            </p>
-          )}
-        </div>
+          </ItemTitle>
+
+          <ItemDescription>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {formatDate(meeting.scheduledStart)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                {meeting.participants || 0} 人
+              </span>
+              <span className="flex items-center gap-1">
+                <Mic className="w-3 h-3" />
+                {recordingCount} 录音
+              </span>
+            </div>
+            {meeting.summary && (
+              <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground line-clamp-1">
+                {meeting.summary}
+              </p>
+            )}
+          </ItemDescription>
+        </ItemContent>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <ItemActions>
           <div className="relative">
             <Button
               size="sm"
@@ -154,9 +170,9 @@ function MeetingListItem({ meeting, onDelete }: MeetingListItemProps) {
             )}
           </div>
           <ChevronRightIcon className="w-4 h-4 text-muted-foreground dark:text-muted-foreground" />
-        </div>
+        </ItemActions>
       </div>
-    </div>
+    </Item>
   );
 }
 

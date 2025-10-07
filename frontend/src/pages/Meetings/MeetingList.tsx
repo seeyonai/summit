@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import SearchInput from '@/components/SearchInput';
 import { ButtonGroup } from '@/components/ui/button-group';
@@ -14,6 +15,10 @@ import type { MeetingCreate } from '@/types';
 import { useMeetings } from '@/hooks/useMeetings';
 import MeetingCard from './components/MeetingCard';
 import MeetingListItem from './components/MeetingListItem';
+import {
+  ItemGroup,
+  ItemSeparator
+} from '@/components/ui/item';
 import PageHeader from '@/components/PageHeader';
 import {
   Mic,
@@ -281,18 +286,20 @@ function MeetingList() {
             
             <ButtonGroup>
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
                 onClick={() => setViewMode('grid')}
-                size="sm"
+                size="icon"
+                className="w-10 h-10"
               >
-                <GridIcon className="w-4 h-4" />
+                <GridIcon className="w-5 h-5" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                variant={viewMode === 'list' ? 'default' : 'outline'}
                 onClick={() => setViewMode('list')}
-                size="sm"
+                size="icon"
+                className="w-10 h-10"
               >
-                <ListIcon className="w-4 h-4" />
+                <ListIcon className="w-5 h-5" />
               </Button>
             </ButtonGroup>
             
@@ -358,7 +365,7 @@ function MeetingList() {
                   <Button
                     variant="ghost"
                     onClick={() => toggleGroupCollapse(group.status)}
-                    className="flex items-center gap-2 mb-4 w-full text-left hover:opacity-70 transition-opacity h-auto p-0"
+                    className="flex flex-left items-center gap-2 mb-4 text-left transition-opacity h-auto p-0 hover:bg-muted"
                   >
                     {isCollapsed ? (
                       <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -377,11 +384,14 @@ function MeetingList() {
                         ))}
                       </div>
                     ) : (
-                      <div className="space-y-3">
-                        {group.meetings.map((meeting) => (
-                          <MeetingListItem key={meeting._id} meeting={meeting} onDelete={deleteMeeting} />
+                      <ItemGroup>
+                        {group.meetings.map((meeting, index) => (
+                          <div key={meeting._id}>
+                            <MeetingListItem meeting={meeting} onDelete={deleteMeeting} />
+                            {index < group.meetings.length - 1 && <ItemSeparator />}
+                          </div>
                         ))}
-                      </div>
+                      </ItemGroup>
                     )
                   )}
                 </div>

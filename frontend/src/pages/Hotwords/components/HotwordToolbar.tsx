@@ -48,18 +48,20 @@ function HotwordToolbar({
 
         <ButtonGroup>
           <Button
-            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
             onClick={() => onViewModeChange('grid')}
-            size="sm"
+            size="icon"
+            className="w-10 h-10"
           >
-            <GridIcon className="w-4 h-4" />
+            <GridIcon className="w-5 h-5" />
           </Button>
           <Button
-            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            variant={viewMode === 'list' ? 'default' : 'outline'}
             onClick={() => onViewModeChange('list')}
-            size="sm"
+            size="icon"
+            className="w-10 h-10"
           >
-            <ListIcon className="w-4 h-4" />
+            <ListIcon className="w-5 h-5" />
           </Button>
         </ButtonGroup>
 
