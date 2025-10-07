@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import SearchInput from '@/components/SearchInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiService } from '@/services/api';
@@ -11,6 +12,7 @@ import { recordingPanelBus } from '@/services/recordingPanelBus';
 import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
 import { formatDuration, formatFileSize } from '@/utils/formatHelpers';
 import type { Recording } from '@/types';
+import { useRecordingList } from './hooks/useRecordingList';
 import RecordingCard from '@/components/RecordingCard';
 import RecordingListItem from '@/components/RecordingListItem';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
@@ -33,10 +35,17 @@ import {
 function RecordingList() {
   const navigate = useNavigate();
   const { toggleFloatingPanel } = useRecordingPanel();
-  const [recordings, setRecordings] = useState<Recording[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [fetchedAll, setFetchedAll] = useState<boolean | undefined>(undefined);
+  const {
+    recordings,
+    loading,
+    error,
+    fetchedAll,
+    fetchRecordings,
+    loadAll,
+    deleteRecording: deleteRecordingAPI,
+    setError
+  } = useRecordingList();
+  
   const [recording, setRecording] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showAssociationModal, setShowAssociationModal] = useState(false);
@@ -46,34 +55,6 @@ function RecordingList() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // API functions
-  const fetchRecordings = async () => {
-    try {
-      setLoading(true);
-      const resp = await apiService.getRecordingsResponse();
-      setRecordings(resp.recordings);
-      setFetchedAll(resp.fetchedAll);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadAll = async () => {
-    try {
-      setLoading(true);
-      const resp = await apiService.getRecordingsResponse({ all: true });
-      setRecordings(resp.recordings);
-      setFetchedAll(resp.fetchedAll);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Keep local button state in sync with panel actions
   useEffect(() => {
@@ -95,10 +76,9 @@ function RecordingList() {
     }
 
     try {
-      await apiService.deleteRecording(id);
-      await fetchRecordings();
+      await deleteRecordingAPI(id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      // Error already handled by the hook
     }
   };
 
@@ -131,7 +111,7 @@ function RecordingList() {
       setUploading(false);
       setUploadProgress(0);
       inputEl.value = '';
-      fetchRecordings();
+      await fetchRecordings();
     } catch (err) {
       setError(err instanceof Error ? err.message : '上传失败');
       setUploading(false);
@@ -140,10 +120,6 @@ function RecordingList() {
     }
   };
 
-  useEffect(() => {
-    fetchRecordings();
-  }, []);
-
   const openAssociationModal = (recording: Recording, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setSelectedRecording(recording);
@@ -151,10 +127,10 @@ function RecordingList() {
   };
 
   // Handle successful association
-  const handleAssociationSuccess = () => {
+  const handleAssociationSuccess = async () => {
     setShowAssociationModal(false);
     setSelectedRecording(null);
-    fetchRecordings();
+    await fetchRecordings();
   };
 
   // Filtered recordings based on search and filter
@@ -325,6 +301,7 @@ function RecordingList() {
               </SelectContent>
             </Select>
             
+            {/* XXX: Button Group */}
             <div className="flex border border-gray-200 dark:border-gray-600 rounded-lg">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -427,20 +404,22 @@ function RecordingList() {
 
         {/* Empty State */}
         {!loading && !error && filteredRecordings.length === 0 && (
-          <Card className="p-12">
-            <div className="text-center">
-              <div className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4">
-                <FileAudioIcon className="w-full h-full" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FileAudioIcon />
+              </EmptyMedia>
+              <EmptyTitle>
                 {searchQuery || filterStatus !== 'all' ? '没有找到匹配的录音' : '暂无录音'}
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-6">
-                {searchQuery || filterStatus !== 'all' 
+              </EmptyTitle>
+              <EmptyDescription>
+                {searchQuery || filterStatus !== 'all'
                   ? '尝试调整搜索条件或筛选器'
                   : '点击"快速录音"开始录制您的第一个录音'}
-              </p>
-              {(searchQuery || filterStatus !== 'all') && (
+              </EmptyDescription>
+            </EmptyHeader>
+            {(searchQuery || filterStatus !== 'all') && (
+              <EmptyContent>
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -450,9 +429,9 @@ function RecordingList() {
                 >
                   清除筛选
                 </Button>
-              )}
-            </div>
-          </Card>
+              </EmptyContent>
+            )}
+          </Empty>
         )}
 
         {/* Association Modal */}
