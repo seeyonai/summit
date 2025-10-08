@@ -1,5 +1,5 @@
 import { ensureTrailingSlash } from './httpClient';
-import { LIVE_SERVICE_BASE, TRANSCRIPTION_SERVICE_BASE } from '../services/RecordingService';
+import { TRANSCRIPTION_SERVICE_BASE } from '../services/RecordingService';
 import { SEGMENTATION_SERVICE_URL } from '../services/SegmentationService';
 import { ALIGNER_SERVICE_URL } from '../services/AlignerService';
 import { debug } from './logger';
@@ -20,11 +20,6 @@ interface HealthCheckResult {
 }
 
 const SERVICES: Service[] = [
-  {
-    name: 'Echo Stream',
-    url: ensureTrailingSlash(LIVE_SERVICE_BASE),
-    port: 2592,
-  },
   {
     name: 'Echo Voices',
     url: ensureTrailingSlash(SEGMENTATION_SERVICE_URL),
