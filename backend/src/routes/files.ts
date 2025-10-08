@@ -72,7 +72,7 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const allowed = await userHasAccess(rec, userId!, role);
   if (!allowed) {
     debugWarn('File access forbidden', { id, userId, role });
-    throw forbidden('Not allowed', 'recording.forbidden');
+    throw forbidden('Not allowed due to file access forbidden', 'recording.forbidden');
   }
 
   const baseDir = getFilesBaseDir();
