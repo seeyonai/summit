@@ -15,11 +15,6 @@ import { debug } from '../utils/logger';
 import { normalizeHotwords } from '../utils/hotwordUtils';
 import { mergeHotwordsIntoMeeting } from './meetingHotwordHelpers';
 
-interface LiveRecordingStartResponse {
-  id: string;
-  message?: string;
-}
-
 interface TranscriptionServiceResponse {
   text: string;
   processingTime: number;
@@ -27,14 +22,12 @@ interface TranscriptionServiceResponse {
   fileSize?: number;
 }
 
-const LIVE_SERVICE_URL = process.env.LIVE_SERVICE_URL || 'http://localhost:2592';
 const TRANSCRIPTION_SERVICE_URL = process.env.TRANSCRIPTION_SERVICE_URL
   || process.env.TRANSCRIBE_SERVICE_URL
   || 'http://localhost:2594';
 
 // Module-level singletons and constants
 const RECORDINGS_DIR = getFilesBaseDir();
-export const LIVE_SERVICE_BASE = ensureTrailingSlash(LIVE_SERVICE_URL);
 export const TRANSCRIPTION_SERVICE_BASE = ensureTrailingSlash(TRANSCRIPTION_SERVICE_URL);
 const segmentationService = new SegmentationService();
 
@@ -162,16 +155,8 @@ async function deleteRecordingFile(document: RecordingDocument): Promise<void> {
   }
 }
 
-function buildLiveServiceUrl(pathname: string): string {
-  return new URL(pathname, LIVE_SERVICE_BASE).toString();
-}
-
 function buildTranscriptionUrl(pathname: string): string {
   return new URL(pathname, TRANSCRIPTION_SERVICE_BASE).toString();
-}
-
-async function callLiveService<T>(pathname: string, options: JsonRequestOptions): Promise<T> {
-  return requestJson<T>(buildLiveServiceUrl(pathname), options);
 }
 
 // Service API (functions over classes)
@@ -247,7 +232,7 @@ export async function createRecording(recordingData: {
   duration: number;
   sampleRate: number;
   channels: number;
-  ownerId?: string;
+  ownerId: string;
   meetingId?: string;
   source?: 'live' | 'upload' | 'concatenated';
   hotwords?: string[];
@@ -293,11 +278,9 @@ export async function createRecording(recordingData: {
 }
 
 export async function startRecording(ownerId: string, meetingId?: string): Promise<{ id: string; message: string }> {
-  const remoteResponse = await callLiveService<LiveRecordingStartResponse>('/api/recordings/start', {
-    method: 'POST',
-    body: {},
-    expectedStatus: [200, 201],
-  });
+  if (!ownerId || !ObjectId.isValid(ownerId)) {
+    throw badRequest('ownerId is required and must be a valid ObjectId', 'recording.missing_owner_id');
+  }
 
   const now = new Date();
   // No on-disk filename is stored; the file is saved as <_id>.<ext>
@@ -334,7 +317,7 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
 
   return {
     id: inserted._id.toHexString(),
-    message: remoteResponse.message || '录音已开始',
+    message:'录音已开始',
   };
 }
 

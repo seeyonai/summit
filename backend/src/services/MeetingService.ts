@@ -206,16 +206,21 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
   const collection = getMeetingsCollection();
   const now = new Date();
   const normalizedHotwords = normalizeHotwords(request.hotwords);
+  const validStatuses: Meeting['status'][] = ['scheduled', 'in_progress', 'completed', 'failed'];
+  const status: Meeting['status'] = request.status && validStatuses.includes(request.status)
+    ? request.status
+    : 'scheduled';
+  const scheduledStart = request.scheduledStart ?? (status === 'in_progress' ? now : undefined);
 
   const meetingId = new ObjectId();
   const meetingDoc: OptionalUnlessRequiredId<MeetingDocument> = {
     _id: meetingId,
     title: request.title,
     summary: request.summary,
-    status: 'scheduled',
+    status,
     createdAt: now,
     updatedAt: now,
-    scheduledStart: request.scheduledStart,
+    scheduledStart,
     recordings: [],
     recordingOrder: normalizeRecordingOrderEntries(request.recordingOrder) ?? [],
     finalTranscript: undefined,
