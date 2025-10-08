@@ -40,6 +40,7 @@ import {
 function MeetingList() {
   const { meetings, loading, error, refetch, fetchedAll, loadAll } = useMeetings();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createVariant, setCreateVariant] = useState<'scheduled' | 'quick'>('scheduled');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
@@ -62,22 +63,32 @@ function MeetingList() {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
   
-  const [newMeeting, setNewMeeting] = useState<MeetingCreate>({
+  const getDefaultMeeting = (variant: 'scheduled' | 'quick'): MeetingCreate => ({
     title: '',
-    scheduledStart: getTomorrow9AM(),
-    participants: 5
+    scheduledStart: variant === 'scheduled' ? getTomorrow9AM() : new Date(),
+    participants: 5,
+    status: variant === 'scheduled' ? 'scheduled' : 'in_progress'
   });
+
+  const [newMeeting, setNewMeeting] = useState<MeetingCreate>(getDefaultMeeting('scheduled'));
+
+  const openCreateModal = (variant: 'scheduled' | 'quick') => {
+    setCreateVariant(variant);
+    setNewMeeting(getDefaultMeeting(variant));
+    setShowCreateModal(true);
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateVariant('scheduled');
+    setNewMeeting(getDefaultMeeting('scheduled'));
+  };
 
   const createMeeting = async (meetingData: MeetingCreate) => {
     try {
       await apiService.createMeeting(meetingData);
       refetch();
-      setShowCreateModal(false);
-      setNewMeeting({
-        title: '',
-        scheduledStart: getTomorrow9AM(),
-        participants: 5
-      });
+      closeCreateModal();
     } catch (err) {
       console.error('Error creating meeting:', err);
     }
@@ -98,7 +109,12 @@ function MeetingList() {
   };
 
   const handleCreateMeeting = () => {
-    createMeeting(newMeeting);
+    const payload: MeetingCreate = {
+      ...newMeeting,
+      status: createVariant === 'quick' ? 'in_progress' : 'scheduled',
+      scheduledStart: createVariant === 'quick' ? new Date() : newMeeting.scheduledStart
+    };
+    createMeeting(payload);
   };
 
   // Filtered meetings based on search and filter
@@ -208,14 +224,24 @@ function MeetingList() {
           title="会议"
           subline="智能管理您的会议记录和任务进度"
           actionButtons={
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              size="lg"
-              variant="hero"
-            >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              创建会议
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => openCreateModal('scheduled')}
+                size="lg"
+                variant="hero"
+              >
+                <PlusIcon className="w-5 h-5 mr-2" />
+                预约会议
+              </Button>
+              <Button
+                onClick={() => openCreateModal('quick')}
+                size="lg"
+                variant="outline"
+              >
+                <ActivityIcon className="w-5 h-5 mr-2" />
+                快速会议
+              </Button>
+            </div>
           }
         >
           <div className="stats-grid">
@@ -428,22 +454,39 @@ function MeetingList() {
                   清除筛选
                 </Button>
               ) : (
-                <Button onClick={() => setShowCreateModal(true)}>
-                  <PlusIcon className="w-4 h-4 mr-2" />
-                  创建会议
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button onClick={() => openCreateModal('scheduled')}>
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    预约会议
+                  </Button>
+                  <Button variant="outline" onClick={() => openCreateModal('quick')}>
+                    <ActivityIcon className="w-4 h-4 mr-2" />
+                    快速会议
+                  </Button>
+                </div>
               )}
             </EmptyContent>
           </Empty>
         )}
 
         {/* Create Meeting Modal */}
-        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <Dialog
+          open={showCreateModal}
+          onOpenChange={(open) => {
+            if (!open) {
+              closeCreateModal();
+              return;
+            }
+            setShowCreateModal(true);
+          }}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>创建新会议</DialogTitle>
+              <DialogTitle>{createVariant === 'quick' ? '快速会议' : '创建新会议'}</DialogTitle>
               <DialogDescription>
-                填写会议信息以创建新的会议记录
+                {createVariant === 'quick'
+                  ? '立即开始会议并即时跟踪进度'
+                  : '填写会议信息以创建新的会议记录'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -457,15 +500,17 @@ function MeetingList() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="start-time">开始时间</Label>
-                <Input
-                  id="start-time"
-                  type="datetime-local"
-                  value={newMeeting.scheduledStart ? formatDateTimeLocal(newMeeting.scheduledStart) : ''}
-                  onChange={(e) => setNewMeeting({...newMeeting, scheduledStart: e.target.value ? new Date(e.target.value) : undefined})}
-                />
-              </div>
+              {createVariant === 'scheduled' && (
+                <div className="space-y-2">
+                  <Label htmlFor="start-time">开始时间</Label>
+                  <Input
+                    id="start-time"
+                    type="datetime-local"
+                    value={newMeeting.scheduledStart ? formatDateTimeLocal(newMeeting.scheduledStart) : ''}
+                    onChange={(e) => setNewMeeting({...newMeeting, scheduledStart: e.target.value ? new Date(e.target.value) : undefined})}
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="participants">参与人数</Label>
@@ -479,7 +524,7 @@ function MeetingList() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+              <Button variant="outline" onClick={() => closeCreateModal()}>
                 取消
               </Button>
               <Button onClick={handleCreateMeeting}>
