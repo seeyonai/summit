@@ -54,7 +54,7 @@ if [ ! -d "$BACKEND_DIR/dist" ]; then
   echo "Run the build step before syncing.";
 else
   if confirm "📤 Sync backend code to $REMOTE_HOST:$REMOTE_PATH?"; then
-    rsync -avz --delete --exclude '/node_modules' --exclude '/files' --exclude '/src' --exclude '.env' --exclude '.env.production' --exclude '.git' \
+    rsync -avz --delete --exclude '/node_modules' --exclude '/files'  --exclude '/customization.json' --exclude '/src' --exclude '.env' --exclude '.env.production' --exclude '.git' \
       "$BACKEND_DIR/" "$REMOTE_HOST:$REMOTE_PATH/";
     if confirm "📦 Install backend dependencies on $REMOTE_HOST?"; then
       ssh "$REMOTE_HOST" "cd '$REMOTE_PATH' && npm install --production";
@@ -72,6 +72,15 @@ if [ -f "$BACKEND_DIR/.env.production" ]; then
   fi;
 else
   echo "No .env.production file found at $BACKEND_DIR/.env.production, skipping.";
+fi;
+
+header "🎨 Sync customization.json";
+if [ -f "$BACKEND_DIR/customization.production.json" ]; then
+  if confirm "📝 Sync customization.production.json to $REMOTE_HOST:$REMOTE_PATH/customization.json?"; then
+    rsync -avz "$BACKEND_DIR/customization.production.json" "$REMOTE_HOST:$REMOTE_PATH/customization.json";
+  fi;
+else
+  echo "No customization.production.json file found at $BACKEND_DIR/customization.production.json, skipping.";
 fi;
 
 service_registered=0;
