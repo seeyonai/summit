@@ -78,15 +78,43 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-        <div className="text-center mb-20">
-          <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight mb-6">
-            AI 驱动的会议智能平台
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            结合语音识别、说话人分离、内容提取与时间对齐的全栈 AI 技术，将会议对话转化为结构化知识资产。
-          </p>
+      {/* Hero Section with Split Layout */}
+      <div className="relative overflow-hidden border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[600px] py-16 sm:py-24">
+            {/* Left: Text Content */}
+            <div className="space-y-8">
+              <div className="space-y-6">
+                <h1 className="text-xl sm:text-5xl font-extrabold tracking-tight leading-tight">
+                  AI 驱动的会议智能平台
+                </h1>
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  结合语音识别、说话人分离、内容提取与时间对齐的全栈 AI 技术，将会议对话转化为结构化知识资产。
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <a href="/register" className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors">
+                  开始使用
+                </a>
+                <a href="/login" className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-border bg-background hover:bg-muted transition-colors font-semibold">
+                  登录
+                </a>
+              </div>
+            </div>
+
+            {/* Right: Summit Photo */}
+            <div className="relative lg:absolute lg:right-0 lg:top-0 lg:bottom-0 lg:w-1/2">
+              <div className="relative h-[400px] lg:h-full rounded-2xl lg:rounded-none overflow-hidden">
+                <img src="/summit-photo.jpg" alt="Mountain Summit" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-l from-transparent via-background/20 to-background lg:via-background/40 lg:to-background" />
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <div className="mb-20" />
 
         {/* Core Features */}
         <div className="mb-32">
