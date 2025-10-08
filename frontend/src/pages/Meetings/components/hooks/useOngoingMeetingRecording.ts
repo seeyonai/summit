@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { apiService } from '@/services/api';
+import { buildWsUrl } from '@/utils/ws';
 
 export interface RecordingInfo {
   recordingId?: string;
@@ -26,28 +28,6 @@ const isDev = window.location.port === '2592';
 const PRODUCTION_TRANSCRIPTION_API_BASE = '/live/';
 const DEFAULT_TRANSCRIPTION_API_BASE = isDev ? 'http://localhost:2592/' : PRODUCTION_TRANSCRIPTION_API_BASE;
 const TRANSCRIPTION_API_BASE = import.meta.env.VITE_TRANSCRIPTION_API_BASE || DEFAULT_TRANSCRIPTION_API_BASE;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const getLiveServiceUrlFromEnv = (): string | undefined => {
-  const env = import.meta.env as Record<string, string | undefined>;
-  const unprefixed = env?.LIVE_SERVICE_URL?.trim();
-  if (unprefixed) {
-    return unprefixed;
-  }
-
-  const prefixed = env?.VITE_LIVE_SERVICE_URL?.trim();
-  if (prefixed) {
-    return prefixed;
-  }
-
-  const globalProcess = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
-  const processValue = globalProcess?.env?.LIVE_SERVICE_URL?.trim();
-  if (processValue) {
-    return processValue;
-  }
-
-  return undefined;
-};
 
 export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo: RecordingInfo) => void) {
   const [isRecording, setIsRecording] = useState(false);
@@ -252,9 +232,18 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
     };
   }, [handleTranscriptionPayload, transcriptionWsUrl]);
 
-  const connectWebSocket = useCallback(() => {
+  const connectWebSocket = useCallback(async () => {
     try {
-      const ws = new WebSocket(`ws://${window.location.hostname}:2591/ws/live-recorder`);
+      const startResponse = await apiService.startRecording();
+      const recordingId = typeof startResponse?.id === 'string' ? startResponse.id : undefined;
+
+      if (!recordingId) {
+        setStatus('error');
+        setMessage('Failed to obtain recording ID');
+        return;
+      }
+
+      const ws = new WebSocket(buildWsUrl('/ws/live-recorder', { recordingId }));
       
       ws.onopen = () => {
         setIsConnected(true);
@@ -328,8 +317,10 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
   const startRecording = async () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       setMessage('Connecting to recording system...');
-      connectWebSocket();
-      return;
+      await connectWebSocket();
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        return;
+      }
     }
 
     try {
@@ -448,7 +439,7 @@ export function useOngoingMeetingRecording(onRecordingComplete?: (recordingInfo:
   };
 
   useEffect(() => {
-    connectWebSocket();
+    void connectWebSocket();
     connectTranscriptionWebSocket();
 
     return () => {

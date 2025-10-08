@@ -15,9 +15,7 @@ declare global {
 }
 
 const isDev = window.location.port === '2592';
-const PRODUCTION_TRANSCRIPTION_API_BASE = '/live/';
-const DEFAULT_TRANSCRIPTION_API_BASE = isDev ? 'http://localhost:2592/' : PRODUCTION_TRANSCRIPTION_API_BASE;
-const TRANSCRIPTION_API_BASE = import.meta.env.VITE_TRANSCRIPTION_API_BASE || DEFAULT_TRANSCRIPTION_API_BASE;
+const TRANSCRIPTION_API_BASE = import.meta.env.VITE_TRANSCRIPTION_API_BASE;
 
 export function useOngoingMeetingTranscription() {
   const [isTranscriptionConnected, setIsTranscriptionConnected] = useState(false);
@@ -42,10 +40,12 @@ export function useOngoingMeetingTranscription() {
 
   const transcriptionWsUrl = useMemo(() => {
     try {
-      const endpoint = new URL('api/ws', TRANSCRIPTION_API_BASE);
+      const endpoint = new URL('api/ws', TRANSCRIPTION_API_BASE || window.location.origin);
+      console.info('Live transcription endpoint:', endpoint);
       const protocol = endpoint.protocol === 'https:' ? 'wss:' : 'ws:';
       return `${protocol}//${endpoint.host}${endpoint.pathname}${endpoint.search}`;
-    } catch {
+    } catch (e) {
+      console.error('Failed to parse transcription API base:', e);
       return 'ws://localhost:2592/api/ws';
     }
   }, []);
@@ -170,10 +170,11 @@ export function useOngoingMeetingTranscription() {
     ws.onopen = () => {
       setIsTranscriptionConnected(true);
       if (isListeningRef.current) {
-        ws.send(JSON.stringify({
+        const startMessage = {
           type: 'start',
           sample_rate: 16000
-        }));
+        };
+        ws.send(JSON.stringify(startMessage));
         transcriptionStartTimeRef.current = Date.now();
         setTranscriptionStatus('listening');
         setTranscriptionMessage('Transcription resumed.');
@@ -193,12 +194,13 @@ export function useOngoingMeetingTranscription() {
     };
 
     ws.onerror = (error) => {
+      console.error('[DEBUG] Transcription WebSocket error:', error);
       console.error('Transcription WebSocket error:', error);
       setTranscriptionStatus('error');
       setTranscriptionMessage('Transcription connection error');
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       transcriptionWsRef.current = null;
       setIsTranscriptionConnected(false);
 
@@ -210,6 +212,7 @@ export function useOngoingMeetingTranscription() {
       setTranscriptionMessage('Transcription disconnected. Attempting to reconnect...');
 
       transcriptionReconnectTimerRef.current = window.setTimeout(() => {
+        console.warn('[DEBUG] Attempting to reconnect transcription WebSocket...');
         connectTranscriptionWebSocket();
       }, 3000);
     };
@@ -218,10 +221,11 @@ export function useOngoingMeetingTranscription() {
   const startListening = async () => {
     try {
       if (transcriptionWsRef.current && transcriptionWsRef.current.readyState === WebSocket.OPEN) {
-        transcriptionWsRef.current.send(JSON.stringify({
+        const startMessage = {
           type: 'start',
           sample_rate: 16000
-        }));
+        };
+        transcriptionWsRef.current.send(JSON.stringify(startMessage));
         transcriptionStartTimeRef.current = Date.now();
         lastTranscriptionTypeRef.current = null;
         setTranscriptionStatus('listening');
@@ -279,17 +283,18 @@ export function useOngoingMeetingTranscription() {
     if (workletNodeRef.current) {
       workletNodeRef.current.disconnect();
     }
-    
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
-    
+
     if (audioContextRef.current) {
       audioContextRef.current.close();
     }
 
     if (transcriptionWsRef.current && transcriptionWsRef.current.readyState === WebSocket.OPEN) {
-      transcriptionWsRef.current.send(JSON.stringify({ type: 'stop' }));
+      const stopMessage = { type: 'stop' };
+      transcriptionWsRef.current.send(JSON.stringify(stopMessage));
       transcriptionStartTimeRef.current = null;
       if (transcriptionStatus !== 'error') {
         setTranscriptionStatus('ready');
