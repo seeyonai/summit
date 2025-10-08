@@ -479,13 +479,13 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
                 >
                   关闭
                 </Button>
-                <Button
+                {/* <Button
                   type="button"
                   onClick={handleContinueRecording}
                   className="flex-1 h-9 text-sm"
                 >
                   继续录音
-                </Button>
+                </Button> */}
               </>
             )}
           </div>
