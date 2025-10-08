@@ -15,7 +15,6 @@ import MeetingEdit from './pages/Meetings/MeetingEdit';
 import OngoingMeetingPage from './pages/Meetings/OngoingMeetingPage';
 import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
-import LiveRecorderTest from './pages/LiveRecorderTest';
 import FloatingRecordingPanel from './components/Audio/FloatingRecordingPanel';
 import DebugInfo from './components/DebugInfo';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -93,7 +92,6 @@ function AppContent() {
                       <Route path="/meetings/:id/edit" element={<ProtectedRoute><MeetingEdit /></ProtectedRoute>} />
                       <Route path="/hotwords" element={<ProtectedRoute><HotwordListPage /></ProtectedRoute>} />
                       <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-                      <Route path="/test-recorder" element={<ProtectedRoute><LiveRecorderTest /></ProtectedRoute>} />
                       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />

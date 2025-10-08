@@ -9,6 +9,7 @@ import { apiService } from '@/services/api';
 import type { Meeting } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface FloatingRecordingPanelProps {
   isVisible: boolean;
@@ -16,6 +17,7 @@ interface FloatingRecordingPanelProps {
 }
 
 function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelProps) {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [isPaused, setIsPaused] = useState(false);
   const [showMeetingMenu, setShowMeetingMenu] = useState(false);
@@ -213,7 +215,7 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  if (!isVisible) return null;
+  if (!isVisible || !user) return null;
 
   return (
     <TooltipProvider>

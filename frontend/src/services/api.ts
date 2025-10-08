@@ -231,8 +231,11 @@ class ApiService {
     return this.get(`/api/recordings/${id}`);
   }
 
-  async startRecording() {
-    return this.post('/api/recordings/start');
+  async startRecording(options?: { meetingId?: string }): Promise<{ id: string; message?: string }> {
+    const endpoint = options?.meetingId
+      ? `/api/recordings/start?meetingId=${encodeURIComponent(options.meetingId)}`
+      : '/api/recordings/start';
+    return this.post<{ id: string; message?: string }>(endpoint, {});
   }
 
   async updateRecording(id: string, data: RecordingUpdatePayload): Promise<{ message: string }> {
