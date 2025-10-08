@@ -48,23 +48,23 @@ else
   fi;
 fi;
 
-header "📂 Ensure files directory";
-if confirm "📁 Create $REMOTE_PATH/files with 777 permissions on $REMOTE_HOST?"; then
-  ssh "$REMOTE_HOST" "sudo mkdir -p '$REMOTE_PATH/files' && sudo chmod 777 '$REMOTE_PATH/files'";
-fi;
-
 header "🔄 Rsync backend artifacts";
 if [ ! -d "$BACKEND_DIR/dist" ]; then
   echo "Build output not found at $BACKEND_DIR/dist.";
   echo "Run the build step before syncing.";
 else
   if confirm "📤 Sync backend code to $REMOTE_HOST:$REMOTE_PATH?"; then
-    rsync -avz --delete --exclude 'node_modules' --exclude 'src' --exclude '.env' --exclude '.env.production' --exclude '.git' \
+    rsync -avz --delete --exclude '/node_modules' --exclude '/files' --exclude '/src' --exclude '.env' --exclude '.env.production' --exclude '.git' \
       "$BACKEND_DIR/" "$REMOTE_HOST:$REMOTE_PATH/";
     if confirm "📦 Install backend dependencies on $REMOTE_HOST?"; then
       ssh "$REMOTE_HOST" "cd '$REMOTE_PATH' && npm install --production";
     fi;
   fi;
+fi;
+
+header "📂 Ensure files directory";
+if confirm "📁 Create $REMOTE_PATH/files with 777 permissions on $REMOTE_HOST?"; then
+  ssh "$REMOTE_HOST" "sudo mkdir -p '$REMOTE_PATH/files' && sudo chmod 777 '$REMOTE_PATH/files'";
 fi;
 
 header "🔐 Sync production environment file";
@@ -118,9 +118,8 @@ if [ "$service_registered" -eq 1 ]; then
     ssh "$REMOTE_HOST" "sudo systemctl restart '$SERVICE_NAME'";
   fi;
   header "📊 Check service status";
-  if confirm "🔍 Show $SERVICE_NAME status on $REMOTE_HOST?"; then
-    ssh "$REMOTE_HOST" "sudo systemctl status '$SERVICE_NAME' --no-pager";
-  fi;
+
+  ssh "$REMOTE_HOST" "sudo systemctl status '$SERVICE_NAME' --no-pager";
 else
   echo "Systemd service $SERVICE_NAME is not registered; skipping reload prompts.";
 fi;
