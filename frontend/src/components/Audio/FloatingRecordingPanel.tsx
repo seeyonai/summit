@@ -28,7 +28,6 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
   const [savedRecordingId, setSavedRecordingId] = useState<string | null>(null);
   const [savedFilename, setSavedFilename] = useState<string | null>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
-  const maxDuration = 30 * 60; // 30 minutes in seconds
   
   // Drag functionality state
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -393,12 +392,8 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
               </TooltipContent>
             </Tooltip>
             {/* Timer (blinking when paused) */}
-            <div className={`flex items-center gap-1 text-sm font-mono text-gray-700 dark:text-gray-300 ${
-              isPaused ? 'animate-pulse' : ''
-            }`}>
+            <div className={`flex items-center gap-1 text-sm font-mono text-gray-700 dark:text-gray-300 ${isPaused ? 'animate-pulse' : ''}`}>
               <span>{formatTime(displayTime)}</span>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-500 dark:text-gray-400">{formatTime(maxDuration)}</span>
             </div>
           </>
         )}
