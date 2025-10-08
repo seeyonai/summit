@@ -68,7 +68,7 @@ function MeetingCard({ meeting, onDelete }: MeetingCardProps) {
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-success/10 hover:bg-success/20 text-success dark:bg-success/20 dark:hover:bg-success/30 dark:text-success/80"
+                className="bg-success/10 hover:bg-success/20 text-success hover:text-success/80 dark:bg-success/20 dark:hover:bg-success/30 dark:text-success/80"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/meetings/${meeting._id}`);

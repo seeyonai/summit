@@ -21,7 +21,7 @@ const HotwordForm: React.FC<HotwordFormProps> = ({ onSubmit, isLoading = false, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!word.trim()) return;
 
     setIsSubmitting(true);
@@ -39,56 +39,46 @@ const HotwordForm: React.FC<HotwordFormProps> = ({ onSubmit, isLoading = false, 
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus size={20} />
-          添加新热词
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Input
-              value={word}
-              onChange={(e) => setWord(e.target.value)}
-              placeholder="输入热词..."
-              disabled={isLoading || isSubmitting}
-            />
-          </div>
-          {user?.role === 'admin' && (
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="isPublic"
-                checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
-                disabled={isLoading || isSubmitting}
-                className="rounded"
-              />
-              <label htmlFor="isPublic" className="text-sm font-medium">
-                设为公开（所有人只读）
-              </label>
-            </div>
-          )}
-          
-          <Button 
-            type="submit" 
-            disabled={!word.trim() || isLoading || isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting ? '添加中...' : '添加热词'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <div>
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Input
+            value={word}
+            onChange={(e) => setWord(e.target.value)}
+            placeholder="输入热词..."
+            disabled={isLoading || isSubmitting}
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="isPublic"
+            checked={isPublic}
+            onChange={(e) => setIsPublic(e.target.checked)}
+            disabled={isLoading || isSubmitting}
+            className="rounded"
+          />
+          <label htmlFor="isPublic" className="text-sm font-medium">
+            设为公开（所有人只读）
+          </label>
+        </div>
+
+        <Button
+          type="submit"
+          disabled={!word.trim() || isLoading || isSubmitting}
+          className="w-full"
+        >
+          {isSubmitting ? '添加中...' : '添加热词'}
+        </Button>
+      </form>
+    </div>
   );
 };
 

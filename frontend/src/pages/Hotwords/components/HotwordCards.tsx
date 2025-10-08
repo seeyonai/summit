@@ -60,7 +60,7 @@ const HotwordCards: React.FC<HotwordCardsProps> = ({
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-medium font-serif text-2xl flex-grow">{hotword.word}</span>
-                  <Badge variant={hotword.isActive ? 'default' : 'secondary'} className="flex-shrink-0">
+                  <Badge variant={hotword.isActive ? 'outline' : 'secondary'} className="flex-shrink-0">
                     {hotword.isActive ? '启用' : '禁用'}
                   </Badge>
                   {hotword.isPublic && (
