@@ -105,7 +105,7 @@ function Home() {
             {/* Right: Summit Photo */}
             <div className="relative lg:absolute lg:right-0 lg:top-0 lg:bottom-0 lg:w-1/2">
               <div className="relative h-[400px] lg:h-full rounded-2xl lg:rounded-none overflow-hidden">
-                <img src="/summit-photo.jpg" alt="Mountain Summit" className="absolute inset-0 w-full h-full object-cover" />
+                <video src="/summit-day-light.mp4" autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-l from-transparent via-background/20 to-background lg:via-background/40 lg:to-background" />
               </div>
             </div>
