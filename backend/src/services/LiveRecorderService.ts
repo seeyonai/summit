@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import fs from 'fs';
-import type { Server as HttpServer } from 'http';
+import type { Server as HttpServer, IncomingMessage } from 'http';
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { getFilesBaseDir, resolveWithinBase } from '../utils/filePaths';
@@ -13,6 +13,7 @@ interface ActiveRecording {
   chunks: Buffer[];
   startTime: Date;
   ws: WebSocket;
+  documentId?: ObjectId;
 }
 
 export class LiveRecorderService {
@@ -29,61 +30,78 @@ export class LiveRecorderService {
   }
 
   private setupWebSocketHandlers() {
-    this.wss.on('connection', (ws: WebSocket) => {
-      debug('New WebSocket connection for live recorder');
-      debug('WebSocket connected from client on port 2591');
+    this.wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
+      void this.initializeConnection(ws, request);
+    });
+  }
 
-      const recordingId = uuidv4();
+  private async initializeConnection(ws: WebSocket, request?: IncomingMessage) {
+    debug('New WebSocket connection for live recorder');
+    debug('WebSocket connected from client on port 2591');
 
-      const activeRecording: ActiveRecording = {
-        id: recordingId,
-        chunks: [],
-        startTime: new Date(),
-        ws
-      };
+    const sessionId = uuidv4();
+    let documentId: ObjectId | undefined;
+    let recordingIdForClient: string | undefined;
 
-      this.activeRecordings.set(recordingId, activeRecording);
+    if (request?.url) {
+      try {
+        const parsedUrl = new URL(request.url, 'http://localhost');
+        const requestedRecordingId = parsedUrl.searchParams.get('recordingId');
 
-      // Send ready message to client
-      ws.send(JSON.stringify({
-        type: 'ready',
-        message: '准备接收音频数据',
-        recordingId
-      }));
-
-      ws.on('message', (data: Buffer | string) => {
-        // Handle text messages (control messages like stop)
-        if (typeof data === 'string' || Buffer.isBuffer(data) && data.length < 1000) {
-          try {
-            const message = JSON.parse(data.toString());
-            if (message.type === 'stop') {
-              debug(`Received stop message for recording ${recordingId}`);
-              this.handleConnectionClose(recordingId);
-              return;
-            }
-          } catch (e) {
-            // Not JSON, treat as audio
-          }
+        if (requestedRecordingId && ObjectId.isValid(requestedRecordingId)) {
+          documentId = new ObjectId(requestedRecordingId);
+          recordingIdForClient = requestedRecordingId;
         }
-        // Handle binary audio data
-        this.handleAudioChunk(recordingId, data as Buffer);
-      });
+      } catch (error) {
+        debugWarn('Failed to parse WebSocket request URL for live recorder', error as Error);
+      }
+    }
 
-      ws.on('close', () => {
-        debug('WebSocket disconnected from client on port 2591');
-        this.handleConnectionClose(recordingId);
-      });
+    const activeRecording: ActiveRecording = {
+      id: sessionId,
+      chunks: [],
+      startTime: new Date(),
+      ws,
+      documentId
+    };
 
-      ws.on('error', (error: Error) => {
-        console.error(`WebSocket error for recording ${recordingId}:`, error);
-        debug('WebSocket connection failed from client on port 2591');
-        this.handleConnectionClose(recordingId);
-      });
+    this.activeRecordings.set(sessionId, activeRecording);
 
-      ws.send(JSON.stringify({
-        type: 'ready',
-        message: '准备接收音频数据'
-      }));
+    const readyPayload: Record<string, unknown> = {
+      type: 'ready',
+      message: '准备接收音频数据',
+      recordingId: recordingIdForClient ?? sessionId
+    };
+
+    ws.send(JSON.stringify(readyPayload));
+
+    ws.on('message', (data: Buffer | string) => {
+      // Handle text messages (control messages like stop)
+      if (typeof data === 'string' || (Buffer.isBuffer(data) && data.length < 1000)) {
+        try {
+          const message = JSON.parse(data.toString());
+          if (message.type === 'stop') {
+            debug(`Received stop message for recording session ${sessionId}`);
+            this.handleConnectionClose(sessionId);
+            return;
+          }
+        } catch (e) {
+          // Not JSON, treat as audio
+        }
+      }
+      // Handle binary audio data
+      this.handleAudioChunk(sessionId, data as Buffer);
+    });
+
+    ws.on('close', () => {
+      debug('WebSocket disconnected from client on port 2591');
+      this.handleConnectionClose(sessionId);
+    });
+
+    ws.on('error', (error: Error) => {
+      console.error(`WebSocket error for recording session ${sessionId}:`, error);
+      debug('WebSocket connection failed from client on port 2591');
+      this.handleConnectionClose(sessionId);
     });
   }
 
@@ -160,28 +178,58 @@ export class LiveRecorderService {
       
       const duration = Math.floor((Date.now() - recording.startTime.getTime()) / 1000);
 
-      // Create Recording document in database first to get ID
+      // Create or update Recording document in database
       let insertedId: string | null = null;
       try {
         const collection = await getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
         const now = new Date();
-        const recordingObjectId = new ObjectId();
-        const recordingDocument: RecordingDocument = {
-          _id: recordingObjectId,
-          // originalFileName not set for live recordings
-          duration,
-          fileSize: wavBuffer.length,
-          source: 'live',
-          sampleRate: 16000,
-          channels: 1,
-          format: 'wav',
-          createdAt: now,
-          updatedAt: now
-        };
+        let targetObjectId = recording.documentId ?? null;
 
-        const result = await collection.insertOne(recordingDocument);
-        insertedId = result.insertedId.toHexString();
-        debug(`Recording document created with ID: ${insertedId}`);
+        if (targetObjectId) {
+          const updateResult = await collection.updateOne(
+            { _id: targetObjectId },
+            {
+              $set: {
+                duration,
+                fileSize: wavBuffer.length,
+                source: 'live',
+                sampleRate: 16000,
+                channels: 1,
+                format: 'wav',
+                updatedAt: now
+              }
+            }
+          );
+
+          if (updateResult.matchedCount === 0) {
+            debugWarn(`Recording document ${targetObjectId.toHexString()} not found for session ${recording.id}, creating new document`);
+            targetObjectId = null;
+          } else {
+            insertedId = targetObjectId.toHexString();
+            debug(`Recording document updated with ID: ${insertedId}`);
+          }
+        }
+
+        if (!targetObjectId) {
+          const recordingObjectId = new ObjectId();
+          const recordingDocument: RecordingDocument = {
+            _id: recordingObjectId,
+            // originalFileName not set for live recordings
+            duration,
+            fileSize: wavBuffer.length,
+            source: 'live',
+            sampleRate: 16000,
+            channels: 1,
+            format: 'wav',
+            createdAt: now,
+            updatedAt: now
+          };
+
+          const result = await collection.insertOne(recordingDocument);
+          targetObjectId = result.insertedId;
+          insertedId = targetObjectId.toHexString();
+          debug(`Recording document created with ID: ${insertedId}`);
+        }
       } catch (dbError) {
         console.error('Error creating Recording document:', dbError);
       }
