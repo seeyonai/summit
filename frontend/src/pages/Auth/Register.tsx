@@ -19,7 +19,7 @@ function Register() {
   const [loading, setLoading] = useState(false);
 
   // Get the intended destination from location state or default to meetings
-  const from = (location.state as any)?.from?.pathname || '/meetings';
+  const from = (location.state as any)?.from?.pathname || '/dashboard';
 
   useEffect(() => {
     if (user) {
