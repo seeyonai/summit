@@ -152,14 +152,12 @@ export function requireRecordingReadAccess() {
         next();
         return;
       }
-      if (!rec.meetingId) {
-        next(forbidden('Not allowed', 'recording.forbidden'));
-        return;
-      }
-      const meeting = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: rec.meetingId });
-      if (!(await hasMeetingReadAccess(meeting, req.user.userId))) {
-        next(forbidden('Not allowed', 'recording.forbidden'));
-        return;
+      if (rec.meetingId) {
+        const meeting = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: rec.meetingId });
+        if (!(await hasMeetingReadAccess(meeting, req.user.userId))) {
+          next(forbidden('Not allowed due to missing meeting read access', 'recording.forbidden'));
+          return;
+        }
       }
       next();
     } catch (err) {
@@ -190,14 +188,12 @@ export function requireRecordingWriteAccess() {
         next();
         return;
       }
-      if (!rec.meetingId) {
-        next(forbidden('Not allowed', 'recording.forbidden'));
-        return;
-      }
-      const meeting = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: rec.meetingId });
-      if (!(await hasMeetingWriteAccess(meeting, req.user.userId))) {
-        next(forbidden('Not allowed', 'recording.forbidden'));
-        return;
+      if (rec.meetingId) {
+        const meeting = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: rec.meetingId });
+        if (!(await hasMeetingWriteAccess(meeting, req.user.userId))) {
+          next(forbidden('Not allowed due to missing meeting write access', 'recording.forbidden'));
+          return;
+        }
       }
       next();
     } catch (err) {
