@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { buildWsUrl } from '@/utils/ws';
+import { apiService } from '@/services/api';
 
 export interface AudioRecordingState {
   isRecording: boolean;
@@ -14,6 +15,7 @@ export interface UseAudioRecordingOptions {
   wsUrl?: string;
   sampleRate?: number;
   language?: string;
+  meetingId?: string;
   onRecordingComplete?: (data: {
     downloadUrl: string;
     transcription: string;
@@ -83,8 +85,35 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
     setState(prev => ({ ...prev, error: null }));
 
     try {
-      // Connect to WebSocket
-      const wsUrl = options.wsUrl || buildWsUrl('/ws/live-recorder');
+      const startResponse = await apiService.startRecording(
+        options.meetingId ? { meetingId: options.meetingId } : undefined
+      );
+      const recordingId =
+        typeof startResponse?.id === 'string' && startResponse.id
+          ? startResponse.id
+          : undefined;
+
+      if (!recordingId) {
+        throw new Error('无法获取录音标识');
+      }
+
+      recordingInfoRef.current = { recordingId };
+
+      const wsUrl = options.wsUrl
+        ? (() => {
+            try {
+              const base = typeof window !== 'undefined' && window.location
+                ? window.location.href
+                : 'http://localhost';
+              const url = new URL(options.wsUrl, base);
+              url.searchParams.set('recordingId', recordingId);
+              return url.toString();
+            } catch {
+              const delimiter = options.wsUrl.includes('?') ? '&' : '?';
+              return `${options.wsUrl}${delimiter}recordingId=${encodeURIComponent(recordingId)}`;
+            }
+          })()
+        : buildWsUrl('/ws/live-recorder', { recordingId });
       wsRef.current = new WebSocket(wsUrl);
       wsRef.current.onopen = () => {
         console.info('🔗 WebSocket connected to backend');
@@ -95,9 +124,11 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
         const data = JSON.parse(event.data);
         
         switch (data.type) {
-          case 'recording_started':
+          case 'ready':
             recordingInfoRef.current = {
-              recordingId: data.recordingId
+              recordingId: typeof data.recordingId === 'string'
+                ? data.recordingId
+                : recordingInfoRef.current.recordingId
             };
             break;
           case 'chunk_received':
@@ -175,8 +206,9 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       console.error('Error starting recording:', error);
       setState(prev => ({ 
         ...prev, 
-        error: '无法开始录音，请检查麦克风权限',
-        isRecording: false 
+        error: error instanceof Error ? error.message : '无法开始录音，请检查麦克风权限',
+        isRecording: false,
+        isConnected: false
       }));
       cleanup();
     }
