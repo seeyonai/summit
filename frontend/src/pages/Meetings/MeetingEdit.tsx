@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { apiService } from '@/services/api';
 import type { Meeting, MeetingUpdate } from '@/types';
@@ -11,6 +11,8 @@ import {
 function MeetingEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'info';
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -142,6 +144,7 @@ function MeetingEdit() {
             onMembersChanged={handleMembersChanged}
             loading={saving}
             error={error}
+            initialTab={initialTab}
           />
         )}
       </div>

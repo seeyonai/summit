@@ -271,6 +271,7 @@ function MeetingDetail() {
                 memberUsers={memberUsers}
                 loading={membersLoading}
                 maxVisible={4}
+                onOpenMemberEditor={() => navigate(`/meetings/${meeting._id}/edit?tab=members`)}
               />
             </div>
           </div>

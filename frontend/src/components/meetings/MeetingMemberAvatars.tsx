@@ -9,13 +9,15 @@ interface MeetingMemberAvatarsProps {
   memberUsers: UserListItem[];
   maxVisible?: number;
   loading?: boolean;
+  onOpenMemberEditor?: () => void;
 }
 
 function MeetingMemberAvatars({
   ownerUser,
   memberUsers,
   maxVisible = 5,
-  loading = false
+  loading = false,
+  onOpenMemberEditor
 }: MeetingMemberAvatarsProps) {
   if (loading) {
     return (
@@ -68,7 +70,7 @@ function MeetingMemberAvatars({
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center -space-x-2">
+      <div className="flex items-center -space-x-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={onOpenMemberEditor}>
         {visibleUsers.map((user, index) => (
           <div key={user._id} className="relative group">
             <Avatar className="w-8 h-8 border-2 ring-1 ring-muted/20">

@@ -22,6 +22,7 @@ interface MeetingFormProps {
   onMembersChanged?: () => void;
   loading?: boolean;
   error?: string | null;
+  initialTab?: string;
 }
 
 function getTomorrow9AM() {
@@ -50,9 +51,10 @@ function MeetingForm({
   onCancel,
   onMembersChanged,
   loading = false,
-  error = null
+  error = null,
+  initialTab = 'info'
 }: MeetingFormProps) {
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const [formData, setFormData] = useState({
     title: '',
