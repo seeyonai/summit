@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMeetingDetail } from "@/hooks/useMeetingDetail";
 import { useTodoAdvice } from "@/hooks/useTodoAdvice";
-import { formatDate } from "@/utils/date";
+import { formatDate, isSameDay } from "@/utils/date";
 import BackButton from "@/components/BackButton";
 import MeetingTranscript from "./components/MeetingTranscript";
 import MeetingRecordings from "./components/MeetingRecordings";
@@ -23,6 +23,7 @@ import {
   AlertCircleIcon,
   PlayIcon,
   PauseIcon,
+  SquareIcon,
   BrainIcon,
   MaximizeIcon,
   TargetIcon,
@@ -35,6 +36,7 @@ function MeetingDetail() {
   const navigate = useNavigate();
   const [success, setSuccess] = useState<string | null>(null);
   const [showAnalysisSuccess, setShowAnalysisSuccess] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "recordings";
 
@@ -49,6 +51,7 @@ function MeetingDetail() {
     setShowConcatenatedRecording,
     deleteMeeting,
     refresh,
+    updateMeetingStatus,
   } = useMeetingDetail(id);
 
   const {
@@ -88,6 +91,44 @@ function MeetingDetail() {
     nextParams.set("tab", value);
     setSearchParams(nextParams);
   }, [searchParams, setSearchParams]);
+
+  const handleStartMeeting = useCallback(async () => {
+    if (!meeting || updatingStatus) {
+      return;
+    }
+
+    try {
+      setUpdatingStatus(true);
+      await updateMeetingStatus("in_progress");
+      setSuccess("会议已开始");
+    } catch (error) {
+      console.error("Failed to start meeting", error);
+      alert("开始会议失败，请稍后重试。");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }, [meeting, updateMeetingStatus, updatingStatus]);
+
+  const handleEndMeeting = useCallback(async () => {
+    if (!meeting || updatingStatus) {
+      return;
+    }
+
+    if (!confirm("确认要结束当前会议吗？")) {
+      return;
+    }
+
+    try {
+      setUpdatingStatus(true);
+      await updateMeetingStatus("completed");
+      setSuccess("会议已结束");
+    } catch (error) {
+      console.error("Failed to end meeting", error);
+      alert("结束会议失败，请稍后重试。");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }, [meeting, updateMeetingStatus, updatingStatus]);
 
   useEffect(() => {
     if (success) {
@@ -168,6 +209,13 @@ function MeetingDetail() {
     showConcatenatedRecording && meeting.concatenatedRecording
       ? [meeting.concatenatedRecording]
       : (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated');
+  const scheduledStartDate = meeting.scheduledStart
+    ? new Date(meeting.scheduledStart)
+    : null;
+  const canStartMeeting = meeting.status === "scheduled"
+    && scheduledStartDate !== null
+    && !Number.isNaN(scheduledStartDate.getTime())
+    && isSameDay(scheduledStartDate, new Date());
 
   return (
     <div className="min-h-screen">
@@ -207,14 +255,35 @@ function MeetingDetail() {
           </div>
 
           <div className="flex gap-2">
-            {meeting.status === "in_progress" && (
+            {canStartMeeting && (
               <Button
-                onClick={handleToggleMeetingDisplay}
-                variant="fancy"
+                onClick={handleStartMeeting}
+                disabled={updatingStatus}
+                variant="secondary"
               >
-                <MaximizeIcon className="w-4 h-4 mr-2" />
-                会议大屏
+                <PlayIcon className="w-4 h-4 mr-2" />
+                开始会议
               </Button>
+            )}
+            {meeting.status === "in_progress" && (
+              <>
+                <Button
+                  onClick={handleToggleMeetingDisplay}
+                  variant="fancy"
+                >
+                  <MaximizeIcon className="w-4 h-4 mr-2" />
+                  会议大屏
+                </Button>
+                <Button
+                  onClick={handleEndMeeting}
+                  disabled={updatingStatus}
+                  variant="outline"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
+                >
+                  <SquareIcon className="w-4 h-4 mr-2" />
+                  结束会议
+                </Button>
+              </>
             )}
             <Button
               onClick={() => navigate(`/meetings/${meeting._id}/edit`)}
@@ -223,14 +292,16 @@ function MeetingDetail() {
               <EditIcon className="w-4 h-4 mr-2" />
               编辑
             </Button>
-            <Button
-              onClick={handleDeleteMeeting}
-              variant="outline"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
-            >
-              <TrashIcon className="w-4 h-4 mr-2" />
-              删除
-            </Button>
+            {meeting.status !== "in_progress" && (
+              <Button
+                onClick={handleDeleteMeeting}
+                variant="outline"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
+              >
+                <TrashIcon className="w-4 h-4 mr-2" />
+                删除
+              </Button>
+            )}
           </div>
         </div>
 

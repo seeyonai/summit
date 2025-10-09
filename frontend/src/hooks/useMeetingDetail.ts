@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '@/services/api';
-import type { MeetingWithRecordings } from '@/types';
+import type { MeetingWithRecordings, MeetingStatus } from '@/types';
 
 const sanitizeRecordingOrder = (
   order: MeetingWithRecordings['recordingOrder']
@@ -100,6 +100,7 @@ interface UseMeetingDetailReturn {
     downloadUrl?: string;
     transcription?: string;
   }) => Promise<void>;
+  updateMeetingStatus: (status: MeetingStatus) => Promise<void>;
 }
 
 export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetailReturn {
@@ -137,6 +138,20 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
   }, [meetingId, navigate]);
+
+  const updateMeetingStatus = useCallback(async (status: MeetingStatus) => {
+    if (!meetingId) {
+      return;
+    }
+
+    try {
+      await apiService.updateMeeting(meetingId, { _id: meetingId, status });
+      await fetchMeeting();
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update meeting status');
+      throw error;
+    }
+  }, [meetingId, fetchMeeting]);
 
   const handleRecordingComplete = useCallback(async (recordingData: {
     duration: number;
@@ -182,5 +197,6 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
     refresh: fetchMeeting,
     deleteMeeting,
     handleRecordingComplete,
+    updateMeetingStatus,
   };
 }

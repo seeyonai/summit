@@ -68,3 +68,15 @@ export function getRelativeTime(date: Date | string): string {
   
   return '刚刚';
 }
+
+/**
+ * Check if two dates are on the same day
+ * @param first - First date to compare
+ * @param second - Second date to compare
+ * @returns True if both dates are on the same day
+ */
+export function isSameDay(first: Date, second: Date): boolean {
+  return first.getFullYear() === second.getFullYear()
+    && first.getMonth() === second.getMonth()
+    && first.getDate() === second.getDate();
+}
