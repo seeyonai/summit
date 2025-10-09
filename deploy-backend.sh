@@ -57,7 +57,7 @@ else
     rsync -avz --delete --exclude '/node_modules' --exclude '/files'  --exclude '/customization.json' --exclude '/src' --exclude '.env' --exclude '.env.production' --exclude '.git' \
       "$BACKEND_DIR/" "$REMOTE_HOST:$REMOTE_PATH/";
     if confirm "📦 Install backend dependencies on $REMOTE_HOST?"; then
-      ssh "$REMOTE_HOST" "cd '$REMOTE_PATH' && npm install --production";
+      ssh "$REMOTE_HOST" "cd '$REMOTE_PATH' && npm install --omit=dev";
     fi;
   fi;
 fi;
