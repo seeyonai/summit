@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonGroup } from '@/components/ui/button-group';
+import { Input } from '@/components/ui/input';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Meeting, OrganizedSpeech } from '@/types';
 import {
@@ -10,18 +13,35 @@ import {
   DownloadIcon,
   MessageSquareIcon,
   UsersIcon,
-  HashIcon
+  HashIcon,
+  EyeIcon,
+  CodeIcon,
+  SearchIcon,
+  XIcon,
+  MaximizeIcon
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import rehypeRaw from 'rehype-raw';
 import StatisticsCard from '@/components/StatisticsCard';
+import TranscriptUploadDialog from './TranscriptUploadDialog';
+import FullscreenMarkdownViewer from './FullscreenMarkdownViewer';
+import { apiService } from '@/services/api';
 
 interface MeetingTranscriptProps {
   meeting: Meeting;
+  onMeetingUpdate?: (meeting: Meeting) => void;
 }
 
-function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
-  const [exportFormat, setExportFormat] = useState<'txt' | 'docx'>('txt');
+function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps) {
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [viewMode, setViewMode] = useState<'text' | 'markdown'>('text');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const exportTranscript = async () => {
+  const exportTranscript = async (format: 'txt' | 'docx') => {
     if (!meeting.finalTranscript) return;
 
     try {
@@ -30,7 +50,7 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${meeting.title}_transcript.${exportFormat}`;
+      a.download = `${meeting.title}_transcript.${format}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -47,6 +67,26 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
       await navigator.clipboard.writeText(meeting.finalTranscript);
     } catch (err) {
       console.error('Copy failed:', err);
+    }
+  };
+
+  const handleTranscriptAdd = async (content: string, filename?: string) => {
+    if (!content.trim()) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await apiService.updateMeetingTranscript(meeting._id, content.trim());
+
+      if (response.success && onMeetingUpdate) {
+        onMeetingUpdate(response.meeting);
+      }
+    } catch (error) {
+      console.error('Failed to save transcript:', error);
+      // Error is already handled by the API service with toast notification
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -91,6 +131,33 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
   const concatenatedRecordingSpeeches = meeting.concatenatedRecording?.organizedSpeeches || [];
 
   const allOrganizedSpeeches = [...(combinedOrganizedSpeeches || []), ...concatenatedRecordingSpeeches];
+
+  // Highlight search matches in text
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+
+    const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+    return parts.map((part, index) => 
+      part.toLowerCase() === query.toLowerCase() 
+        ? `<mark class="bg-yellow-200 dark:bg-yellow-900/50 text-foreground rounded px-0.5">${part}</mark>`
+        : part
+    ).join('');
+  };
+
+  // Get highlighted transcript for text view
+  const highlightedTranscript = useMemo(() => {
+    if (!meeting.finalTranscript || !searchQuery.trim()) {
+      return meeting.finalTranscript;
+    }
+    return highlightText(meeting.finalTranscript, searchQuery);
+  }, [meeting.finalTranscript, searchQuery]);
+
+  // Count matches
+  const matchCount = useMemo(() => {
+    if (!meeting.finalTranscript || !searchQuery.trim()) return 0;
+    const regex = new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    return (meeting.finalTranscript.match(regex) || []).length;
+  }, [meeting.finalTranscript, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -150,53 +217,88 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
       )}
 
       {/* Transcript Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>会议记录</CardTitle>
-              <CardDescription>完整的会议文字记录</CardDescription>
-            </div>
-            {meeting.finalTranscript && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={copyToClipboard}
-                  variant="outline"
-                  size="sm"
-                >
-                  <CopyIcon className="w-4 h-4 mr-2" />
-                  复制
-                </Button>
-                <Select value={exportFormat} onValueChange={(value: 'txt' | 'docx') => setExportFormat(value)}>
-                  <SelectTrigger className="w-[100px] h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="txt">TXT</SelectItem>
-                    <SelectItem value="docx">DOCX</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={exportTranscript}
-                  variant="outline"
-                  size="sm"
-                >
-                  <DownloadIcon className="w-4 h-4 mr-2" />
-                  导出
-                </Button>
+      <Card className="relative">
+        <CardHeader className="pb-0">
+          <div className="space-y-4">
+            <div className="pb-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>会议记录</CardTitle>
+                  <CardDescription>完整的会议文字记录</CardDescription>
+                </div>
+                {meeting.finalTranscript && (
+                  <div className="flex gap-2">
+                  <ButtonGroup>
+                    <Button onClick={() => setViewMode('text')} variant={viewMode === 'text' ? 'default' : 'outline'}>
+                      <FileTextIcon className="w-4 h-4 mr-2" />
+                      文本
+                    </Button>
+                    <Button onClick={() => setViewMode('markdown')} variant={viewMode === 'markdown' ? 'default' : 'outline'}>
+                      <EyeIcon className="w-4 h-4 mr-2" />
+                      预览
+                    </Button>
+                  </ButtonGroup>
+                  <Button onClick={() => setIsFullscreen(true)} variant="outline">
+                    <MaximizeIcon className="w-4 h-4 mr-2" />
+                    全屏
+                  </Button>
+                  <Button onClick={copyToClipboard} variant="outline">
+                    <CopyIcon className="w-4 h-4 mr-2" />
+                    复制
+                  </Button>
+                  <Select onValueChange={(value) => exportTranscript(value as 'txt' | 'docx')}>
+                    <SelectTrigger className="w-[180px]">
+                      <DownloadIcon className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="导出" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="txt">文本文件 (.txt)</SelectItem>
+                      <SelectItem value="docx">Word 文档 (.docx)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                )}
+                {meeting.finalTranscript && (
+                  <div className="relative">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input type="text" placeholder="搜索会议记录..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-20" />
+                    {searchQuery && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {matchCount} 个匹配
+                        </span>
+                        <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} className="h-6 w-6 p-0">
+                          <XIcon className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           {meeting.finalTranscript ? (
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl p-6 border border-border/50">
-                <div className="prose max-w-none">
-                  <p className="text-foreground whitespace-pre-wrap leading-relaxed">
-                    {meeting.finalTranscript}
-                  </p>
-                </div>
+                {viewMode === 'text' ? (
+                  <div className="prose max-w-none">
+                    {searchQuery ? (
+                      <div className="text-foreground whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: highlightedTranscript || '' }} />
+                    ) : (
+                      <p className="text-foreground whitespace-pre-wrap leading-relaxed">
+                        {meeting.finalTranscript}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={[rehypeRaw]}>
+                      {searchQuery ? highlightedTranscript || '' : meeting.finalTranscript}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </div>
               
               {/* Text Statistics */}
@@ -222,13 +324,28 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
               </div>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <FileTextIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">暂无会议转录</p>
-              <p className="text-sm text-muted-foreground">
-                会议结束后将自动生成转录内容
-              </p>
-            </div>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <FileTextIcon className="w-12 h-12" />
+                </EmptyMedia>
+                <EmptyTitle>暂无会议转录</EmptyTitle>
+                <EmptyDescription>会议结束后将自动生成转录内容</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={!meeting.recordings || meeting.recordings.length === 0}
+                  >
+                    根据录音转录
+                  </Button>
+                  <Button onClick={() => setIsUploadDialogOpen(true)}>
+                    手工添加...
+                  </Button>
+                </div>
+              </EmptyContent>
+            </Empty>
           )}
         </CardContent>
       </Card>
@@ -267,31 +384,20 @@ function MeetingTranscript({ meeting }: MeetingTranscriptProps) {
         </Card>
       )}
 
-      {/* Disputed Issues */}
-      {meeting.disputedIssues && meeting.disputedIssues.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>争议问题</CardTitle>
-            <CardDescription>需要进一步讨论或解决的问题</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {meeting.disputedIssues.map((issue, index) => (
-                <div key={index} className="p-4 bg-destructive/10 rounded-lg border border-destructive/30">
-                  <div className="flex items-start gap-3">
-                    <MessageSquareIcon className="w-5 h-5 text-destructive mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-foreground font-medium">{issue.text}</p>
-                      {issue.resolved && (
-                        <Badge className="mt-2 bg-badge-success">已解决</Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Upload Dialog */}
+      <TranscriptUploadDialog
+        open={isUploadDialogOpen}
+        onOpenChange={setIsUploadDialogOpen}
+        onTranscriptAdd={handleTranscriptAdd}
+        isSaving={isSaving}
+      />
+
+      {/* Fullscreen Markdown Viewer */}
+      {isFullscreen && meeting.finalTranscript && (
+        <FullscreenMarkdownViewer
+          content={meeting.finalTranscript}
+          onClose={() => setIsFullscreen(false)}
+        />
       )}
     </div>
   );

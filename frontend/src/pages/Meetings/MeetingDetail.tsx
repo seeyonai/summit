@@ -141,6 +141,14 @@ function MeetingDetail() {
     }
   }, [meeting, updateMeetingStatus, updatingStatus]);
 
+  const handleMeetingUpdate = useCallback((updatedMeeting: any) => {
+    // Update local state immediately for responsive UI
+    if (refresh) {
+      refresh();
+    }
+    setSuccess("转录内容已更新");
+  }, [refresh]);
+
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -351,7 +359,7 @@ function MeetingDetail() {
         </TabsList>
 
         <TabsContent value="transcript">
-          <MeetingTranscript meeting={meeting} />
+          <MeetingTranscript meeting={meeting} onMeetingUpdate={handleMeetingUpdate} />
         </TabsContent>
 
         <TabsContent value="recordings">
@@ -367,6 +375,7 @@ function MeetingDetail() {
         <TabsContent value="disputedIssues">
           <DisputedIssues
             meetingId={meeting._id}
+            hasTranscript={!!meeting.finalTranscript}
             onAnalysisComplete={handleAnalysisComplete}
           />
         </TabsContent>

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { useDisputedIssues } from '@/hooks/useDisputedIssues';
 import { 
   AlertCircleIcon, 
@@ -16,10 +17,11 @@ import {
 
 interface DisputedIssuesProps {
   meetingId: string;
+  hasTranscript?: boolean;
   onAnalysisComplete?: () => void;
 }
 
-function DisputedIssues({ meetingId, onAnalysisComplete }: DisputedIssuesProps) {
+function DisputedIssues({ meetingId, hasTranscript = false, onAnalysisComplete }: DisputedIssuesProps) {
   const {
     disputedIssues,
     loading,
@@ -127,14 +129,27 @@ function DisputedIssues({ meetingId, onAnalysisComplete }: DisputedIssuesProps) 
           </Button>
         </div>
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <TargetIcon className="w-12 h-12 text-muted-foreground mb-4" />
-            <h4 className="text-lg font-medium text-foreground mb-2">
-              暂无争论焦点
-            </h4>
-            <p className="text-muted-foreground max-w-md">
-              点击"分析争论焦点"按钮，AI 将从会议记录中提取和分析争论焦点，帮助您了解会议中的关键分歧点。
-            </p>
+          <CardContent className="p-6">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <TargetIcon className="w-12 h-12" />
+                </EmptyMedia>
+                <EmptyTitle>暂无争论焦点</EmptyTitle>
+                <EmptyDescription>
+                  AI 将从会议记录中提取和分析争论焦点，帮助您了解会议中的关键分歧点。
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button
+                  onClick={handleExtractAnalysis}
+                  disabled={!hasTranscript}
+                >
+                  <BrainIcon className="w-4 h-4" />
+                  提取争论焦点
+                </Button>
+              </EmptyContent>
+            </Empty>
           </CardContent>
         </Card>
       </div>

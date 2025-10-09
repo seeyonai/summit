@@ -410,6 +410,10 @@ class ApiService {
     return this.put(`/api/meetings/${id}`, data);
   }
 
+  async updateMeetingTranscript(id: string, finalTranscript: string): Promise<{ success: boolean; message: string; meeting: Meeting }> {
+    return this.put(`/api/meetings/${id}/final-transcript`, { finalTranscript });
+  }
+
   async deleteMeeting(id: string) {
     return this.delete(`/api/meetings/${id}`);
   }

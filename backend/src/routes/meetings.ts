@@ -239,23 +239,23 @@ router.post('/:meetingId/recordings/:recordingId/verbatim', async (req: Request,
 router.post('/:meetingId/final-transcript', async (req: Request, res: Response) => {
   try {
     const { meetingId } = req.params;
-    
+
     const meeting = await meetingService.getMeetingById(meetingId);
     if (!meeting) {
       return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
     }
-    
+
     const recordings = await recordingService.getRecordingsByMeetingId(meetingId, true);
 
     const transcripts = recordings
       .filter((r: RecordingResponse) => r.transcription)
       .map((r: RecordingResponse) => r.transcription)
       .filter(Boolean);
-    
+
     if (transcripts.length === 0) {
       return res.status(400).json({ error: 'No transcriptions available for this meeting' });
     }
-    
+
     // TODO: Implement actual AI polishing with OpenAI
     // For now, generate a placeholder summary
     const allTranscripts = transcripts.join('\n\n');
@@ -274,11 +274,11 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
 
 ---
 *此纪要由AI自动生成，仅供参考。*`;
-    
+
     await meetingService.updateMeeting(meetingId, {
       finalTranscript: meeting.finalTranscript
     });
-    
+
     res.json({
       success: true,
       finalTranscript: meeting.finalTranscript,
@@ -286,6 +286,38 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
     });
   } catch (error) {
     console.error('Error generating final transcript:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update final transcript for meeting
+router.put('/:meetingId/final-transcript', async (req: Request, res: Response) => {
+  try {
+    const { meetingId } = req.params;
+    const { finalTranscript } = req.body;
+
+    // Validate required fields
+    if (!finalTranscript || typeof finalTranscript !== 'string') {
+      return res.status(400).json({ error: 'Final transcript content is required and must be a string' });
+    }
+
+    const meeting = await meetingService.getMeetingById(meetingId);
+    if (!meeting) {
+      return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
+    }
+
+    const updatedMeeting = await meetingService.updateMeeting(meetingId, {
+      finalTranscript: finalTranscript.trim()
+    });
+
+    res.json({
+      success: true,
+      finalTranscript: updatedMeeting.finalTranscript,
+      message: '会议转录更新成功',
+      meeting: serializeMeeting(updatedMeeting)
+    });
+  } catch (error) {
+    console.error('Error updating final transcript:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

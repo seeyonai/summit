@@ -357,6 +357,38 @@ ${allTranscripts.split('\n').map((line: string) => `- ${line}`).join('\n')}
   }
 }));
 
+// Update final transcript for meeting
+router.put('/:meetingId/final-transcript', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
+  const { meetingId } = req.params;
+  const { finalTranscript } = req.body as { finalTranscript?: string };
+
+  // Validate required fields
+  if (!finalTranscript || typeof finalTranscript !== 'string') {
+    throw badRequest('Final transcript content is required and must be a string', 'meeting.transcript_content_required');
+  }
+
+  const meeting = await meetingService.getMeetingById(meetingId);
+  if (!meeting) {
+    throw notFound(`Meeting not found (ID: ${meetingId})`, 'meeting.not_found');
+  }
+
+  const updatedMeeting = await meetingService.updateMeeting(meetingId, {
+    finalTranscript: finalTranscript.trim()
+  });
+
+  if (!updatedMeeting) {
+    throw notFound(`Failed to update meeting (ID: ${meetingId})`, 'meeting.update_failed');
+  }
+
+  const lang = getPreferredLang(req);
+  res.json({
+    success: true,
+    finalTranscript: updatedMeeting.finalTranscript,
+    message: lang === 'en' ? 'Transcript updated successfully' : '会议转录更新成功',
+    meeting: serializeMeeting(updatedMeeting)
+  });
+}));
+
 // Generate AI advice for a todo item
 router.post('/:meetingId/todo-advice', requireMemberOrOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { meetingId } = req.params;

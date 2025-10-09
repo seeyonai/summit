@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
     MEETING_DETAIL: (id: string) => `/api/meetings/${id}`,
     MEETING_EXTRACT_ANALYSIS: (id: string) => `/api/meetings/${id}/extract-analysis`,
     MEETING_TODO_ADVICE: (id: string) => `/api/meetings/${id}/todo-advice`,
+    MEETING_UPDATE_TRANSCRIPT: (id: string) => `/api/meetings/${id}/final-transcript`,
     HOTWORDS: '/api/hotwords',
     HOTWORDS_BULK: '/api/hotwords/bulk',
     HOTWORD_DETAIL: (id: string) => `/api/hotwords/${id}`,
