@@ -310,6 +310,10 @@ router.put('/:meetingId/final-transcript', async (req: Request, res: Response) =
       finalTranscript: finalTranscript.trim()
     });
 
+    if (!updatedMeeting) {
+      return res.status(404).json({ error: `Meeting not found (ID: ${meetingId})` });
+    }
+
     res.json({
       success: true,
       finalTranscript: updatedMeeting.finalTranscript,

@@ -24,6 +24,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
+import markdownDocx, { Packer } from 'markdown-docx';
 import StatisticsCard from '@/components/StatisticsCard';
 import TranscriptUploadDialog from './TranscriptUploadDialog';
 import FullscreenMarkdownViewer from './FullscreenMarkdownViewer';
@@ -46,15 +47,31 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
 
     try {
       const content = meeting.finalTranscript;
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${meeting.title}_transcript.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      
+      if (format === 'docx') {
+        // Convert markdown to DOCX
+        const doc = await markdownDocx(content);
+        const blob = await Packer.toBlob(doc);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${meeting.title}_transcript.docx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        // Export as plain text
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${meeting.title}_transcript.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
     } catch (err) {
       console.error('Export failed:', err);
     }
@@ -161,6 +178,64 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
 
   return (
     <div className="space-y-6">
+      {/* Text Statistics */}
+      {meeting.finalTranscript && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+          <StatisticsCard
+            icon={<FileTextIcon className="w-4 h-4 text-primary" />}
+            label="字符数"
+            value={meeting.finalTranscript.length.toLocaleString()}
+            description="文本中的字符总数"
+          />
+          <StatisticsCard
+            icon={<HashIcon className="w-4 h-4 text-accent" />}
+            label="词数"
+            value={meeting.finalTranscript.split(/\s+/).filter(Boolean).length.toLocaleString()}
+            description="按空白分隔统计"
+          />
+          <StatisticsCard
+            icon={<MessageSquareIcon className="w-4 h-4 text-success" />}
+            label="句数"
+            value={meeting.finalTranscript.split(/[。！？.!?]+/).filter(s => s.trim()).length.toLocaleString()}
+            description="按句号/问号/感叹号划分"
+          />
+        </div>
+      )}
+
+      {/* Speaker Statistics */}
+      {speakerStats && Object.keys(speakerStats).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>发言人统计</CardTitle>
+            <CardDescription>会议中各发言人的参与情况</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {(Object.values(speakerStats) as Array<{ index: number; segments: number; totalDuration: number }>).map((speaker) => {
+                const minutes = Math.floor(speaker.totalDuration / 60);
+                const seconds = Math.floor(speaker.totalDuration % 60);
+                return (
+                  <div key={speaker.index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-chart-4/30 to-chart-5/30 rounded-full flex items-center justify-center text-foreground font-semibold">
+                        {speaker.index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium">发言人 {speaker.index + 1}</p>
+                        <p className="text-sm text-muted-foreground">{speaker.segments} 个发言片段</p>
+                      </div>
+                    </div>
+                    <Badge className={speakerColors[speaker.index % speakerColors.length]}>
+                      {minutes}分{seconds}秒
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Organized Speeches */}
       {allOrganizedSpeeches.length > 0 && (
         <Card>
@@ -300,28 +375,6 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                   </div>
                 )}
               </div>
-              
-              {/* Text Statistics */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                <StatisticsCard
-                  icon={<FileTextIcon className="w-4 h-4 text-primary" />}
-                  label="字符数"
-                  value={meeting.finalTranscript.length.toLocaleString()}
-                  description="文本中的字符总数"
-                />
-                <StatisticsCard
-                  icon={<HashIcon className="w-4 h-4 text-accent" />}
-                  label="词数"
-                  value={meeting.finalTranscript.split(/\s+/).filter(Boolean).length.toLocaleString()}
-                  description="按空白分隔统计"
-                />
-                <StatisticsCard
-                  icon={<MessageSquareIcon className="w-4 h-4 text-success" />}
-                  label="句数"
-                  value={meeting.finalTranscript.split(/[。！？.!?]+/).filter(s => s.trim()).length.toLocaleString()}
-                  description="按句号/问号/感叹号划分"
-                />
-              </div>
             </div>
           ) : (
             <Empty>
@@ -349,40 +402,6 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
           )}
         </CardContent>
       </Card>
-
-      {/* Speaker Statistics */}
-      {speakerStats && Object.keys(speakerStats).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>发言人统计</CardTitle>
-            <CardDescription>会议中各发言人的参与情况</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {(Object.values(speakerStats) as Array<{ index: number; segments: number; totalDuration: number }>).map((speaker) => {
-                const minutes = Math.floor(speaker.totalDuration / 60);
-                const seconds = Math.floor(speaker.totalDuration % 60);
-                return (
-                  <div key={speaker.index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-chart-4/30 to-chart-5/30 rounded-full flex items-center justify-center text-foreground font-semibold">
-                        {speaker.index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">发言人 {speaker.index + 1}</p>
-                        <p className="text-sm text-muted-foreground">{speaker.segments} 个发言片段</p>
-                      </div>
-                    </div>
-                    <Badge className={speakerColors[speaker.index % speakerColors.length]}>
-                      {minutes}分{seconds}秒
-                    </Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Upload Dialog */}
       <TranscriptUploadDialog

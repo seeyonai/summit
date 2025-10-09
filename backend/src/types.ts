@@ -98,6 +98,7 @@ export type MeetingUpdate = Partial<Pick<
   'title' |
   'summary' |
   'status' |
+  'agenda' |
   'scheduledStart' |
   'finalTranscript' |
   'recordingOrder' |
@@ -150,3 +151,5 @@ export type HotwordCreate = baseTypes.Hotword & {
 export type HotwordUpdate = Pick<Hotword, '_id' | 'word' | 'isActive'> & {
   isPublic?: boolean;
 };
+
+export type AgendaItemStatus = baseTypes.AgendaItemStatus;
