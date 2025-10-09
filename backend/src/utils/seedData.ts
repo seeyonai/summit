@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument, HotwordDocument, RecordingDocument } from '../types/documents';
 import { RecordingCreate, MeetingCreate, HotwordCreate } from '../types';
+import { normalizeAgendaItems } from './agendaUtils';
 
 const isMeetingDocumentCandidate = (value: unknown): value is MeetingDocument => {
   if (!value || typeof value !== 'object') {
@@ -28,10 +29,10 @@ export class DataSeeder {
       {
         title: '产品规划会议',
         agenda: [
-          { order: 1, text: '回顾上季度产品表现', status: 'resolved' },
-          { order: 2, text: '讨论下季度产品功能优先级', status: 'resolved' },
-          { order: 3, text: '确定用户界面改进计划', status: 'resolved' },
-          { order: 4, text: '分配产品需求文档任务', status: 'resolved' }
+          { order: 1, text: '回顾上季度产品表现', status: 'completed' },
+          { order: 2, text: '讨论下季度产品功能优先级', status: 'completed' },
+          { order: 3, text: '确定用户界面改进计划', status: 'completed' },
+          { order: 4, text: '分配产品需求文档任务', status: 'completed' }
         ],
         summary: '讨论下季度产品功能和路线图',
         status: 'completed',
@@ -99,7 +100,6 @@ export class DataSeeder {
             dueDate: '2024-02-05'
           }
         ],
-        participants: 8,
         disputedIssues: [
           {
             text: '是否应该优先开发移动端应用而不是Web端'
@@ -112,10 +112,10 @@ export class DataSeeder {
       {
         title: '技术架构评审',
         agenda: [
-          { order: 1, text: '介绍新系统架构设计', status: 'ongoing' },
-          { order: 2, text: '讨论微服务设计方案', status: 'resolved' },
-          { order: 3, text: '评审数据库选型', status: 'resolved' },
-          { order: 4, text: '确定技术实施路线图', status: 'pending' }
+          { order: 1, text: '介绍新系统架构设计', status: 'in_progress' },
+          { order: 2, text: '讨论微服务设计方案', status: 'completed' },
+          { order: 3, text: '评审数据库选型', status: 'completed' },
+          { order: 4, text: '确定技术实施路线图', status: 'scheduled' }
         ],
         summary: '新系统架构设计评审会议',
         status: 'in_progress',
@@ -155,7 +155,6 @@ export class DataSeeder {
             priority: 'medium',
           }
         ],
-        participants: 5,
         disputedIssues: [
           {
             text: '微服务架构与单体架构的选型争议'
@@ -165,9 +164,9 @@ export class DataSeeder {
       {
         title: '团队周会',
         agenda: [
-          { order: 1, text: '本周工作总结', status: 'pending' },
-          { order: 2, text: '下周工作计划', status: 'pending' },
-          { order: 3, text: '问题与解决方案讨论', status: 'pending' }
+          { order: 1, text: '本周工作总结', status: 'scheduled' },
+          { order: 2, text: '下周工作计划', status: 'scheduled' },
+          { order: 3, text: '问题与解决方案讨论', status: 'scheduled' }
         ],
         summary: '本周工作总结和下周计划',
         status: 'scheduled',
@@ -179,7 +178,6 @@ export class DataSeeder {
             priority: 'low',
           }
         ],
-        participants: 12,
         disputedIssues: []
       }
     ],
@@ -265,6 +263,7 @@ export class DataSeeder {
       const now = new Date();
       const meetingDocument: Omit<MeetingDocument, '_id'> = {
         ...meetingData,
+        agenda: normalizeAgendaItems(meetingData.agenda),
         createdAt: now,
         updatedAt: now,
         recordings: [],

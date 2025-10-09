@@ -17,7 +17,6 @@ export interface MeetingDocument extends Document {
   finalTranscript?: string;
   parsedTodos?: TodoItem[];
   disputedIssues?: Meeting['disputedIssues'];
-  participants?: number;
   createdAt: Date;
   updatedAt?: Date;
   hotwords?: string[];

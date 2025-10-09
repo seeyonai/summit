@@ -9,6 +9,7 @@ import { normalizeHotwords } from '../utils/hotwordUtils';
 import { mergeHotwordsIntoMeeting } from './meetingHotwordHelpers';
 import { getById as getUserById } from './UserService';
 import { HotwordService } from './HotwordService';
+import { normalizeAgendaItems } from '../utils/agendaUtils';
 
 const getMeetingsCollection = () => getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
 const hotwordService = new HotwordService();
@@ -213,10 +214,13 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
   const scheduledStart = request.scheduledStart ?? (status === 'in_progress' ? now : undefined);
 
   const meetingId = new ObjectId();
+  const normalizedAgenda = normalizeAgendaItems(request.agenda);
+
   const meetingDoc: OptionalUnlessRequiredId<MeetingDocument> = {
     _id: meetingId,
     title: request.title,
     summary: request.summary,
+    agenda: normalizedAgenda,
     status,
     createdAt: now,
     updatedAt: now,
@@ -224,7 +228,6 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
     recordings: [],
     recordingOrder: normalizeRecordingOrderEntries(request.recordingOrder) ?? [],
     finalTranscript: undefined,
-    participants: request.participants,
     ownerId: ownerId && ObjectId.isValid(ownerId) ? new ObjectId(ownerId) : undefined,
     members: [],
   };
@@ -257,6 +260,12 @@ export const updateMeeting = async (id: string, request: MeetingUpdate): Promise
 
   if (Array.isArray(updateData.recordingOrder)) {
     updateFields.recordingOrder = normalizeRecordingOrderEntries(updateData.recordingOrder) ?? [];
+  }
+  if (Array.isArray(updateData.agenda)) {
+    const normalizedAgenda = normalizeAgendaItems(updateData.agenda);
+    if (normalizedAgenda !== undefined) {
+      updateFields.agenda = normalizedAgenda;
+    }
   }
 
   const result = await collection.findOneAndUpdate(

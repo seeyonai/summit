@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/utils/date';
 import type { Meeting, MeetingStatus } from '@/types';
-import { Users, Mic, Calendar, Clock, CheckCircle, PlayIcon, TargetIcon, FileTextIcon, TrashIcon, MoreVertical } from 'lucide-react';
+import { Mic, Calendar, Clock, CheckCircle, PlayIcon, TargetIcon, FileTextIcon, TrashIcon, MoreVertical } from 'lucide-react';
 
 interface MeetingCardProps {
   meeting: Meeting;
@@ -146,11 +146,7 @@ function MeetingCard({ meeting, onDelete }: MeetingCardProps) {
         <div className="flex-1" />
 
         {/* Meeting Info */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
-            <Users className="w-3 h-3" />
-            <span>{meeting.participants || 0} 人</span>
-          </div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="flex items-center gap-1 text-muted-foreground dark:text-muted-foreground">
             <Mic className="w-3 h-3" />
             <span>{recordingCount} 录音</span>

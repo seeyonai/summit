@@ -124,6 +124,7 @@ files/             # Audio file storage (served at /files/*)
 - Prefer composition over inheritance
 - Implement proper TypeScript types (avoid `any`)
 - Prefer functions for pure logic, utilities, and stateless operations. Use classes only when you actually need object instances with state/behavior. Default to functions.
+- Do not use dynamic imports unless explicitly required.
 
 #### Design
 - Avoid overdesign with gradients.

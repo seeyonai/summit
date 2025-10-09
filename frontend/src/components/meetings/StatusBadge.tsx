@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import type { AgendaItemStatus } from '@base/types';
 
 export type MeetingStatus = 'in_progress' | 'completed' | 'scheduled' | 'failed';
-export type AgendaStatus = 'resolved' | 'ongoing' | 'pending';
+export type AgendaStatus = AgendaItemStatus;
 export type TodoPriority = 'high' | 'medium' | 'low';
 
 interface StatusBadgeProps {
@@ -36,20 +37,40 @@ const statusConfig = {
     },
   },
   agenda: {
-    resolved: {
-      label: '已完成',
-      className: 'bg-gradient-to-r from-green-500/5 to-emerald-500/5 text-green-700 border-green-500/20',
-      dotClass: 'bg-green-500',
+    draft: {
+      label: '草稿',
+      className: 'bg-gradient-to-r from-muted/5 to-gray-500/5 text-muted-foreground border-muted/30',
+      dotClass: 'bg-muted-foreground',
     },
-    ongoing: {
+    scheduled: {
+      label: '已排期',
+      className: 'bg-gradient-to-r from-primary/5 to-blue-500/5 text-primary border-primary/20',
+      dotClass: 'bg-primary',
+    },
+    in_progress: {
       label: '进行中',
       className: 'bg-gradient-to-r from-primary/5 to-accent/5 text-primary border-primary/20',
       dotClass: 'bg-primary animate-pulse',
     },
-    pending: {
-      label: '待处理',
+    skipped: {
+      label: '已跳过',
       className: 'bg-gradient-to-r from-yellow-500/5 to-amber-500/5 text-yellow-700 border-yellow-500/20',
       dotClass: 'bg-yellow-500',
+    },
+    completed: {
+      label: '已完成',
+      className: 'bg-gradient-to-r from-green-500/5 to-emerald-500/5 text-green-700 border-green-500/20',
+      dotClass: 'bg-green-500',
+    },
+    deferred: {
+      label: '已推迟',
+      className: 'bg-gradient-to-r from-orange-500/5 to-amber-500/5 text-orange-700 border-orange-500/20',
+      dotClass: 'bg-orange-500',
+    },
+    cancelled: {
+      label: '已取消',
+      className: 'bg-gradient-to-r from-destructive/5 to-rose-500/5 text-destructive border-destructive/20',
+      dotClass: 'bg-destructive',
     },
   },
   priority: {

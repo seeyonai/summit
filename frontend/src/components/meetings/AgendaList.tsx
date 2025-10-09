@@ -1,13 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ListOrdered, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import StatusBadge from './StatusBadge';
+import { ListOrdered } from 'lucide-react';
+import AgendaStatusBadge from './AgendaStatusBadge';
+import { useAgendaSort } from '@/hooks/useAgenda';
 import { cn } from '@/lib/utils';
-
-interface AgendaItem {
-  order: number;
-  text: string;
-  status: 'resolved' | 'ongoing' | 'pending';
-}
+import type { AgendaItem } from '@/types';
 
 interface AgendaListProps {
   items: AgendaItem[];
@@ -15,6 +11,8 @@ interface AgendaListProps {
 }
 
 function AgendaList({ items, className }: AgendaListProps) {
+  const sortedItems = useAgendaSort(items);
+
   if (!items || items.length === 0) {
     return (
       <Card className={cn('border-dashed', className)}>
@@ -26,18 +24,7 @@ function AgendaList({ items, className }: AgendaListProps) {
     );
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'resolved':
-        return <CheckCircle2 className="w-4 h-4 text-success" />;
-      case 'ongoing':
-        return <Clock className="w-4 h-4 text-primary animate-pulse" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-warning" />;
-    }
-  };
-
-  const sortedItems = [...items].sort((a, b) => a.order - b.order);
+  const completedCount = items.filter(item => item.status === 'completed').length;
 
   return (
     <Card className={cn('overflow-hidden', className)}>
@@ -46,7 +33,7 @@ function AgendaList({ items, className }: AgendaListProps) {
           <ListOrdered className="w-5 h-5" />
           会议议程
           <span className="ml-auto text-sm font-normal text-muted-foreground">
-            {items.filter(item => item.status === 'resolved').length}/{items.length} 已完成
+            {completedCount}/{items.length} 已完成
           </span>
         </CardTitle>
         <CardDescription>本次会议的议程安排</CardDescription>
@@ -58,7 +45,7 @@ function AgendaList({ items, className }: AgendaListProps) {
               key={index}
               className={cn(
                 'flex items-start gap-4 p-4 transition-all hover:bg-muted/50',
-                item.status === 'resolved' && 'opacity-60'
+                (item.status === 'completed' || item.status === 'cancelled') && 'opacity-60'
               )}
             >
               <div className="flex-shrink-0">
@@ -69,15 +56,12 @@ function AgendaList({ items, className }: AgendaListProps) {
               <div className="flex-1 min-w-0">
                 <p className={cn(
                   'text-sm leading-relaxed',
-                  item.status === 'resolved' && 'line-through text-muted-foreground'
+                  (item.status === 'completed' || item.status === 'cancelled') && 'line-through text-muted-foreground'
                 )}>
                   {item.text}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {getStatusIcon(item.status)}
-                <StatusBadge status={item.status} type="agenda" size="sm" />
-              </div>
+              <AgendaStatusBadge status={item.status} size="sm" />
             </div>
           ))}
         </div>

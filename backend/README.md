@@ -75,7 +75,6 @@ interface Meeting {
   actual_start?: Date;
   actual_end?: Date;
   recordings: Recording[];
-  participants?: number;
   location?: string;
   tags?: string[];
 }

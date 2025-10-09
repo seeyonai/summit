@@ -3,17 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SearchInput from '@/components/SearchInput';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiService } from '@/services/api';
 import type { MeetingCreate } from '@/types';
 import { useMeetings } from '@/hooks/useMeetings';
+import MeetingForm from '@/components/meetings/MeetingForm';
 import MeetingCard from './components/MeetingCard';
 import MeetingListItem from './components/MeetingListItem';
 import {
@@ -43,63 +42,46 @@ function MeetingList() {
   const { meetings, loading, error, refetch, fetchedAll, loadAll } = useMeetings();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createVariant, setCreateVariant] = useState<'scheduled' | 'quick'>('scheduled');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set(['completed']));
-  
-  const getTomorrow9AM = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    return tomorrow;
-  };
-
-  const formatDateTimeLocal = (date: Date | string) => {
-    const dateObj = date instanceof Date ? date : new Date(date);
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    const hours = String(dateObj.getHours()).padStart(2, '0');
-    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-  
-  const getDefaultMeeting = (variant: 'scheduled' | 'quick'): MeetingCreate => ({
-    title: '',
-    scheduledStart: variant === 'scheduled' ? getTomorrow9AM() : new Date(),
-    participants: 5,
-    status: variant === 'scheduled' ? 'scheduled' : 'in_progress'
-  });
-
-  const [newMeeting, setNewMeeting] = useState<MeetingCreate>(getDefaultMeeting('scheduled'));
 
   const openCreateModal = (variant: 'scheduled' | 'quick') => {
     setCreateVariant(variant);
-    setNewMeeting(getDefaultMeeting(variant));
+    setCreateError(null);
     setShowCreateModal(true);
   };
 
   const closeCreateModal = () => {
     setShowCreateModal(false);
     setCreateVariant('scheduled');
-    setNewMeeting(getDefaultMeeting('scheduled'));
+    setCreateError(null);
   };
 
   const createMeeting = async (meetingData: MeetingCreate) => {
     const isQuickCreation = createVariant === 'quick';
     try {
+      setCreating(true);
+      setCreateError(null);
+
       const createdMeeting = await apiService.createMeeting(meetingData);
       const meetingId = createdMeeting?._id;
+
       if (isQuickCreation && meetingId) {
         closeCreateModal();
         navigate(`/meetings/${meetingId}`);
         return;
       }
+
       refetch();
       closeCreateModal();
     } catch (err) {
-      console.error('Error creating meeting:', err);
+      setCreateError(err instanceof Error ? err.message : 'Error creating meeting');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -115,15 +97,6 @@ function MeetingList() {
     } catch (err) {
       console.error('Error deleting meeting:', err);
     }
-  };
-
-  const handleCreateMeeting = () => {
-    const payload: MeetingCreate = {
-      ...newMeeting,
-      status: createVariant === 'quick' ? 'in_progress' : 'scheduled',
-      scheduledStart: createVariant === 'quick' ? new Date() : newMeeting.scheduledStart
-    };
-    createMeeting(payload);
   };
 
   // Filtered meetings based on search and filter
@@ -489,58 +462,15 @@ function MeetingList() {
             setShowCreateModal(true);
           }}
         >
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{createVariant === 'quick' ? '快速会议' : '创建新会议'}</DialogTitle>
-              <DialogDescription>
-                {createVariant === 'quick'
-                  ? '立即开始会议并即时跟踪进度'
-                  : '填写会议信息以创建新的会议记录'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">会议标题</Label>
-                <Input
-                  id="title"
-                  value={newMeeting.title}
-                  onChange={(e) => setNewMeeting({...newMeeting, title: e.target.value})}
-                  placeholder="输入会议标题"
-                />
-              </div>
-
-              {createVariant === 'scheduled' && (
-                <div className="space-y-2">
-                  <Label htmlFor="start-time">开始时间</Label>
-                  <Input
-                    id="start-time"
-                    type="datetime-local"
-                    value={newMeeting.scheduledStart ? formatDateTimeLocal(newMeeting.scheduledStart) : ''}
-                    onChange={(e) => setNewMeeting({...newMeeting, scheduledStart: e.target.value ? new Date(e.target.value) : undefined})}
-                  />
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="participants">参与人数</Label>
-                <Input
-                  id="participants"
-                  type="number"
-                  value={newMeeting.participants || ''}
-                  onChange={(e) => setNewMeeting({...newMeeting, participants: e.target.value ? parseInt(e.target.value) : undefined})}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => closeCreateModal()}>
-                取消
-              </Button>
-              <Button onClick={handleCreateMeeting}>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                创建
-              </Button>
-            </DialogFooter>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <MeetingForm
+              mode="create"
+              variant={createVariant}
+              onSubmit={createMeeting}
+              onCancel={closeCreateModal}
+              loading={creating}
+              error={createError}
+            />
           </DialogContent>
         </Dialog>
     </div>

@@ -6,20 +6,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMeetingDetail } from "@/hooks/useMeetingDetail";
 import { useTodoAdvice } from "@/hooks/useTodoAdvice";
+import useMeetingMembers from "@/hooks/useMeetingMembers";
 import { formatDate, isSameDay } from "@/utils/date";
 import BackButton from "@/components/BackButton";
+import MeetingMemberAvatars from "@/components/meetings/MeetingMemberAvatars";
 import MeetingTranscript from "./components/MeetingTranscript";
 import MeetingRecordings from "./components/MeetingRecordings";
 import DisputedIssues from "./components/DisputedIssues";
 import TranscriptDialog from "@/components/meetings/TranscriptDialog";
 import AdviceDialog from "@/components/meetings/AdviceDialog";
-import MeetingMembers from "@/components/MeetingMembers";
 import {
   EditIcon,
   TrashIcon,
   CalendarIcon,
   ClockIcon,
-  UsersIcon,
   AlertCircleIcon,
   PlayIcon,
   PauseIcon,
@@ -29,6 +29,7 @@ import {
   TargetIcon,
   FileTextIcon,
   HeadphonesIcon,
+  ListIcon,
 } from "lucide-react";
 
 function MeetingDetail() {
@@ -61,6 +62,16 @@ function MeetingDetail() {
     generateAdvice,
     setSelectedTodoId,
   } = useTodoAdvice();
+
+  const {
+    memberUsers,
+    ownerUser,
+    loading: membersLoading,
+  } = useMeetingMembers({
+    meetingId: id || '',
+    ownerId: meeting?.ownerId,
+    members: meeting?.members || [],
+  });
 
   // Event handlers
 
@@ -224,7 +235,7 @@ function MeetingDetail() {
         <BackButton url="/meetings" variant="ghost" className="mb-4">返回</BackButton>
 
         <div className="flex justify-between items-start mb-6">
-          <div>
+          <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-foreground dark:text-foreground">
                 {meeting.title}
@@ -237,20 +248,30 @@ function MeetingDetail() {
                 {getStatusText(meeting.status)}
               </Badge>
             </div>
-            <p className="text-muted-foreground dark:text-muted-foreground">{meeting.summary || "暂无概要"}</p>
-            <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground dark:text-muted-foreground">
+            <p className="text-muted-foreground dark:text-muted-foreground mb-3">{meeting.summary || "暂无概要"}</p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-muted-foreground">
               <span className="flex items-center gap-1">
                 <CalendarIcon className="w-4 h-4" />
                 {formatDate(meeting.scheduledStart)}
               </span>
+              {meeting.agenda && meeting.agenda.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <ListIcon className="w-4 h-4" />
+                  {meeting.agenda.length} 项议程
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <ClockIcon className="w-4 h-4" />
                 最近更新: {formatDate(meeting.updatedAt)}
               </span>
-              <span className="flex items-center gap-1">
-                <UsersIcon className="w-4 h-4" />
-                {meeting.participants || 0} 人参与
-              </span>
+            </div>
+            <div className="mt-4">
+              <MeetingMemberAvatars
+                ownerUser={ownerUser}
+                memberUsers={memberUsers}
+                loading={membersLoading}
+                maxVisible={4}
+              />
             </div>
           </div>
 
@@ -313,7 +334,7 @@ function MeetingDetail() {
         onValueChange={handleTabChange}
         className="space-y-6 w-full"
       >
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-3 w-full">
           <TabsTrigger value="recordings" className="flex items-center gap-2">
             <HeadphonesIcon className="w-4 h-4" />
             录音
@@ -325,10 +346,6 @@ function MeetingDetail() {
           <TabsTrigger value="disputedIssues" className="flex items-center gap-2">
             <TargetIcon className="w-4 h-4" />
             争论焦点
-          </TabsTrigger>
-          <TabsTrigger value="members" className="flex items-center gap-2">
-            <UsersIcon className="w-4 h-4" />
-            成员
           </TabsTrigger>
         </TabsList>
 
@@ -350,15 +367,6 @@ function MeetingDetail() {
           <DisputedIssues
             meetingId={meeting._id}
             onAnalysisComplete={handleAnalysisComplete}
-          />
-        </TabsContent>
-
-        <TabsContent value="members">
-          <MeetingMembers
-            meetingId={meeting._id}
-            ownerId={meeting.ownerId}
-            members={meeting.members}
-            onChanged={refresh}
           />
         </TabsContent>
 

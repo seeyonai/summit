@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { useMeetings } from '@/hooks/useMeetings';
 
 interface IncomingMeetingsProps {
@@ -101,12 +101,6 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
                               <span>{formatTime(meeting.scheduledStart)}</span>
                             </div>
                           </>
-                        )}
-                        {meeting.participants && (
-                          <div className="flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{meeting.participants} 人</span>
-                          </div>
                         )}
                       </div>
                     </div>

@@ -11,6 +11,7 @@ import {
   RecordingDocument,
 } from '../types/documents';
 import { ObjectId } from 'mongodb';
+import { normalizeAgendaItems } from './agendaUtils';
 
 const toIsoString = (value?: Date): string | undefined => (value ? value.toISOString() : undefined);
 
@@ -44,7 +45,7 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
   return {
     _id: meetingDoc._id,
     title: meetingDoc.title,
-    agenda: meetingDoc.agenda,
+    agenda: normalizeAgendaItems(meetingDoc.agenda),
     status: meetingDoc.status as MeetingStatus,
     createdAt: meetingDoc.createdAt,
     updatedAt: meetingDoc.updatedAt,
@@ -53,7 +54,6 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     parsedTodos: meetingDoc.parsedTodos,
     disputedIssues: meetingDoc.disputedIssues,
     summary: meetingDoc.summary,
-    participants: meetingDoc.participants,
     hotwords: Array.isArray(meetingDoc.hotwords) ? meetingDoc.hotwords : undefined,
     ownerId: meetingDoc.ownerId,
     members: meetingDoc.members,

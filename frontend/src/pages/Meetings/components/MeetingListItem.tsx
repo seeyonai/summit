@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/item';
 import { formatDate } from '@/utils/date';
 import type { Meeting, MeetingStatus } from '@/types';
-import { Users, Mic, Calendar, Clock, CheckCircle, PlayIcon, ChevronRightIcon, TrashIcon, MoreVertical } from 'lucide-react';
+import { Mic, Calendar, Clock, CheckCircle, PlayIcon, ChevronRightIcon, TrashIcon, MoreVertical } from 'lucide-react';
 
 interface MeetingListItemProps {
   meeting: Meeting;
@@ -110,10 +110,6 @@ function MeetingListItem({ meeting, onDelete }: MeetingListItemProps) {
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {formatDate(meeting.scheduledStart)}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                {meeting.participants || 0} 人
               </span>
               <span className="flex items-center gap-1">
                 <Mic className="w-3 h-3" />

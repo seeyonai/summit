@@ -94,10 +94,21 @@ export interface DisputedIssue {
   resolved?: boolean;
 }
 
+export type AgendaItemStatus =
+  | "draft"
+  | "scheduled"
+  | "in_progress"
+  | "skipped"
+  | "completed"
+  | "deferred"
+  | "cancelled";
+
 export interface AgendaItem {
   order: number;
   text: string;
-  status: 'resolved' | 'ongoing' | 'pending';
+  description?: string;
+  ownerId?: string;
+  status: AgendaItemStatus;
 }
 
 export interface Meeting {
@@ -109,7 +120,6 @@ export interface Meeting {
   summary?: string;
   parsedTodos?: TodoItem[];
   disputedIssues?: DisputedIssue[];
-  participants?: number;
   // recordings?: Recording[]; // recordings are frontend only
   recordingOrder?: MeetingRecordingOrderItem[];
   concatenatedRecording?: Recording | null;

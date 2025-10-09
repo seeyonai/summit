@@ -58,7 +58,6 @@ export interface RecordingResponse {
     updatedAt?: string;
     scheduledStart?: string;
     summary?: string;
-    participants?: number;
   };
 }
 
@@ -101,7 +100,6 @@ export type MeetingUpdate = Partial<Pick<
   'status' |
   'scheduledStart' |
   'finalTranscript' |
-  'participants' |
   'recordingOrder' |
   'hotwords'
 >>;

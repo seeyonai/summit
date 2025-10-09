@@ -151,7 +151,7 @@ export type MeetingWithRecordings = Meeting & { recordings: Recording[] };
 
 export type MeetingCreate = Pick<
   baseTypes.Meeting,
-  'title' | 'summary' | 'scheduledStart' | 'participants' | 'status'
+  'title' | 'summary' | 'scheduledStart' | 'status' | 'agenda'
 >;
 
 export type MeetingUpdate = Partial<Meeting> & Pick<Meeting, '_id'>;

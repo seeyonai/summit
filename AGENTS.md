@@ -42,6 +42,7 @@
 - Use named function components and default-export them on the last line.
 - File names: PascalCase (`.jsx`/`.tsx`).
 - Avoid wrapping JSX props across lines unless a single line would exceed ~200 characters.
+- Do not use dynamic imports unless explicitly required.
 
 ### useEffect guidance
 - **Don't use `useEffect`** for: data transforms for render (use variables/`useMemo`), event handling (use handlers), resetting state on prop change (use `key` or compute during render), or deriving state from props/state (compute during render).

@@ -38,7 +38,6 @@ const MEETING_LOOKUP_FIELDS: Array<keyof Meeting> = [
   'updatedAt',
   'scheduledStart',
   'summary',
-  'participants',
 ];
 
 // Shared helpers
