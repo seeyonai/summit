@@ -8,9 +8,34 @@ REMOTE_HOST="chat"
 REMOTE_PATH="/opt/summit"
 SERVICE_NAME="summit-backend.service"
 SERVICE_PATH="/etc/systemd/system/$SERVICE_NAME"
+AUTO_YES=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -y|--yes)
+      AUTO_YES="yes"
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: $0 [-y|--yes]"
+      echo "  -y, --yes    Automatically confirm all prompts"
+      echo "  -h, --help   Show this help message"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Use -h for help"
+      exit 1
+      ;;
+  esac
+done
 
 confirm() {
   local prompt="$1";
+  if [ "$AUTO_YES" = "yes" ]; then
+    echo "$prompt [Y/n]: Y";
+    return 0;
+  fi;
   local response;
   read -n 1 -r -p "$prompt [Y/n]: " response;
   echo;
