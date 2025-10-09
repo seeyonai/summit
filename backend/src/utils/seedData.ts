@@ -80,7 +80,7 @@ export class DataSeeder {
           }
         ],
         finalTranscript: '会议记录：讨论了Q2产品功能优先级，确定了用户界面改进计划。',
-        parsedTodos: [
+        todos: [
           {
             text: '完成用户界面设计稿',
             completed: true,
@@ -143,7 +143,7 @@ export class DataSeeder {
           }
         ],
         finalTranscript: '技术架构评审会议记录',
-        parsedTodos: [
+        todos: [
           {
             text: '完成架构图绘制',
             completed: true,
@@ -171,7 +171,7 @@ export class DataSeeder {
         summary: '本周工作总结和下周计划',
         status: 'scheduled',
         scheduledStart: new Date('2024-01-17T10:00:00'),
-        parsedTodos: [
+        todos: [
           {
             text: '准备周会PPT',
             completed: false,

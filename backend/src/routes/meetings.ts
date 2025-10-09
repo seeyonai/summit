@@ -397,6 +397,7 @@ router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) 
     
     // Extract analysis using intext
     const extractionResult = await transcriptExtractionService.extractFromTranscript(transcript);
+    console.log('* extractionResult:', extractionResult)
     
     // Format the results for meeting storage
     const formattedAnalysis = transcriptExtractionService.formatExtractionForMeeting(extractionResult);
@@ -406,7 +407,7 @@ router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) 
     const updateData: any = {
       _id: meeting._id,
       disputedIssues: formattedAnalysis.disputedIssues,
-      parsedTodos: formattedAnalysis.todos
+      todos: formattedAnalysis.todos
     };
     
     // If we built the transcript from organized speeches, save it as finalTranscript
@@ -418,11 +419,7 @@ router.post('/:meetingId/extract-analysis', async (req: Request, res: Response) 
     
     res.json({
       success: true,
-      data: {
-        disputedIssues: formattedAnalysis.disputedIssues,
-        todos: formattedAnalysis.todos,
-        metadata: formattedAnalysis.metadata
-      },
+      data: formattedAnalysis,
       message: '转录分析完成',
       meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null
     });

@@ -4,7 +4,7 @@ import {
   Meeting,
   MeetingStatus,
   Recording,
-  TodoItem,
+  Todo,
 } from '../types';
 
 export interface MeetingDocument extends Document {
@@ -15,7 +15,7 @@ export interface MeetingDocument extends Document {
   status: MeetingStatus;
   scheduledStart?: Date;
   finalTranscript?: string;
-  parsedTodos?: TodoItem[];
+  todos?: Todo[];
   disputedIssues?: Meeting['disputedIssues'];
   createdAt: Date;
   updatedAt?: Date;

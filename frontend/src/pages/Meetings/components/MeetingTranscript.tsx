@@ -20,10 +20,7 @@ import {
   XIcon,
   MaximizeIcon
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
-import rehypeRaw from 'rehype-raw';
+import AnnotatedMarkdown from '@/components/AnnotatedMarkdown';
 import markdownDocx, { Packer } from 'markdown-docx';
 import StatisticsCard from '@/components/StatisticsCard';
 import TranscriptUploadDialog from './TranscriptUploadDialog';
@@ -368,10 +365,8 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                     )}
                   </div>
                 ) : (
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={[rehypeRaw]}>
-                      {searchQuery ? highlightedTranscript || '' : meeting.finalTranscript}
-                    </ReactMarkdown>
+                  <div>
+                    <AnnotatedMarkdown content={searchQuery ? highlightedTranscript || '' : meeting.finalTranscript} />
                   </div>
                 )}
               </div>

@@ -110,8 +110,7 @@ class TranscriptExtractionService {
       openai,
       clientParams: { 
         model: process.env.SUMMIT_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini', 
-        temperature: 0.1,
-        max_tokens: 1000
+        temperature: 0.1
       },
     });
 
@@ -135,7 +134,7 @@ class TranscriptExtractionService {
       schema: transcriptAnalysisSchema,
       chunkTokens: 1000,
       overlapTokens: 200,
-      concurrency: 2,
+      concurrency: 10,
     });
 
     return result;

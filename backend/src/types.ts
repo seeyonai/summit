@@ -71,7 +71,7 @@ export type RecordingUpdate = baseTypes.RecordingUpdate & MeetingId;
 
 export type MeetingStatus = baseTypes.MeetingStatus;
 
-export type TodoItem = baseTypes.TodoItem;
+export type Todo = baseTypes.Todo;
 
 // DiscussionPoint type is not defined in baseTypes, removing reference
 // export type DiscussionPoint = baseTypes.DiscussionPoint;

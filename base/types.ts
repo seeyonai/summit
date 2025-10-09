@@ -75,8 +75,7 @@ export type RecordingUpdate = Partial<Recording>;
 
 export type MeetingStatus = 'scheduled' | 'in_progress' | 'completed' | 'failed';
 
-export interface TodoItem {
-  id?: string;
+export interface Todo {
   text: string;
   completed: boolean;
   priority?: 'low' | 'medium' | 'high';
@@ -85,13 +84,9 @@ export interface TodoItem {
 }
 
 export interface DisputedIssue {
-  id?: string;
   text: string;
-  title?: string;
-  description?: string;
-  priority?: 'low' | 'medium' | 'high';
-  status?: 'resolved' | 'ongoing' | 'pending';
-  resolved?: boolean;
+  severity?: 'low' | 'medium' | 'high';
+  parties?: string[];
 }
 
 export type AgendaItemStatus =
@@ -118,7 +113,7 @@ export interface Meeting {
   scheduledStart?: Date;
   finalTranscript?: string;
   summary?: string;
-  parsedTodos?: TodoItem[];
+  todos?: Todo[];
   disputedIssues?: DisputedIssue[];
   // recordings?: Recording[]; // recordings are frontend only
   recordingOrder?: MeetingRecordingOrderItem[];

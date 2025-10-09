@@ -36,9 +36,9 @@ const Dashboard: React.FC = () => {
     const inProgressCount = meetings.filter(m => m.status === 'in_progress').length;
     const completedCount = meetings.filter(m => m.status === 'completed').length;
     const totalRecordings = recordings.length;
-    const totalTodos = meetings.reduce((acc, m) => acc + (m.parsedTodos?.length || 0), 0);
+    const totalTodos = meetings.reduce((acc, m) => acc + (m.todos?.length || 0), 0);
     const completedTodos = meetings.reduce((acc, m) => 
-      acc + (m.parsedTodos?.filter(t => t.completed).length || 0), 0);
+      acc + (m.todos?.filter(t => t.completed).length || 0), 0);
     const todoCompletionRate = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
     
     return {

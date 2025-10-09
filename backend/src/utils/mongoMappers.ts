@@ -51,7 +51,7 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     updatedAt: meetingDoc.updatedAt,
     scheduledStart: meetingDoc.scheduledStart,
     finalTranscript: meetingDoc.finalTranscript,
-    parsedTodos: meetingDoc.parsedTodos,
+    todos: meetingDoc.todos,
     disputedIssues: meetingDoc.disputedIssues,
     summary: meetingDoc.summary,
     hotwords: Array.isArray(meetingDoc.hotwords) ? meetingDoc.hotwords : undefined,

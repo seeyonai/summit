@@ -4,10 +4,7 @@ import { ButtonGroup } from '@/components/ui/button-group';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { MinimizeIcon, TypeIcon, AlignLeftIcon, PaletteIcon } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
-import rehypeRaw from 'rehype-raw';
+import AnnotatedMarkdown from '@/components/AnnotatedMarkdown';
 
 interface FullscreenMarkdownViewerProps {
   content: string;
@@ -109,9 +106,7 @@ function FullscreenMarkdownViewer({ content, onClose }: FullscreenMarkdownViewer
             }}
           >
             <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl prose-p:text-base prose-li:text-base">
-              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={[rehypeRaw]}>
-                {content}
-              </ReactMarkdown>
+              <AnnotatedMarkdown content={content} />
             </div>
           </div>
         </div>

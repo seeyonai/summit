@@ -183,9 +183,9 @@ function MeetingList() {
       const originals = (m.recordings || []).filter((recording) => recording.source !== 'concatenated');
       return acc + originals.length;
     }, 0);
-    const totalTodos = meetings.reduce((acc, m) => acc + (m.parsedTodos?.length || 0), 0);
+    const totalTodos = meetings.reduce((acc, m) => acc + (m.todos?.length || 0), 0);
     const completedTodos = meetings.reduce((acc, m) => 
-      acc + (m.parsedTodos?.filter(t => t.completed).length || 0), 0);
+      acc + (m.todos?.filter(t => t.completed).length || 0), 0);
     
     return {
       total: meetings.length,

@@ -13,6 +13,8 @@ import MeetingMemberAvatars from "@/components/meetings/MeetingMemberAvatars";
 import MeetingTranscript from "./components/MeetingTranscript";
 import MeetingRecordings from "./components/MeetingRecordings";
 import DisputedIssues from "./components/DisputedIssues";
+import MeetingTodos from "./components/MeetingTodos";
+import MeetingAnaylysis from "./components/MeetingAnalysis";
 import TranscriptDialog from "@/components/meetings/TranscriptDialog";
 import AdviceDialog from "@/components/meetings/AdviceDialog";
 import {
@@ -30,6 +32,7 @@ import {
   FileTextIcon,
   HeadphonesIcon,
   ListIcon,
+  RadarIcon,
 } from "lucide-react";
 
 function MeetingDetail() {
@@ -352,9 +355,9 @@ function MeetingDetail() {
             <FileTextIcon className="w-4 h-4" />
             记录
           </TabsTrigger>
-          <TabsTrigger value="disputedIssues" className="flex items-center gap-2">
-            <TargetIcon className="w-4 h-4" />
-            争论焦点
+          <TabsTrigger value="analysis" className="flex items-center gap-2">
+            <RadarIcon className="w-4 h-4" />
+            AI 分析
           </TabsTrigger>
         </TabsList>
 
@@ -372,12 +375,17 @@ function MeetingDetail() {
           />
         </TabsContent>
 
-        <TabsContent value="disputedIssues">
-          <DisputedIssues
-            meetingId={meeting._id}
-            hasTranscript={!!meeting.finalTranscript}
-            onAnalysisComplete={handleAnalysisComplete}
-          />
+        <TabsContent value="analysis">
+          <MeetingAnaylysis meeting={meeting}>
+            {({disputedIssues, todos}) => (
+              <>
+                <h3>争论焦点</h3>
+                <DisputedIssues disputedIssues={disputedIssues} />
+                <h3>待办事项</h3>
+                <MeetingTodos todos={todos} />
+              </>
+            )}
+          </MeetingAnaylysis>
         </TabsContent>
 
       </Tabs>
@@ -397,28 +405,6 @@ function MeetingDetail() {
         concatenatedRecording={meeting.concatenatedRecording ?? undefined}
       />
 
-      {/* Advice Dialog */}
-      <AdviceDialog
-        open={!!selectedTodoId}
-        onOpenChange={(open) => !open && setSelectedTodoId(null)}
-        todoText={
-          selectedTodoId
-            ? meeting.parsedTodos?.find((t) => t.id === selectedTodoId)?.text
-            : undefined
-        }
-        advice={selectedTodoId ? adviceById[selectedTodoId] : undefined}
-        loading={selectedTodoId ? loadingById[selectedTodoId] : false}
-        onRegenerate={
-          selectedTodoId
-            ? () => {
-                const todo = meeting.parsedTodos?.find(
-                  (t) => t.id === selectedTodoId
-                );
-                if (todo && id) generateAdvice(id, selectedTodoId, todo.text);
-              }
-            : undefined
-        }
-      />
 
       {/* Success Message */}
       {success && (

@@ -466,7 +466,7 @@ router.post('/:meetingId/extract-analysis', requireMemberOrOwner(), asyncHandler
     const updateData: any = {
       _id: meeting._id,
       disputedIssues: formattedAnalysis.disputedIssues,
-      parsedTodos: formattedAnalysis.todos
+      todos: formattedAnalysis.todos
     };
 
     if (!meeting.finalTranscript && transcript) {

@@ -1,4 +1,4 @@
-import type { Meeting, MeetingWithRecordings, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment, AppCustomization } from '@/types';
+import type { Meeting, MeetingWithRecordings, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment, AppCustomization, DisputedIssue, Todo } from '@/types';
 import { toast } from 'sonner';
 
 type ErrorPayload = {
@@ -529,21 +529,8 @@ class ApiService {
   async extractTranscriptAnalysis(meetingId: string): Promise<{
     success: boolean;
     data: {
-      disputedIssues: Array<{
-        id: string;
-        text: string;
-        severity: 'low' | 'medium' | 'high';
-        parties: string[];
-      }>;
-      todos: Array<{
-        id: string;
-        text: string;
-        completed: boolean;
-        assignee?: string;
-        dueDate?: string;
-        priority: 'low' | 'medium' | 'high';
-        category?: string;
-      }>;
+      disputedIssues: Array<DisputedIssue>;
+      todos: Array<Todo>;
       metadata: {
         totalChunks: number;
         processingTime: string;

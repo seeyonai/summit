@@ -32,7 +32,7 @@ const PendingMeetings: React.FC<PendingMeetingsProps> = ({ className }) => {
       const createdDate = meeting.createdAt ? new Date(meeting.createdAt).toISOString().split('T')[0] : '';
       
       // Check for incomplete todos
-      const incompleteTodos = meeting.parsedTodos?.filter(t => !t.completed) || [];
+      const incompleteTodos = meeting.todos?.filter(t => !t.completed) || [];
       if (incompleteTodos.length > 0) {
         items.push({
           id: meeting._id,

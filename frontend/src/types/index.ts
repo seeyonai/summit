@@ -122,7 +122,7 @@ export interface HotwordBulkImportResult {
 
 export type MeetingStatus = baseTypes.MeetingStatus;
 
-export type TodoItem = baseTypes.TodoItem;
+export type Todo = baseTypes.Todo;
 
 export type DisputedIssue = baseTypes.DisputedIssue;
 

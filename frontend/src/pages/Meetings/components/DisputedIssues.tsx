@@ -1,46 +1,13 @@
-import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { useDisputedIssues } from '@/hooks/useDisputedIssues';
-import { 
-  AlertCircleIcon, 
-  TargetIcon, 
-  RefreshCwIcon, 
-  UsersIcon,
-  ClockIcon,
-  BrainIcon
-} from 'lucide-react';
+import type { DisputedIssue } from '@/types/index';
 
 interface DisputedIssuesProps {
-  meetingId: string;
-  hasTranscript?: boolean;
-  onAnalysisComplete?: () => void;
+  disputedIssues: DisputedIssue[];
 }
 
-function DisputedIssues({ meetingId, hasTranscript = false, onAnalysisComplete }: DisputedIssuesProps) {
-  const {
-    disputedIssues,
-    loading,
-    error,
-    analysisMetadata,
-    extractAnalysis,
-    clearAnalysis,
-  } = useDisputedIssues(meetingId);
+function DisputedIssues({ disputedIssues }: DisputedIssuesProps) {
 
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleExtractAnalysis = useCallback(async () => {
-    setIsProcessing(true);
-    await extractAnalysis();
-    setIsProcessing(false);
-    onAnalysisComplete?.();
-  }, [extractAnalysis, onAnalysisComplete]);
-
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColor = (severity?: string | null) => {
     switch (severity) {
       case 'high':
         return 'bg-destructive/10 text-destructive border border-destructive/30';
@@ -53,7 +20,7 @@ function DisputedIssues({ meetingId, hasTranscript = false, onAnalysisComplete }
     }
   };
 
-  const getSeverityText = (severity: string) => {
+  const getSeverityText = (severity?: string | null) => {
     switch (severity) {
       case 'high':
         return '高';
@@ -62,164 +29,35 @@ function DisputedIssues({ meetingId, hasTranscript = false, onAnalysisComplete }
       case 'low':
         return '低';
       default:
-        return severity;
+        return severity || '未知';
     }
   };
 
-  if (loading || isProcessing) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <TargetIcon className="w-5 h-5" />
-            争论焦点
-          </h3>
-          <Skeleton className="h-10 w-24" />
-        </div>
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-20 w-full" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <TargetIcon className="w-5 h-5" />
-            争论焦点
-          </h3>
-          <Button
-            onClick={handleExtractAnalysis}
-            size="sm"
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <RefreshCwIcon className="w-4 h-4" />
-            重试分析
-          </Button>
-        </div>
-        <Alert variant="destructive">
-          <AlertCircleIcon className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (disputedIssues.length === 0) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <TargetIcon className="w-5 h-5" />
-            争论焦点
-          </h3>
-          <Button
-            onClick={handleExtractAnalysis}
-            size="sm"
-            className="flex items-center gap-2 bg-gradient-to-r from-chart-4 to-primary hover:from-chart-4/90 hover:to-primary/90 text-white"
-          >
-            <BrainIcon className="w-4 h-4" />
-            分析争论焦点
-          </Button>
-        </div>
-        <Card className="border-dashed">
-          <CardContent className="p-6">
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <TargetIcon className="w-12 h-12" />
-                </EmptyMedia>
-                <EmptyTitle>暂无争论焦点</EmptyTitle>
-                <EmptyDescription>
-                  AI 将从会议记录中提取和分析争论焦点，帮助您了解会议中的关键分歧点。
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button
-                  onClick={handleExtractAnalysis}
-                  disabled={!hasTranscript}
-                >
-                  <BrainIcon className="w-4 h-4" />
-                  提取争论焦点
-                </Button>
-              </EmptyContent>
-            </Empty>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <TargetIcon className="w-5 h-5" />
-          争论焦点
-          <Badge variant="secondary">{disputedIssues.length}</Badge>
-        </h3>
-        <div className="flex gap-2">
-          {analysisMetadata && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <ClockIcon className="w-4 h-4" />
-              {analysisMetadata.processingTime}
-            </div>
-          )}
-          <Button
-            onClick={handleExtractAnalysis}
-            size="sm"
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <RefreshCwIcon className="w-4 h-4" />
-            重新分析
-          </Button>
-          <Button
-            onClick={clearAnalysis}
-            size="sm"
-            variant="ghost"
-            className="text-destructive hover:text-destructive"
-          >
-            清除
-          </Button>
-        </div>
-      </div>
-
       <div className="space-y-3">
-        {disputedIssues.map((issue) => (
-          <Card key={issue.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-base font-medium flex-1 pr-4">
-                  {issue.text}
-                </CardTitle>
-                <Badge className={getSeverityColor(issue.severity)}>
-                  {getSeverityText(issue.severity)}
-                </Badge>
+        {disputedIssues.map((issue, index) => (
+          <div key={issue.id || index} className="hover:shadow-md transition-shadow">
+            <div className="pb-3">
+              <div className="text-base font-medium mb-2">
+                {issue.text}
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {issue.parties.length > 0 && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <UsersIcon className="w-4 h-4" />
-                  <span>涉及方:</span>
-                  <div className="flex gap-1 flex-wrap">
-                    {issue.parties.map((party, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {party}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
+              <div className="flex flex-wrap gap-2 items-center">
+                {issue.severity && (
+                  <Badge className={getSeverityColor(issue.severity)}>
+                    严重程度: {getSeverityText(issue.severity)}
+                  </Badge>
+                )}
+
+                {issue.parties && (
+                  <Badge variant="outline">
+                    相关方: {issue.parties}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

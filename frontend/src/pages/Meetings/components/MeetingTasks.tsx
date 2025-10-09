@@ -24,7 +24,7 @@ interface MeetingTasksProps {
 
 function MeetingTasks({ meeting, onGenerateAdvice, generatingAdvice }: MeetingTasksProps) {
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending'>('all');
-  const todos = meeting.parsedTodos || [];
+  const todos = meeting.todos || [];
   
   const filteredTodos = todos.filter(todo => {
     if (filter === 'completed') return todo.completed;
