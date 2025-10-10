@@ -31,10 +31,10 @@ function SuggestedQuestions({ questions, onSelectQuestion, onRefresh, disabled, 
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 gap-2">
+      <div className="flex flex-wrap gap-2">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, idx) => (
-            <Skeleton key={idx} className="h-10 w-full" />
+            <Skeleton key={idx} className="h-10 w-32" />
           ))
         ) : (
           questions.map((question, idx) => (
@@ -42,7 +42,7 @@ function SuggestedQuestions({ questions, onSelectQuestion, onRefresh, disabled, 
               key={idx}
               variant="outline"
               size="sm"
-              className="justify-start text-left h-auto py-2 px-3 whitespace-normal"
+              className="justify-start text-left h-auto py-2 px-3 whitespace-normal hover:bg-accent/10"
               onClick={() => onSelectQuestion(question)}
               disabled={disabled}
             >

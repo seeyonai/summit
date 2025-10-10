@@ -55,7 +55,7 @@ function ChatMessage({ role, content, isStreaming, onCopy, onRegenerate, showAct
               variant="ghost"
               size="sm"
               onClick={handleCopy}
-              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/10"
             >
               {copied ? (
                 <>
@@ -74,7 +74,7 @@ function ChatMessage({ role, content, isStreaming, onCopy, onRegenerate, showAct
                 variant="ghost"
                 size="sm"
                 onClick={onRegenerate}
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/10"
               >
                 <RefreshCwIcon className="w-3 h-3 mr-1" />
                 重新生成

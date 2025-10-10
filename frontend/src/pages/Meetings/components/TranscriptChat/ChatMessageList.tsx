@@ -82,7 +82,7 @@ function ChatMessageList({ messages, isStreaming, isWaitingForFirstToken, stream
         );
       })}
       {isWaitingForFirstToken && <ChatLoadingMessage />}
-      {isStreaming && streamingContent && !isWaitingForFirstToken && (
+      {isStreaming && streamingContent && (
         <ChatMessage role="assistant" content={streamingContent} isStreaming showActions={false} />
       )}
       <div ref={endRef} />

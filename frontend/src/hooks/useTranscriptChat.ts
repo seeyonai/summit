@@ -123,11 +123,12 @@ export function useTranscriptChat(meetingId: string) {
             try {
               const parsed = JSON.parse(data);
               if (parsed.content) {
+                accumulatedContent += parsed.content;
+                console.log('[Chat Stream] Accumulated:', accumulatedContent.length, 'chars');
+                setStreamingContent(accumulatedContent);
                 if (isWaitingForFirstToken) {
                   setIsWaitingForFirstToken(false);
                 }
-                accumulatedContent += parsed.content;
-                setStreamingContent(accumulatedContent);
               }
             } catch (e) {
               console.error('Failed to parse SSE data:', e);
