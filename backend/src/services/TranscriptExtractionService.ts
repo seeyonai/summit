@@ -132,9 +132,9 @@ class TranscriptExtractionService {
 
     const result = await this.intext.extract(transcript, {
       schema: transcriptAnalysisSchema,
-      chunkTokens: 1000,
-      overlapTokens: 200,
-      concurrency: 10,
+      chunkTokens: parseInt(process.env.SUMMIT_INTEXT_CHUNK_TOKENS || '500', 10),
+      overlapTokens: parseInt(process.env.SUMMIT_INTEXT_OVERLAP_TOKENS || '50', 10),
+      concurrency: parseInt(process.env.SUMMIT_INTEXT_CONCURRENCY || '8', 10),
     });
 
     return result;

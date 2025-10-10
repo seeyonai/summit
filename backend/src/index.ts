@@ -7,7 +7,9 @@ import { getFilesBaseDir } from './utils/filePaths';
 import filesRouter from './routes/files';
 
 // Load environment variables from .env file
-dotenv.config({ quiet: true });
+dotenv.config({ quiet: true, path: ".env" });
+dotenv.config({ quiet: true, path: ".env.local" });
+
 import { DataSeeder } from './utils/seedData';
 import meetingsRouter from './routes/meetings/index';
 import authRouter from './routes/auth';

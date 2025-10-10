@@ -8,8 +8,8 @@ interface AnalysisMetadata {
 }
 
 interface AnalysisResultData {
-  disputedIssues: DisputedIssue[];
-  todos: Todo[];
+  disputedIssues?: DisputedIssue[];
+  todos?: Todo[];
 }
 
 interface AnalysisResultDataWithMeta extends AnalysisResultData {
@@ -23,7 +23,7 @@ interface AnalysisResult {
 }
 
 export const useAnalysisResult = (meetingId: string, initialData: AnalysisResultData) => {
-  const [AnalysisResult, setAnalysisResult] = useState<AnalysisResult | null>({
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>({
     success: true,
     data: initialData,
     message: 'Analysis result loaded from cache',
@@ -58,11 +58,37 @@ export const useAnalysisResult = (meetingId: string, initialData: AnalysisResult
     setError(null);
   }, []);
 
+  const clearDisputedIssues = useCallback(() => {
+    setAnalysisResult(prev =>
+      prev ? {
+        ...prev,
+        data: {
+          ...prev.data,
+          disputedIssues: []
+        }
+      } : null
+    );
+  }, []);
+
+  const clearTodos = useCallback(() => {
+    setAnalysisResult(prev =>
+      prev ? {
+        ...prev,
+        data: {
+          ...prev.data,
+          todos: []
+        }
+      } : null
+    );
+  }, []);
+
   return {
-    AnalysisResult,
+    analysisResult,
     loading,
     error,
     extractAnalysis,
     clearAnalysis,
+    clearDisputedIssues,
+    clearTodos,
   };
 };

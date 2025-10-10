@@ -119,7 +119,7 @@ The intext service is configured with:
 - **Temperature**: 0.1 (low for consistency)
 - **Chunk Tokens**: 1000 (balance between context and cost)
 - **Overlap Tokens**: 200 (ensures continuity between chunks)
-- **Concurrency**: 2 (parallel processing)
+- **Concurrency**: 10 (parallel processing)
 
 ## Best Practices
 

@@ -378,12 +378,18 @@ function MeetingDetail() {
         <TabsContent value="analysis">
           <MeetingAnaylysis meeting={meeting}>
             {({disputedIssues, todos}) => (
-              <>
-                <h3>争论焦点</h3>
-                <DisputedIssues disputedIssues={disputedIssues} />
-                <h3>待办事项</h3>
-                <MeetingTodos todos={todos} />
-              </>
+              <Tabs defaultValue="disputedIssues">
+                <TabsList>
+                  <TabsTrigger value="disputedIssues">争论焦点</TabsTrigger>
+                  <TabsTrigger value="todos">待办事项</TabsTrigger>
+                </TabsList>
+                <TabsContent value="disputedIssues">
+                  <DisputedIssues disputedIssues={disputedIssues} />
+                </TabsContent>
+                <TabsContent value="todos">
+                  <MeetingTodos todos={todos} />
+                </TabsContent>
+              </Tabs>
             )}
           </MeetingAnaylysis>
         </TabsContent>
