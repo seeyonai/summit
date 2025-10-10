@@ -33,13 +33,22 @@ export const AUDIO_CONFIG = {
 
 // Audio file formats
 export const AUDIO_FORMATS = {
-  SUPPORTED: ['wav', 'mp3', 'flac', 'm4a'],
+  SUPPORTED: ['wav', 'mp3', 'flac', 'm4a', 'aac', 'ogg', 'wma', 'webm', 'amr', 'g722', 'g72', 'alac', 'mpeg'],
   DEFAULT: 'wav',
   MIME_TYPES: {
     wav: 'audio/wav',
     mp3: 'audio/mpeg',
     flac: 'audio/flac',
     m4a: 'audio/mp4',
+    aac: 'audio/aac',
+    ogg: 'audio/ogg',
+    wma: 'audio/x-ms-wma',
+    webm: 'audio/webm',
+    amr: 'audio/amr',
+    g722: 'audio/g722',
+    g72: 'audio/g72',
+    alac: 'audio/alac',
+    mpeg: 'audio/mpeg',
   },
 } as const;
 

@@ -20,7 +20,7 @@ export const getFileExtension = (filename: string): string => {
 };
 
 export const isAudioFile = (filename: string): boolean => {
-  const audioExtensions = ['wav', 'mp3', 'flac', 'm4a', 'aac', 'ogg', 'wma'];
+  const audioExtensions = ['wav', 'mp3', 'flac', 'm4a', 'aac', 'ogg', 'wma', 'webm', 'amr', 'g722', 'g72', 'alac', 'mpeg'];
   const extension = getFileExtension(filename).toLowerCase();
   return audioExtensions.includes(extension);
 };

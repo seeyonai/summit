@@ -94,7 +94,7 @@ function RecordingList() {
     const inputEl = event.target as HTMLInputElement;
 
     // Validate file type
-    const allowedTypes = ['audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/m4a', 'audio/webm'];
+    const allowedTypes = ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/aac', 'audio/x-aac', 'audio/alac', 'audio/x-ms-wma', 'audio/wma', 'audio/m4a', 'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/flac', 'audio/amr', 'audio/g722', 'audio/g72'];
     if (!allowedTypes.includes(file.type)) {
       setError('不支持的文件格式。请上传 WAV、MP3、OGG、M4A 或 WEBM 格式的音频文件。');
       return;

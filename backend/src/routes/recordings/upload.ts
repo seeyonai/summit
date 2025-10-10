@@ -39,12 +39,22 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
     'audio/wav',
     'audio/wave',
     'audio/x-wav',
-    'audio/mpeg',
     'audio/mp3',
+    'audio/mpeg',
     'audio/ogg',
-    'audio/webm',
+    'audio/aac',
+    'audio/x-aac',
+    'audio/alac',
+    'audio/x-ms-wma',
+    'audio/wma',
     'audio/m4a',
-    'audio/x-m4a'
+    'audio/x-m4a',
+    'audio/mp4',
+    'audio/webm',
+    'audio/flac',
+    'audio/amr',
+    'audio/g722',
+    'audio/g72'
   ];
   
   if (allowedMimes.includes(file.mimetype)) {
