@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Download, Trash2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { api, apiUrl } from '@/services/api';
 import { toast } from 'sonner';
@@ -7,6 +9,26 @@ import { toast } from 'sonner';
 function AdminAudit() {
   const [loadingDownload, setLoadingDownload] = useState(false);
   const [loadingClear, setLoadingClear] = useState(false);
+  const guideContent = useMemo(() => `### 审计日志使用说明
+
+1. **下载日志**：点击下方“下载审计日志”按钮，获取最新的 JSON Lines 文件，每一行代表一条事件。
+2. **选择查看方式**：使用任何文本编辑器或日志查看工具（如 VS Code、Logtail、jq）打开文件，按行浏览。
+3. **定位关键事件**：
+   - 搜索 \`access_denied\` 可快速发现权限拦截。
+   - 搜索 \`failure\` 或 \`error\` 聚焦异常或失败的操作。
+   - 对比 \`actorId\` / \`actorRole\`，确认执行人和身份。
+
+### 常见字段说明
+- \`timestamp\`：UTC 时间戳，表示事件发生的准确时间。
+- \`action\`：规范化动作名称（如 \`recording_delete\`），帮助分组统计。
+- \`status\`：事件结果，常见取值：\`success\`、\`failure\`、\`access_denied\`、\`error\`。
+- \`resource/resourceId\`：被操作的资源类型及其唯一标识。
+- \`details\`：可选的补充信息（如文件范围、记录数等），用于还原上下文。
+
+### 排查建议
+- 先过滤出 \`status !== "success"\` 的行，快速定位异常。
+- 如果同一资源出现多次操作，按 \`timestamp\` 排序即可重建操作序列。
+- 将日志导入可视化工具（如 Excel、Grafana Loki）时，保持 JSON 按行解析以避免格式丢失。`, []);
 
   const handleDownload = async () => {
     setLoadingDownload(true);
@@ -62,6 +84,19 @@ function AdminAudit() {
           下载或清空系统审计日志。日志以 JSON Lines 格式记录关键操作事件，包含操作类型、时间戳、执行用户与结果状态。
         </p>
       </div>
+      <details className="bg-muted/20 border border-border rounded-xl">
+        <summary className="px-6 py-4 cursor-pointer select-none text-sm font-semibold text-foreground flex items-center justify-between">
+          <span>审计日志使用说明</span>
+          <span className="text-xs text-muted-foreground font-normal">展开查看指南</span>
+        </summary>
+        <div className="px-6 pb-6">
+          <div className="prose prose-sm max-w-none text-muted-foreground prose-headings:text-foreground prose-strong:text-foreground">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {guideContent}
+            </ReactMarkdown>
+          </div>
+        </div>
+      </details>
       <div className="bg-card border border-border rounded-xl p-8 space-y-6">
         <div className="space-y-2">
           <h2 className="text-lg font-semibold flex items-center gap-2">
