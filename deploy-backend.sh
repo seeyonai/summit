@@ -99,6 +99,14 @@ else
   echo "No .env.production file found at $BACKEND_DIR/.env.production, skipping.";
 fi;
 
+if [ -f "$BACKEND_DIR/.env.production.local" ]; then
+  if confirm "📝 Sync .env.production.local to $REMOTE_HOST:$REMOTE_PATH/.env.local?"; then
+    rsync -avz "$BACKEND_DIR/.env.production.local" "$REMOTE_HOST:$REMOTE_PATH/.env.local";
+  fi;
+else
+  echo "No .env.production.local file found at $BACKEND_DIR/.env.production.local, skipping.";
+fi;
+
 header "🎨 Sync customization.json";
 if [ -f "$BACKEND_DIR/customization.production.json" ]; then
   if confirm "📝 Sync customization.production.json to $REMOTE_HOST:$REMOTE_PATH/customization.json?"; then
