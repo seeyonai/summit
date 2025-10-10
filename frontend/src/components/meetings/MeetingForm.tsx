@@ -45,7 +45,7 @@ function formatDateTimeLocal(date: Date | string) {
 function MeetingForm({
   mode,
   variant = 'scheduled',
-  initialData = {},
+  initialData,
   meetingId,
   onSubmit,
   onCancel,
@@ -76,16 +76,22 @@ function MeetingForm({
         hotwords: '',
         agenda: []
       });
-    } else {
-      setFormData({
-        title: initialData.title || '',
-        summary: initialData.summary || '',
-        status: initialData.status || 'scheduled',
-        scheduledStart: initialData.scheduledStart ? formatDateTimeLocal(initialData.scheduledStart) : '',
-        hotwords: Array.isArray(initialData.hotwords) ? initialData.hotwords.join(', ') : '',
-        agenda: initialData.agenda || []
-      });
+      return;
     }
+
+    const scheduledStart = initialData?.scheduledStart;
+    const scheduledStartValue = scheduledStart ? formatDateTimeLocal(scheduledStart) : '';
+    const hotwordsArray = initialData?.hotwords ?? [];
+    const agendaItems = initialData?.agenda ?? [];
+
+    setFormData({
+      title: initialData?.title || '',
+      summary: initialData?.summary || '',
+      status: initialData?.status || 'scheduled',
+      scheduledStart: scheduledStartValue,
+      hotwords: hotwordsArray.join(', '),
+      agenda: agendaItems
+    });
   }, [mode, variant, initialData]);
 
   const handleInputChange = (field: string, value: string) => {
@@ -104,24 +110,34 @@ function MeetingForm({
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
 
-    const submitData = mode === 'create'
-      ? {
-          title: formData.title || undefined,
-          summary: formData.summary || undefined,
-          status: formData.status || undefined,
-          scheduledStart: formData.scheduledStart ? new Date(formData.scheduledStart) : undefined,
-          hotwords: hotwordTokens,
-          agenda: formData.agenda.length > 0 ? formData.agenda : undefined
-        } as MeetingCreate
-      : {
-          _id: initialData._id,
-          title: formData.title || undefined,
-          summary: formData.summary || undefined,
-          status: formData.status || undefined,
-          scheduledStart: formData.scheduledStart ? new Date(formData.scheduledStart) : undefined,
-          hotwords: hotwordTokens,
-          agenda: formData.agenda.length > 0 ? formData.agenda : undefined
-        } as MeetingUpdate;
+    if (mode === 'create') {
+      const submitData: MeetingCreate = {
+        title: formData.title || undefined,
+        summary: formData.summary || undefined,
+        status: formData.status || undefined,
+        scheduledStart: formData.scheduledStart ? new Date(formData.scheduledStart) : undefined,
+        hotwords: hotwordTokens,
+        agenda: formData.agenda.length > 0 ? formData.agenda : undefined
+      };
+      await onSubmit(submitData);
+      return;
+    }
+
+    const targetId = initialData?._id ?? meetingId;
+    if (!targetId) {
+      console.error('Missing meeting identifier for update');
+      return;
+    }
+
+    const submitData: MeetingUpdate = {
+      _id: targetId,
+      title: formData.title || undefined,
+      summary: formData.summary || undefined,
+      status: formData.status || undefined,
+      scheduledStart: formData.scheduledStart ? new Date(formData.scheduledStart) : undefined,
+      hotwords: hotwordTokens,
+      agenda: formData.agenda.length > 0 ? formData.agenda : undefined
+    };
 
     await onSubmit(submitData);
   };
@@ -263,8 +279,8 @@ function MeetingForm({
               <CardContent>
                 <MeetingMembers
                   meetingId={meetingId}
-                  ownerId={initialData.ownerId}
-                  members={initialData.members}
+                  ownerId={initialData?.ownerId}
+                  members={initialData?.members}
                   onChanged={onMembersChanged}
                 />
               </CardContent>

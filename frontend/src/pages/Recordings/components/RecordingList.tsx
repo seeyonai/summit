@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -74,6 +75,13 @@ function RecordingList() {
     return unsubscribe;
   }, []);
 
+  // Show toast notifications for errors from the hook
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   const deleteRecording = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm('确定要删除这个录音吗？此操作不可撤销。')) {
@@ -96,14 +104,18 @@ function RecordingList() {
     // Validate file type
     const allowedTypes = ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/aac', 'audio/x-aac', 'audio/alac', 'audio/x-ms-wma', 'audio/wma', 'audio/m4a', 'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/flac', 'audio/amr', 'audio/g722', 'audio/g72'];
     if (!allowedTypes.includes(file.type)) {
-      setError('不支持的文件格式。请上传 WAV、MP3、OGG、M4A 或 WEBM 格式的音频文件。');
+      const errorMsg = '不支持的文件格式。请上传 WAV、MP3、OGG、M4A 或 WEBM 格式的音频文件。';
+      toast.error(errorMsg);
+      setError(errorMsg);
       return;
     }
 
     // Validate file size (50MB limit)
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      setError('文件大小超过限制。请上传小于 50MB 的音频文件。');
+      const errorMsg = '文件大小超过限制。请上传小于 50MB 的音频文件。';
+      toast.error(errorMsg);
+      setError(errorMsg);
       return;
     }
 
@@ -118,7 +130,9 @@ function RecordingList() {
       inputEl.value = '';
       await fetchRecordings();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '上传失败');
+      const errorMsg = err instanceof Error ? err.message : '上传失败';
+      toast.error(errorMsg);
+      setError(errorMsg);
       setUploading(false);
       setUploadProgress(0);
       inputEl.value = '';
@@ -338,7 +352,7 @@ function RecordingList() {
         </div>
 
         {/* Truncation hint */}
-        {!loading && !error && fetchedAll === false && (
+        {!loading && fetchedAll === false && (
           <Alert>
             <AlertCircleIcon className="h-4 w-4" />
             <AlertTitle>显示最新 100 条录音</AlertTitle>
@@ -368,17 +382,9 @@ function RecordingList() {
           </div>
         )}
 
-        {/* Error State */}
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircleIcon className="h-4 w-4" />
-            <AlertTitle>加载失败</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
 
         {/* Recordings Grid/List */}
-        {!loading && !error && filteredRecordings.length > 0 && (
+        {!loading && filteredRecordings.length > 0 && (
           viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRecordings.map((recording) => (
@@ -411,7 +417,7 @@ function RecordingList() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && filteredRecordings.length === 0 && (
+        {!loading && filteredRecordings.length === 0 && (
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">

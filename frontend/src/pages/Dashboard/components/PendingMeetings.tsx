@@ -148,7 +148,7 @@ const PendingMeetings: React.FC<PendingMeetingsProps> = ({ className }) => {
         ) : (
           <div className="space-y-4">
             {pendingItems.map((item) => (
-              <Link key={item.id} to={`/meetings/${item.id}`}>
+              <Link key={item.id} to={`/meetings/${item.id}?tab=analysis&subtab=todos`}>
                 <div className="group p-4 rounded-lg border border-border/50 hover:bg-warning/10 dark:hover:bg-warning/20 hover:border-warning/30 dark:hover:border-warning/70 transition-all duration-200 cursor-pointer">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

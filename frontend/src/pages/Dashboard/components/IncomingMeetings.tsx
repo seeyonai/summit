@@ -12,19 +12,18 @@ interface IncomingMeetingsProps {
 const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
   const { meetings: allMeetings, loading } = useMeetings();
 
-  // Filter for scheduled meetings happening today or soon
+  // Filter for scheduled meetings happening within the next two days
   const upcomingMeetings = useMemo(() => {
     const now = new Date();
-    const todayEnd = new Date(now);
-    todayEnd.setHours(23, 59, 59, 999);
+    const twoDaysLater = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
     
     return allMeetings
-      .filter(m => {
-        if (m.status !== 'scheduled') return false;
-        if (!m.scheduledStart) return false;
+      .filter(meeting => {
+        if (meeting.status !== 'scheduled') return false;
+        if (!meeting.scheduledStart) return false;
         
-        const scheduledDate = new Date(m.scheduledStart);
-        return scheduledDate >= now && scheduledDate <= todayEnd;
+        const scheduledDate = new Date(meeting.scheduledStart);
+        return scheduledDate >= now && scheduledDate <= twoDaysLater;
       })
       .sort((a, b) => {
         const dateA = new Date(a.scheduledStart!);
@@ -54,7 +53,7 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
           <div>
             <CardTitle className="text-lg">即将到来的会议</CardTitle>
             <CardDescription className="text-sm">
-              今天的会议安排
+              未来两天的会议安排
             </CardDescription>
           </div>
         </div>
@@ -71,7 +70,7 @@ const IncomingMeetings: React.FC<IncomingMeetingsProps> = ({ className }) => {
           <div className="text-center py-12 text-muted-foreground">
             <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="text-lg font-medium mb-1">暂无即将到来的会议</p>
-            <p className="text-sm">今天没有安排会议</p>
+            <p className="text-sm">未来两天内没有安排会议</p>
           </div>
         ) : (
           <div className="space-y-4">

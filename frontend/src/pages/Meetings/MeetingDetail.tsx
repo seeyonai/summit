@@ -43,6 +43,7 @@ function MeetingDetail() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "recordings";
+  const activeSubtab = searchParams.get("subtab") || "disputedIssues";
 
   // Use custom hooks
   const {
@@ -103,6 +104,12 @@ function MeetingDetail() {
   const handleTabChange = useCallback((value: string) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("tab", value);
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
+
+  const handleSubtabChange = useCallback((value: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("subtab", value);
     setSearchParams(nextParams);
   }, [searchParams, setSearchParams]);
 
@@ -378,7 +385,7 @@ function MeetingDetail() {
         <TabsContent value="analysis">
           <MeetingAnaylysis meeting={meeting}>
             {({disputedIssues, todos}) => (
-              <Tabs defaultValue="disputedIssues">
+              <Tabs value={activeSubtab} onValueChange={handleSubtabChange}>
                 <TabsList>
                   <TabsTrigger value="disputedIssues">争论焦点</TabsTrigger>
                   <TabsTrigger value="todos">待办事项</TabsTrigger>
