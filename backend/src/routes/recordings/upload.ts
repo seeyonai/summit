@@ -2,13 +2,15 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import recordingService from '../../services/RecordingService';
 import { parseFile } from 'music-metadata';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { badRequest, internal, forbidden } from '../../utils/errors';
 import type { RequestWithUser } from '../../types/auth';
 import { isOwner as isMeetingOwner } from '../../services/MeetingService';
 import { getPreferredLang } from '../../utils/lang';
+import recordingService from '../../services/RecordingService';
+import { writeEncryptedFile } from '../../utils/audioEncryption';
+import { buildRecordingFilename } from '../../utils/recordingHelpers';
 
 // Ensure files directory exists (storage for uploaded audio)
 import { getFilesBaseDir } from '../../utils/filePaths';
@@ -143,13 +145,16 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
 
     const result = await recordingService.createRecording(recordingData);
 
-    // Move uploaded file to final id-based filename
+    // Encrypt and persist uploaded file to final id-based filename
     try {
-      const storedName = `${result._id}.${result.format || 'wav'}`;
+      const storedName = buildRecordingFilename(result._id.toString(), result.format);
       const finalPath = path.join(filesDir, storedName);
-      fs.renameSync(absolutePath, finalPath);
+      const fileBuffer = await fs.promises.readFile(absolutePath);
+      await writeEncryptedFile(finalPath, fileBuffer);
+      await fs.promises.unlink(absolutePath).catch(() => undefined);
     } catch (moveErr) {
-      console.warn('Failed to move uploaded file to final path:', moveErr);
+      console.error('Failed to persist encrypted recording file:', moveErr);
+      throw internal('Failed to store encrypted audio file', 'upload.storage_failure');
     }
 
     const lang = getPreferredLang(req);

@@ -7,6 +7,7 @@ import { SegmentationRequest, SegmentationResponse, SegmentationModelInfo, Speak
 import { getFilesBaseDir, normalizePublicOrRelative, resolvePathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
 import { debug, debugWarn } from '../utils/logger';
+import { decryptFileToTempPath } from '../utils/audioEncryption';
 
 interface ApiModelInfo {
   model: string;
@@ -108,37 +109,41 @@ export class SegmentationService {
     const absolutePath = this.resolveAudioFilePath(normalizedPath);
     debug('Analyzing segmentation for:', absolutePath);
 
+    const { tempPath: plainPath, cleanup } = await decryptFileToTempPath(absolutePath);
+
     let audioBuffer: Buffer;
     let contentType: string;
 
-    const sampleRate = await this.getAudioSampleRate(absolutePath);
-    
-    if (sampleRate && sampleRate !== 16000) {
-      debug(`Audio sample rate is ${sampleRate}Hz, resampling to 16kHz for segmentation`);
-      
-      const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'summit-resample-'));
-      const resampledPath = path.join(tempDir, 'resampled.wav');
-      
-      try {
-        await this.resampleTo16kHz(absolutePath, resampledPath);
-        audioBuffer = await fs.promises.readFile(resampledPath);
-        contentType = 'audio/wav';
-      } finally {
-        await fs.promises.rm(tempDir, { recursive: true, force: true });
-      }
-    } else {
-      audioBuffer = await fs.promises.readFile(absolutePath);
-      contentType = this.determineContentType(absolutePath);
-    }
-
-    const targetUrl = this.buildAnalyzeUrl(request.oracleNumSpeakers, request.returnText);
-
     try {
+      const sampleRate = await this.getAudioSampleRate(plainPath);
+
+      if (sampleRate && sampleRate !== 16000) {
+        debug(`Audio sample rate is ${sampleRate}Hz, resampling to 16kHz for segmentation`);
+
+        const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'summit-resample-'));
+        const resampledPath = path.join(tempDir, 'resampled.wav');
+
+        try {
+          await this.resampleTo16kHz(plainPath, resampledPath);
+          audioBuffer = await fs.promises.readFile(resampledPath);
+          contentType = 'audio/wav';
+        } finally {
+          await fs.promises.rm(tempDir, { recursive: true, force: true });
+        }
+      } else {
+        audioBuffer = await fs.promises.readFile(plainPath);
+        contentType = this.determineContentType(plainPath);
+      }
+
+      const targetUrl = this.buildAnalyzeUrl(request.oracleNumSpeakers, request.returnText);
+
       const response = await this.sendAnalyzeRequest(targetUrl, audioBuffer, contentType);
 
       return this.mapSegmentationResponse(response, normalizedPath);
     } catch (error) {
       this.handleApiError(error, { audioFilePath: normalizedPath });
+    } finally {
+      await cleanup();
     }
   }
 

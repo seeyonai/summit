@@ -7,6 +7,7 @@ import { spawn } from 'child_process';
 import { parseFile } from 'music-metadata';
 import meetingService from '../../services/MeetingService';
 import transcriptExtractionService from '../../services/TranscriptExtractionService';
+import transcriptChatService from '../../services/TranscriptChatService';
 import { MeetingCreate, MeetingUpdate, Recording, Meeting, RecordingResponse } from '../../types';
 import recordingService from '../../services/RecordingService';
 import { asyncHandler } from '../../middleware/errorHandler';
@@ -15,7 +16,9 @@ import type { RequestWithUser } from '../../types/auth';
 import { requireMemberOrOwner, requireOwner } from '../../middleware/auth';
 import { getPreferredLang } from '../../utils/lang';
 import { debug } from '../../utils/logger';
-import { getFilesBaseDir, resolveExistingPathFromCandidate } from '../../utils/filePaths';
+import { getFilesBaseDir } from '../../utils/filePaths';
+import { decryptFileToTempPath, writeEncryptedFile } from '../../utils/audioEncryption';
+import { buildRecordingFilename, findRecordingFilePath } from '../../utils/recordingHelpers';
 
 const router = Router();
 
@@ -506,6 +509,109 @@ router.post('/:meetingId/extract-analysis', requireMemberOrOwner(), asyncHandler
   }
 }));
 
+// Generate suggested questions for chat
+router.get('/:id/chat/suggested-questions', requireMemberOrOwner(), asyncHandler(async (req: Request, res: Response) => {
+  const { id: meetingId } = req.params as { id: string };
+
+  const meeting = await meetingService.getMeetingById(meetingId);
+  if (!meeting) {
+    throw notFound('Meeting not found', 'meeting.not_found');
+  }
+
+  let transcript = meeting.finalTranscript;
+  if (!transcript) {
+    try {
+      transcript = await transcriptExtractionService.buildTranscriptFromOrganizedSpeeches(meetingId);
+    } catch (error) {
+      throw badRequest(
+        'Meeting must have a final transcript or organized speeches before questions can be generated',
+        'chat.transcript_required'
+      );
+    }
+  }
+
+  try {
+    const questions = await transcriptChatService.generateSuggestedQuestions(transcript, meeting.title);
+    res.json({ success: true, questions });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('OPENAI_API_KEY')) {
+        throw internal(
+          'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.',
+          'chat.missing_api_key'
+        );
+      }
+    }
+
+    throw internal(
+      'Failed to generate suggested questions',
+      'chat.failed',
+      error instanceof Error ? error.message : error
+    );
+  }
+}));
+
+// Chat with transcript using streaming
+router.post('/:id/chat', requireMemberOrOwner(), asyncHandler(async (req: Request, res: Response) => {
+  const { id: meetingId } = req.params as { id: string };
+  const { message, history } = req.body as { message?: string; history?: Array<{ role: 'user' | 'assistant'; content: string }> };
+
+  if (!message || typeof message !== 'string' || message.trim().length === 0) {
+    throw badRequest('Message is required', 'chat.message_required');
+  }
+
+  const meeting = await meetingService.getMeetingById(meetingId);
+  if (!meeting) {
+    throw notFound('Meeting not found', 'meeting.not_found');
+  }
+
+  let transcript = meeting.finalTranscript;
+  if (!transcript) {
+    try {
+      transcript = await transcriptExtractionService.buildTranscriptFromOrganizedSpeeches(meetingId);
+    } catch (error) {
+      throw badRequest(
+        'Meeting must have a final transcript or organized speeches before chat can be used',
+        'chat.transcript_required'
+      );
+    }
+  }
+
+  try {
+    const chatHistory = Array.isArray(history) ? history : [];
+    const stream = await transcriptChatService.chatStream(transcript, message.trim(), chatHistory);
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('OPENAI_API_KEY')) {
+        throw internal(
+          'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.',
+          'chat.missing_api_key'
+        );
+      }
+    }
+
+    throw internal(
+      'Failed to process chat request',
+      'chat.failed',
+      error instanceof Error ? error.message : error
+    );
+  }
+}));
+
 // Concatenate meeting recordings into a single file
 router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(async (req: Request, res: Response) => {
   const { meetingId } = req.params as { meetingId: string };
@@ -594,136 +700,148 @@ router.post('/:meetingId/concatenate-recordings', requireOwner(), asyncHandler(a
 
   const resolvedFiles: Array<{ record: RecordingResponse; path: string }> = [];
   for (const record of targets) {
-    const ext = ((record.format && record.format.trim()) || 'wav').replace(/^\./, '').toLowerCase();
-    const candidate = `${record._id}.${ext}`;
-    try {
-      const absolutePath = await resolveExistingPathFromCandidate(recordingsBaseDir, candidate);
-      resolvedFiles.push({ record, path: absolutePath });
-    } catch {
+    const recordId = record._id;
+    const absolutePath = await findRecordingFilePath(recordingsBaseDir, recordId, record.format || undefined);
+    if (!absolutePath) {
       throw notFound(`Audio file not found for recording ${record._id}`, 'meeting.concatenate_missing_file');
     }
+    resolvedFiles.push({ record, path: absolutePath });
   }
 
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'summit-concatenate-'));
-  const listPath = path.join(tempDir, 'inputs.txt');
-  const outputPath = path.join(tempDir, 'concatenated.wav');
+  const decryptedFiles: Array<{ record: RecordingResponse; path: string; cleanup: () => Promise<void> }> = [];
 
   try {
-    const normalizedFiles: Array<{ record: RecordingResponse; path: string }> = [];
-
-    for (const [index, item] of resolvedFiles.entries()) {
-      const normalizedPath = path.join(tempDir, `normalized-${index}.wav`);
-      const args = [
-        '-y',
-        '-i', item.path,
-        '-c:a', 'pcm_s16le',
-        '-ar', '16000',
-        '-ac', '1',
-        normalizedPath,
-      ];
-      await runProcess('ffmpeg', args);
-      normalizedFiles.push({ record: item.record, path: normalizedPath });
+    for (const item of resolvedFiles) {
+      const { tempPath, cleanup } = await decryptFileToTempPath(item.path);
+      decryptedFiles.push({ record: item.record, path: tempPath, cleanup });
     }
 
-    if (normalizedFiles.length === 1) {
-      await fs.rm(outputPath, { force: true }).catch(() => undefined);
-      await fs.rename(normalizedFiles[0].path, outputPath);
-    } else {
-      const listContent = normalizedFiles
-        .map((item) => `file '${escapePathForFfmpeg(item.path)}'`)
-        .join('\n');
-      await fs.writeFile(listPath, `${listContent}\n`, 'utf8');
-      const args = [
-        '-y',
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', listPath,
-        '-c:a', 'pcm_s16le',
-        '-ar', '16000',
-        '-ac', '1',
-        outputPath,
-      ];
-      await runProcess('ffmpeg', args);
-    }
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'summit-concatenate-'));
+    const listPath = path.join(tempDir, 'inputs.txt');
+    const outputPath = path.join(tempDir, 'concatenated.wav');
 
-    const stats = await fs.stat(outputPath);
-    const metadata = await parseFile(outputPath).catch(() => null);
-    const duration = metadata?.format?.duration && Number.isFinite(metadata.format.duration)
-      ? Number(metadata.format.duration)
-      : fallbackDuration;
-    const sampleRate = metadata?.format?.sampleRate && Number.isFinite(metadata.format.sampleRate)
-      ? Number(metadata.format.sampleRate)
-      : undefined;
-    const channels = metadata?.format?.numberOfChannels && Number.isFinite(metadata.format.numberOfChannels)
-      ? Number(metadata.format.numberOfChannels)
-      : undefined;
+    try {
+      const normalizedFiles: Array<{ record: RecordingResponse; path: string }> = [];
 
-    let ownerId: string | undefined = meeting.ownerId instanceof ObjectId
-      ? meeting.ownerId.toHexString()
-      : undefined;
-    if (!ownerId && meeting.ownerId) {
-      const candidate = meeting.ownerId.toString();
-      ownerId = ObjectId.isValid(candidate) ? candidate : undefined;
-    }
-    if (!ownerId) {
-      const firstOwned = targets.find((record) => record.ownerId)?.ownerId;
-      ownerId = typeof firstOwned === 'string' && ObjectId.isValid(firstOwned) ? firstOwned : undefined;
-    }
-
-    if (!ownerId) {
-      throw badRequest('Cannot determine owner for concatenated recording', 'meeting.concatenate_missing_owner');
-    }
-
-    const originalFileName = buildConcatenatedFileName(meeting.title, 'wav');
-
-    const newRecording = await recordingService.createRecording({
-      originalFileName,
-      fileSize: stats.size,
-      format: 'wav',
-      mimeType: 'audio/wav',
-      createdAt: new Date(),
-      duration,
-      sampleRate: sampleRate || 16000,
-      channels: channels || 1,
-      ownerId,
-      meetingId,
-      source: 'concatenated',
-    });
-
-    const finalFilename = `${newRecording._id}.wav`;
-    const finalPath = path.join(recordingsBaseDir, finalFilename);
-
-    await fs.rm(finalPath, { force: true }).catch(() => undefined);
-    await fs.rename(outputPath, finalPath);
-
-    const concatenatedRecording = responseToRecording({
-      ...newRecording,
-      source: newRecording.source || 'concatenated',
-      meetingId,
-      ownerId,
-    }, meetingId);
-
-    const updatedMeeting = await meetingService.updateConcatenatedRecording(meetingId, concatenatedRecording);
-
-    if (meeting.concatenatedRecording && meeting.concatenatedRecording._id) {
-      const previousId = meeting.concatenatedRecording._id.toString();
-      if (previousId !== newRecording._id) {
-        await recordingService.deleteRecording(previousId).catch((error) => {
-          debug('Failed to remove previous concatenated recording', error);
-        });
+      for (const [index, item] of decryptedFiles.entries()) {
+        const normalizedPath = path.join(tempDir, `normalized-${index}.wav`);
+        const args = [
+          '-y',
+          '-i', item.path,
+          '-c:a', 'pcm_s16le',
+          '-ar', '16000',
+          '-ac', '1',
+          normalizedPath,
+        ];
+        await runProcess('ffmpeg', args);
+        normalizedFiles.push({ record: item.record, path: normalizedPath });
       }
+
+      if (normalizedFiles.length === 1) {
+        await fs.rm(outputPath, { force: true }).catch(() => undefined);
+        await fs.rename(normalizedFiles[0].path, outputPath);
+      } else {
+        const listContent = normalizedFiles
+          .map((item) => `file '${escapePathForFfmpeg(item.path)}'`)
+          .join('\n');
+        await fs.writeFile(listPath, `${listContent}\n`, 'utf8');
+        const args = [
+          '-y',
+          '-f', 'concat',
+          '-safe', '0',
+          '-i', listPath,
+          '-c:a', 'pcm_s16le',
+          '-ar', '16000',
+          '-ac', '1',
+          outputPath,
+        ];
+        await runProcess('ffmpeg', args);
+      }
+
+      const stats = await fs.stat(outputPath);
+      const metadata = await parseFile(outputPath).catch(() => null);
+      const duration = metadata?.format?.duration && Number.isFinite(metadata.format.duration)
+        ? Number(metadata.format.duration)
+        : fallbackDuration;
+      const sampleRate = metadata?.format?.sampleRate && Number.isFinite(metadata.format.sampleRate)
+        ? Number(metadata.format.sampleRate)
+        : undefined;
+      const channels = metadata?.format?.numberOfChannels && Number.isFinite(metadata.format.numberOfChannels)
+        ? Number(metadata.format.numberOfChannels)
+        : undefined;
+
+      let ownerId: string | undefined = meeting.ownerId instanceof ObjectId
+        ? meeting.ownerId.toHexString()
+        : undefined;
+      if (!ownerId && meeting.ownerId) {
+        const candidate = meeting.ownerId.toString();
+        ownerId = ObjectId.isValid(candidate) ? candidate : undefined;
+      }
+      if (!ownerId) {
+        const firstOwned = targets.find((record) => record.ownerId)?.ownerId;
+        ownerId = typeof firstOwned === 'string' && ObjectId.isValid(firstOwned) ? firstOwned : undefined;
+      }
+
+      if (!ownerId) {
+        throw badRequest('Cannot determine owner for concatenated recording', 'meeting.concatenate_missing_owner');
+      }
+
+      const originalFileName = buildConcatenatedFileName(meeting.title, 'wav');
+
+      const newRecording = await recordingService.createRecording({
+        originalFileName,
+        fileSize: stats.size,
+        format: 'wav',
+        mimeType: 'audio/wav',
+        createdAt: new Date(),
+        duration,
+        sampleRate: sampleRate || 16000,
+        channels: channels || 1,
+        ownerId,
+        meetingId,
+        source: 'concatenated',
+      });
+
+      const finalFilename = buildRecordingFilename(newRecording._id.toString(), 'wav');
+      const finalPath = path.join(recordingsBaseDir, finalFilename);
+
+      await fs.rm(finalPath, { force: true }).catch(() => undefined);
+      const outputBuffer = await fs.readFile(outputPath);
+      await writeEncryptedFile(finalPath, outputBuffer);
+      await fs.rm(outputPath, { force: true }).catch(() => undefined);
+
+      const concatenatedRecording = responseToRecording({
+        ...newRecording,
+        source: newRecording.source || 'concatenated',
+        meetingId,
+        ownerId,
+      }, meetingId);
+
+      const updatedMeeting = await meetingService.updateConcatenatedRecording(meetingId, concatenatedRecording);
+
+      if (meeting.concatenatedRecording && meeting.concatenatedRecording._id) {
+        const previousId = meeting.concatenatedRecording._id.toString();
+        if (previousId !== newRecording._id) {
+          await recordingService.deleteRecording(previousId).catch((error) => {
+            debug('Failed to remove previous concatenated recording', error);
+          });
+        }
+      }
+
+      const refreshedMeeting = await meetingService.getMeetingById(meetingId);
+      const lang = getPreferredLang(req);
+      res.json({
+        success: true,
+        message: lang === 'en' ? 'Concatenated recording generated' : '拼接录音已生成',
+        recording: serializeRecording(concatenatedRecording),
+        meeting: refreshedMeeting ? serializeMeeting(refreshedMeeting) : updatedMeeting ? serializeMeeting(updatedMeeting) : null,
+      });
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined);
     }
 
-    const refreshedMeeting = await meetingService.getMeetingById(meetingId);
-    const lang = getPreferredLang(req);
-    res.json({
-      success: true,
-      message: lang === 'en' ? 'Concatenated recording generated' : '拼接录音已生成',
-      recording: serializeRecording(concatenatedRecording),
-      meeting: refreshedMeeting ? serializeMeeting(refreshedMeeting) : updatedMeeting ? serializeMeeting(updatedMeeting) : null,
-    });
   } finally {
-    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined);
+    await Promise.allSettled(decryptedFiles.map((item) => item.cleanup()));
   }
 }));
 

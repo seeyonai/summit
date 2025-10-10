@@ -106,12 +106,16 @@ class TranscriptExtractionService {
 
     const openai = createOpenAIClient(apiKey, baseURL);
     
+    const clientParams = {
+      model: process.env.SUMMIT_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini', 
+      temperature: 0.1
+    };
+
+    console.log('clientParams:', clientParams);
+
     this.intext = createIntext({
       openai,
-      clientParams: { 
-        model: process.env.SUMMIT_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini', 
-        temperature: 0.1
-      },
+      clientParams
     });
 
     this.isInitialized = true;
@@ -130,11 +134,18 @@ class TranscriptExtractionService {
       throw internal('Transcript extraction service not initialized', 'analysis.not_initialized');
     }
 
-    const result = await this.intext.extract(transcript, {
-      schema: transcriptAnalysisSchema,
+    const intextParams = {
       chunkTokens: parseInt(process.env.SUMMIT_INTEXT_CHUNK_TOKENS || '500', 10),
       overlapTokens: parseInt(process.env.SUMMIT_INTEXT_OVERLAP_TOKENS || '50', 10),
       concurrency: parseInt(process.env.SUMMIT_INTEXT_CONCURRENCY || '8', 10),
+    };
+
+    console.log('intextParams:\n', intextParams);
+
+    const result = await this.intext.extract(transcript, {
+      schema: transcriptAnalysisSchema,
+      debug: true,
+      ...intextParams,
     });
 
     return result;

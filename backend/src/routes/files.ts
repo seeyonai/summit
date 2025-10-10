@@ -1,16 +1,17 @@
 import { Router, Request, Response } from 'express';
-import fs from 'fs';
 import path from 'path';
 import { ObjectId, type Filter } from 'mongodb';
+import { Readable } from 'stream';
 import { asyncHandler } from '../middleware/errorHandler';
 import type { RequestWithUser } from '../types/auth';
 import { verifyJwt } from '../utils/jwt';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, RecordingDocument, MeetingDocument } from '../types/documents';
-import { getFilesBaseDir, resolveExistingPathFromCandidate } from '../utils/filePaths';
-import { getMimeType } from '../utils/recordingHelpers';
+import { getFilesBaseDir } from '../utils/filePaths';
+import { getMimeType, findRecordingFilePath } from '../utils/recordingHelpers';
 import { forbidden, notFound } from '../utils/errors';
 import { debug, debugWarn } from '../utils/logger';
+import { readDecryptedFile } from '../utils/audioEncryption';
 
 const router = Router();
 
@@ -76,35 +77,55 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   }
 
   const baseDir = getFilesBaseDir();
-  const ext = rec.format ?? 'wav';
-  const storedName = `${rec._id.toString()}.${ext}`;
-  const absolutePath = await resolveExistingPathFromCandidate(baseDir, storedName);
+  const absolutePath = await findRecordingFilePath(baseDir, rec._id.toString(), rec.format ?? undefined);
+  if (!absolutePath) {
+    debugWarn('File not found on disk', { id, path: `${rec._id.toString()}.${rec.format ?? 'wav'}` });
+    throw notFound('Recording file not found', 'recording.file_missing');
+  }
 
-  const stat = fs.statSync(absolutePath);
+  const fileBuffer = await readDecryptedFile(absolutePath);
+  const totalSize = fileBuffer.length;
   const mime = getMimeType(path.basename(absolutePath));
   const range = req.headers.range;
+  res.setHeader('Accept-Ranges', 'bytes');
   if (range) {
     const match = /bytes=(\d*)-(\d*)/.exec(range);
     if (match) {
       const start = match[1] ? parseInt(match[1], 10) : 0;
-      const end = match[2] ? parseInt(match[2], 10) : stat.size - 1;
-      const chunkSize = (end - start) + 1;
-      debug('Streaming ranged file response', { file: path.basename(absolutePath), start, end, chunkSize });
+      let end = match[2] ? parseInt(match[2], 10) : totalSize - 1;
+
+      if (Number.isNaN(start) || Number.isNaN(end) || start >= totalSize) {
+        res.status(416);
+        res.setHeader('Content-Range', `bytes */${totalSize}`);
+        res.end();
+        return;
+      }
+
+      if (end >= totalSize) {
+        end = totalSize - 1;
+      }
+
+      const chunk = fileBuffer.subarray(start, end + 1);
+      debug('Streaming ranged file response', {
+        file: path.basename(absolutePath),
+        start,
+        end,
+        chunkSize: chunk.length
+      });
       res.status(206);
-      res.setHeader('Content-Range', `bytes ${start}-${end}/${stat.size}`);
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Content-Length', String(chunkSize));
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${totalSize}`);
+      res.setHeader('Content-Length', String(chunk.length));
       res.setHeader('Content-Type', mime);
-      const stream = fs.createReadStream(absolutePath, { start, end });
+      const stream = Readable.from(chunk);
       stream.pipe(res);
       return;
     }
   }
 
-  res.setHeader('Content-Length', String(stat.size));
+  res.setHeader('Content-Length', String(totalSize));
   res.setHeader('Content-Type', mime);
-  debug('Streaming full file response', { file: path.basename(absolutePath), size: stat.size });
-  const stream = fs.createReadStream(absolutePath);
+  debug('Streaming full file response', { file: path.basename(absolutePath), size: totalSize });
+  const stream = Readable.from(fileBuffer);
   stream.pipe(res);
 }));
 

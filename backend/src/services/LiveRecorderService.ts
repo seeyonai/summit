@@ -3,10 +3,12 @@ import fs from 'fs';
 import type { Server as HttpServer, IncomingMessage } from 'http';
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
-import { getFilesBaseDir, resolveWithinBase } from '../utils/filePaths';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, RecordingDocument } from '../types/documents';
 import { debug, debugWarn } from '../utils/logger';
+import { getFilesBaseDir, resolveWithinBase } from '../utils/filePaths';
+import { writeEncryptedFile } from '../utils/audioEncryption';
+import { buildRecordingFilename } from '../utils/recordingHelpers';
 
 interface ActiveRecording {
   id: string; // ephemeral session id
@@ -240,20 +242,25 @@ export class LiveRecorderService {
         if (!fs.existsSync(filesDir)) {
           fs.mkdirSync(filesDir, { recursive: true });
         }
-        const storedName = `${insertedId}.wav`;
+        const storedName = buildRecordingFilename(insertedId, 'wav');
         const fullPath = resolveWithinBase(filesDir, storedName);
-        fs.writeFileSync(fullPath, wavBuffer);
-        debug(`Recording saved: ${storedName} (${wavBuffer.length} bytes, ${duration}s)`);
+        try {
+          await writeEncryptedFile(fullPath, wavBuffer);
+          debug(`Recording saved: ${storedName} (${wavBuffer.length} bytes, ${duration}s)`);
 
-        // Send completion message with id-based download URL
-        recording.ws.send(JSON.stringify({
-          type: 'recording_saved',
-          recordingId: insertedId,
-          downloadUrl: `/files/${insertedId}`,
-          duration,
-          chunksCount: recording.chunks.length,
-          fileSize: wavBuffer.length
-        }));
+          // Send completion message with id-based download URL
+          recording.ws.send(JSON.stringify({
+            type: 'recording_saved',
+            recordingId: insertedId,
+            downloadUrl: `/files/${insertedId}`,
+            duration,
+            chunksCount: recording.chunks.length,
+            fileSize: wavBuffer.length
+          }));
+        } catch (fileError) {
+          console.error('Failed to persist encrypted live recording:', fileError);
+          recording.ws.send(JSON.stringify({ type: 'error', message: '无法保存录音文件' }));
+        }
       } else {
         recording.ws.send(JSON.stringify({ type: 'error', message: '无法保存录音记录' }));
       }

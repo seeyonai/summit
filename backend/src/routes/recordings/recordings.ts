@@ -1,15 +1,16 @@
 import { Router, Request, Response } from 'express';
 import recordingService from '../../services/RecordingService';
 import path from 'path';
-import fs from 'fs';
-import { getFilesBaseDir, resolveExistingPathFromCandidate } from '../../utils/filePaths';
-import { parseFile } from 'music-metadata';
+import { parseBuffer } from 'music-metadata';
 import { RecordingUpdate } from '../../types';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { badRequest } from '../../utils/errors';
+import { getFilesBaseDir } from '../../utils/filePaths';
 import type { RequestWithUser } from '../../types/auth';
 import { requireRecordingReadAccess, requireRecordingWriteAccess } from '../../middleware/auth';
 import { getPreferredLang } from '../../utils/lang';
+import { readDecryptedFile } from '../../utils/audioEncryption';
+import { getMimeType, findRecordingFilePath } from '../../utils/recordingHelpers';
 
 const router = Router();
 
@@ -52,11 +53,12 @@ router.get('/:recordingId', requireRecordingReadAccess(), asyncHandler(async (re
   if (recording._id) {
     try {
       const baseDir = getFilesBaseDir();
-      const ext = recording.format || 'wav';
-      const absolutePath = await resolveExistingPathFromCandidate(baseDir, `${recording._id}.${ext}`);
+      const absolutePath = await findRecordingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format);
 
-      if (fs.existsSync(absolutePath)) {
-        const audioMetadata = await parseFile(absolutePath);
+      if (absolutePath) {
+        const buffer = await readDecryptedFile(absolutePath);
+        const mimeType = getMimeType(path.basename(absolutePath));
+        const audioMetadata = await parseBuffer(buffer, mimeType);
 
         metadata.duration = typeof audioMetadata.format.duration === 'number' && Number.isFinite(audioMetadata.format.duration)
           ? audioMetadata.format.duration

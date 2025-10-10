@@ -8,12 +8,13 @@ import { recordingDocumentToResponse, meetingDocumentToMeeting } from '../utils/
 import { SegmentationService } from './SegmentationService';
 import { ensureTrailingSlash, requestJson, uploadMultipart } from '../utils/httpClient';
 import type { JsonRequestOptions } from '../utils/httpClient';
-import { getFilesBaseDir, makeRelativeToBase, resolveExistingPathFromCandidate } from '../utils/filePaths';
+import { getFilesBaseDir, makeRelativeToBase } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
-import { getMimeType, normalizeTranscriptText } from '../utils/recordingHelpers';
+import { getMimeType, normalizeTranscriptText, findRecordingFilePath } from '../utils/recordingHelpers';
 import { debug } from '../utils/logger';
 import { normalizeHotwords } from '../utils/hotwordUtils';
 import { mergeHotwordsIntoMeeting } from './meetingHotwordHelpers';
+import { readDecryptedFile } from '../utils/audioEncryption';
 
 interface TranscriptionServiceResponse {
   text: string;
@@ -125,27 +126,20 @@ async function findRecordingOrThrow(recordingId: string): Promise<RecordingDocum
   return document;
 }
 
-function inferExtension(format?: string): string {
-  const f = (format || '').toLowerCase();
-  if (!f) return 'wav';
-  return f;
-}
-
 async function resolveAbsoluteFilePath(document: RecordingDocument): Promise<string> {
-  const ext = inferExtension(document.format);
-  const candidate = `${document._id.toString()}.${ext}`;
-  return resolveExistingPathFromCandidate(RECORDINGS_DIR, candidate);
-}
-
-function getRelativeFilePath(document: RecordingDocument): string {
-  const ext = inferExtension(document.format);
-  const candidate = `${document._id.toString()}.${ext}`;
-  return makeRelativeToBase(RECORDINGS_DIR, candidate);
+  const absolutePath = await findRecordingFilePath(RECORDINGS_DIR, document._id.toString(), document.format);
+  if (!absolutePath) {
+    throw notFound('Recording file not found', 'recording.file_missing');
+  }
+  return absolutePath;
 }
 
 async function deleteRecordingFile(document: RecordingDocument): Promise<void> {
+  const absolutePath = await findRecordingFilePath(RECORDINGS_DIR, document._id.toString(), document.format);
+  if (!absolutePath) {
+    return;
+  }
   try {
-    const absolutePath = await resolveAbsoluteFilePath(document);
     await fs.unlink(absolutePath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
@@ -406,7 +400,7 @@ export async function transcribeRecording(recordingId: string, hotword?: string)
   const document = await findRecordingOrThrow(recordingId);
   const absolutePath = await resolveAbsoluteFilePath(document);
   debug('Transcribing recording:', absolutePath);
-  const fileBuffer = await fs.readFile(absolutePath);
+  const fileBuffer = await readDecryptedFile(absolutePath);
   const filename = path.basename(absolutePath);
 
   const formData: Record<string, string> = {};
@@ -453,7 +447,8 @@ export async function transcribeRecording(recordingId: string, hotword?: string)
 export async function segmentRecording(recordingId: string, oracleNumSpeakers?: number): Promise<{ message: string; segments: SpeakerSegment[] }> {
   const document = await findRecordingOrThrow(recordingId);
   debug('Segmenting recording:', document);
-  const relativePath = getRelativeFilePath(document);
+  const absolutePath = await resolveAbsoluteFilePath(document);
+  const relativePath = makeRelativeToBase(RECORDINGS_DIR, absolutePath);
 
   const segmentationResult = await segmentationService.analyzeSegmentation({
     audioFilePath: relativePath,

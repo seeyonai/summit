@@ -12,6 +12,7 @@ cp .env.example .env
 ```
 
 Then modify the values in `.env` as needed for your development environment.
+Set `AUDIO_ENCRYPTION_KEY` to a 32-byte key (base64 or 64-character hex) to enable encryption at rest. If omitted, audio files are stored unencrypted.
 
 ## Development
 
@@ -100,4 +101,4 @@ interface Recording {
 }
 ```
 
-Files are stored on disk within `RECORDING_FILE_DIR` (defaults to the repository `files/` folder) using the document `_id` as the base filename: `<_id>.<ext>`. Stream audio via `GET /files/:id`.
+Files are stored on disk within `RECORDING_FILE_DIR` (defaults to the repository `files/` folder) using the document `_id` as the base filename: `<_id>.<ext>`. When `AUDIO_ENCRYPTION_KEY` is supplied, audio blobs are encrypted with AES-256-GCM before being persisted and transparently decrypted when streamed via `GET /files/:id`.

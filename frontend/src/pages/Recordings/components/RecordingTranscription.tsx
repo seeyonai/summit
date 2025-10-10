@@ -93,7 +93,8 @@ function RecordingTranscription({
     if (!recording.transcription) return;
 
     try {
-      let content = recording.transcription;
+      const aiWarning = "\n\n---\n⚠️ AI生成内容警告：此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。";
+      let content = recording.transcription + aiWarning;
       let mimeType = 'text/plain';
       let fileExtension = exportFormat;
 
@@ -455,12 +456,22 @@ function RecordingTranscription({
         ) : (
           <div className="space-y-4 mt-4">
                 {/* Transcription Display */}
-                <div className={`bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-gray-800 dark:text-gray-200 whitespace-pre-wrap 
+                <div className={`bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-gray-800 dark:text-gray-200 whitespace-pre-wrap
                   ${fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base'}`}>
                   {recording.transcription && (searchTerm
                     ? highlightSearchTerm(formatText(recording.transcription))
                     : formatText(recording.transcription)
                   )}
+                  {/* AI Warning */}
+                  <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-600 dark:text-amber-400 text-sm">⚠️</span>
+                      <div className="text-sm text-amber-800 dark:text-amber-200">
+                        <p className="font-medium mb-1">AI生成内容警告</p>
+                        <p className="text-amber-700 dark:text-amber-300">此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 {recording.verbatimTranscript && (

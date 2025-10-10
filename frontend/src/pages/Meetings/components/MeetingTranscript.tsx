@@ -6,6 +6,12 @@ import { ButtonGroup } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import type { Meeting, OrganizedSpeech } from '@/types';
 import {
   FileTextIcon,
@@ -18,13 +24,15 @@ import {
   CodeIcon,
   SearchIcon,
   XIcon,
-  MaximizeIcon
+  MaximizeIcon,
+  MessageSquareTextIcon
 } from 'lucide-react';
 import AnnotatedMarkdown from '@/components/AnnotatedMarkdown';
 import markdownDocx, { Packer } from 'markdown-docx';
 import StatisticsCard from '@/components/StatisticsCard';
 import TranscriptUploadDialog from './TranscriptUploadDialog';
 import FullscreenMarkdownViewer from './FullscreenMarkdownViewer';
+import TranscriptChatPanel from './TranscriptChat/TranscriptChatPanel';
 import { apiService } from '@/services/api';
 
 interface MeetingTranscriptProps {
@@ -38,12 +46,14 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
   const [viewMode, setViewMode] = useState<'text' | 'markdown'>('text');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const exportTranscript = async (format: 'txt' | 'docx') => {
     if (!meeting.finalTranscript) return;
 
     try {
-      const content = meeting.finalTranscript;
+      const aiWarning = "\n\n---\n⚠️ AI生成内容警告：此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。";
+      const content = meeting.finalTranscript + aiWarning;
       
       if (format === 'docx') {
         // Convert markdown to DOCX
@@ -300,52 +310,69 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                 </div>
                 {meeting.finalTranscript && (
                   <div className="flex gap-2">
-                  <ButtonGroup>
-                    <Button onClick={() => setViewMode('text')} variant={viewMode === 'text' ? 'default' : 'outline'}>
-                      <FileTextIcon className="w-4 h-4 mr-2" />
-                      文本
-                    </Button>
-                    <Button onClick={() => setViewMode('markdown')} variant={viewMode === 'markdown' ? 'default' : 'outline'}>
-                      <EyeIcon className="w-4 h-4 mr-2" />
-                      预览
-                    </Button>
-                  </ButtonGroup>
-                  <Button onClick={() => setIsFullscreen(true)} variant="outline">
-                    <MaximizeIcon className="w-4 h-4 mr-2" />
-                    全屏
-                  </Button>
-                  <Button onClick={copyToClipboard} variant="outline">
-                    <CopyIcon className="w-4 h-4 mr-2" />
-                    复制
-                  </Button>
-                  <Select onValueChange={(value) => exportTranscript(value as 'txt' | 'docx')}>
-                    <SelectTrigger className="w-[180px]">
-                      <DownloadIcon className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="导出" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="txt">文本文件 (.txt)</SelectItem>
-                      <SelectItem value="docx">Word 文档 (.docx)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                )}
-                {meeting.finalTranscript && (
-                  <div className="relative">
-                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input type="text" placeholder="搜索会议记录..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-20" />
-                    {searchQuery && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {matchCount} 个匹配
-                        </span>
-                        <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} className="h-6 w-6 p-0">
-                          <XIcon className="w-3 h-3" />
+                    <TooltipProvider>
+                      <ButtonGroup>
+                        <Button onClick={() => setViewMode('text')} variant={viewMode === 'text' ? 'default' : 'outline'}>
+                          <FileTextIcon className="w-4 h-4 mr-2" />
+                          文本
                         </Button>
-                      </div>
-                    )}
+                        <Button onClick={() => setViewMode('markdown')} variant={viewMode === 'markdown' ? 'default' : 'outline'}>
+                          <EyeIcon className="w-4 h-4 mr-2" />
+                          预览
+                        </Button>
+                      </ButtonGroup>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button onClick={() => setIsFullscreen(true)} variant="outline" size="icon">
+                            <MaximizeIcon className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>全屏</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button onClick={copyToClipboard} variant="outline" size="icon">
+                            <CopyIcon className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>复制</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Select onValueChange={(value) => exportTranscript(value as 'txt' | 'docx')}>
+                        <SelectTrigger className="w-[180px]">
+                          <DownloadIcon className="w-4 h-4 mr-2" />
+                          <SelectValue placeholder="导出" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="txt">文本文件 (.txt)</SelectItem>
+                          <SelectItem value="docx">Word 文档 (.docx)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TooltipProvider>
                   </div>
                 )}
+                <div className="relative">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input type="text" placeholder="搜索会议记录..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-20" />
+                  {searchQuery && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {matchCount} 个匹配
+                      </span>
+                      <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} className="h-6 w-6 p-0">
+                        <XIcon className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <Button onClick={() => setIsChatOpen(true)} variant="outline">
+                  <MessageSquareTextIcon className="w-4 h-4 mr-2" />
+                  与记录对话
+                </Button>
               </div>
             </div>
           </div>
@@ -369,6 +396,16 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                     <AnnotatedMarkdown content={searchQuery ? highlightedTranscript || '' : meeting.finalTranscript} />
                   </div>
                 )}
+                {/* AI Warning */}
+                <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600 dark:text-amber-400 text-sm">⚠️</span>
+                    <div className="text-sm text-amber-800 dark:text-amber-200">
+                      <p className="font-medium mb-1">AI生成内容警告</p>
+                      <p className="text-amber-700 dark:text-amber-300">此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
@@ -411,6 +448,16 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
         <FullscreenMarkdownViewer
           content={meeting.finalTranscript}
           onClose={() => setIsFullscreen(false)}
+        />
+      )}
+
+      {/* Transcript Chat Panel */}
+      {meeting.finalTranscript && (
+        <TranscriptChatPanel
+          open={isChatOpen}
+          onOpenChange={setIsChatOpen}
+          meetingId={meeting._id}
+          meetingTitle={meeting.title}
         />
       )}
     </div>

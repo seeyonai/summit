@@ -4,6 +4,7 @@ import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../uti
 import { getFilesBaseDir, normalizePublicOrRelative, resolvePathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
 import { debug } from '../utils/logger';
+import { readDecryptedFile } from '../utils/audioEncryption';
 
 interface ApiModelInfo {
   model: string;
@@ -82,7 +83,7 @@ export class AlignerService {
     const normalizedPath = normalizePublicOrRelative(audioFilePath);
     const absolutePath = this.resolveAudioFilePath(normalizedPath);
     debug('Aligning audio with text:', absolutePath);
-    const audioBuffer = await fs.promises.readFile(absolutePath);
+    const audioBuffer = await readDecryptedFile(absolutePath);
     const contentType = this.determineContentType(absolutePath);
 
     const targetUrl = this.buildAlignBytesUrl(text);
