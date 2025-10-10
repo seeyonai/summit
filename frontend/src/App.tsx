@@ -24,6 +24,7 @@ import Register from '@/pages/Auth/Register';
 import CustomSignOn from '@/pages/Auth/CustomSignOn';
 import AdminRoute from '@/components/AdminRoute';
 import AdminUsers from '@/pages/Admin/Users';
+import AdminAudit from '@/pages/Admin/AdminAudit';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import { ConfigProvider } from '@/contexts/ConfigContext';
@@ -92,6 +93,7 @@ function AppContent() {
                       <Route path="/meetings/:id/edit" element={<ProtectedRoute><MeetingEdit /></ProtectedRoute>} />
                       <Route path="/hotwords" element={<ProtectedRoute><HotwordListPage /></ProtectedRoute>} />
                       <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                      <Route path="/admin/aduit" element={<AdminRoute><AdminAudit /></AdminRoute>} />
                       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />

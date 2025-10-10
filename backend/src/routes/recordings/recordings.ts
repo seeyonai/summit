@@ -11,6 +11,7 @@ import { requireRecordingReadAccess, requireRecordingWriteAccess } from '../../m
 import { getPreferredLang } from '../../utils/lang';
 import { readDecryptedFile } from '../../utils/audioEncryption';
 import { getMimeType, findRecordingFilePath } from '../../utils/recordingHelpers';
+import { setAuditContext } from '../../middleware/audit';
 
 const router = Router();
 
@@ -98,6 +99,13 @@ router.post('/start', asyncHandler(async (req: Request, res: Response) => {
   const meetingId = typeof req.query.meetingId === 'string' ? req.query.meetingId : undefined;
   const result = await recordingService.startRecording(r.user.userId, meetingId);
   const lang = getPreferredLang(req);
+  setAuditContext(res, {
+    action: 'recording_start',
+    resource: 'recording',
+    resourceId: result.id,
+    status: 'success',
+    details: meetingId ? { meetingId } : undefined,
+  });
   res.status(201).json({ ...result, message: lang === 'en' ? 'Recording started' : '录音已开始' });
 }));
 
@@ -147,6 +155,13 @@ router.put('/:recordingId', requireRecordingWriteAccess(), asyncHandler(async (r
   } else if (message === 'No changes applied' || message === '未应用任何更改') {
     message = lang === 'en' ? 'No changes applied' : '未应用任何更改';
   }
+  setAuditContext(res, {
+    action: 'recording_update',
+    resource: 'recording',
+    resourceId: recordingId,
+    status: 'success',
+    details: { message },
+  });
   res.json({ ...result, message });
 }));
 
@@ -155,6 +170,12 @@ router.delete('/:recordingId', requireRecordingWriteAccess(), asyncHandler(async
   const { recordingId } = req.params;
   const result = await recordingService.deleteRecording(recordingId);
   const lang = getPreferredLang(req);
+  setAuditContext(res, {
+    action: 'recording_delete',
+    resource: 'recording',
+    resourceId: recordingId,
+    status: 'success',
+  });
   res.json({ ...result, message: lang === 'en' ? 'Recording deleted' : '录音删除成功' });
 }));
 

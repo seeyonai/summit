@@ -7,6 +7,7 @@ import type { AuthResponseUser, RequestWithUser } from '../types/auth';
 import { signJwt } from '../utils/jwt';
 import { authenticate } from '../middleware/auth';
 import { getPreferredLang } from '../utils/lang';
+import { setAuditContext } from '../middleware/audit';
 
 const router = Router();
 
@@ -56,6 +57,13 @@ router.post('/register', asyncHandler(async (req, res) => {
     typeof body.aliases === 'string' ? body.aliases : undefined
   );
   const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
+  setAuditContext(res, {
+    action: 'auth_register',
+    resource: 'user',
+    resourceId: user._id.toString(),
+    status: 'success',
+    force: true,
+  });
   res.status(201).json({ token, user: toAuthUser(user) });
 }));
 
@@ -69,6 +77,13 @@ router.post('/login', asyncHandler(async (req, res) => {
     throw unauthorized('Invalid credentials', 'auth.invalid_credentials');
   }
   const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
+  setAuditContext(res, {
+    action: 'auth_login',
+    resource: 'user',
+    resourceId: user._id.toString(),
+    status: 'success',
+    force: true,
+  });
   res.json({ token, user: toAuthUser(user) });
 }));
 
@@ -97,6 +112,13 @@ router.put('/password', authenticate, asyncHandler(async (req, res) => {
   }
   await userService.updatePassword(r.user.userId, currentPassword, newPassword);
   const lang = getPreferredLang(req);
+  setAuditContext(res, {
+    action: 'auth_change_password',
+    resource: 'user',
+    resourceId: r.user.userId,
+    status: 'success',
+    force: true,
+  });
   res.json({ message: lang === 'en' ? 'Password updated' : '密码已更新' });
 }));
 
@@ -167,6 +189,13 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
   // Generate token for the user
   const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
 
+  setAuditContext(res, {
+    action: 'auth_custom_sign_on',
+    resource: 'user',
+    resourceId: user._id.toString(),
+    status: 'success',
+    force: true,
+  });
   res.status(200).json({ token, user: toAuthUser(user), message: 'Authentication successful' });
 }));
 

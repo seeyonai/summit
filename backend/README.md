@@ -14,6 +14,15 @@ cp .env.example .env
 Then modify the values in `.env` as needed for your development environment.
 Set `AUDIO_ENCRYPTION_KEY` to a 32-byte key (base64 or 64-character hex) to enable encryption at rest. If omitted, audio files are stored unencrypted.
 
+### Audit Logging
+
+Audit logging is enabled by default and persists JSON lines to `logs/audit.log`. You can adjust behaviour with the following variables:
+
+- `AUDIT_LOG_ENABLED`: Set to `false`/`0`/`off` to disable writing audit events.
+- `AUDIT_LOG_PATH`: Absolute or relative path to the audit log file (defaults to `logs/audit.log`).
+
+The backend automatically creates the parent directory when the file is first used. Rotate or archive logs with your preferred external tooling (e.g., `logrotate`). Logged events intentionally avoid high-risk PII and focus on resource identifiers, actions, and outcomes.
+
 ## Development
 
 ```bash

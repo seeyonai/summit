@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Book, Users, Wrench, Mic } from 'lucide-react';
+import { LayoutDashboard, Book, Users, Wrench, Mic, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -26,7 +26,11 @@ export const Navigation: React.FC = () => {
       return [];
     }
     if (user.role === 'admin') {
-      return [...baseItems, { path: '/admin/users', label: '管理', icon: Wrench }];
+      return [
+        ...baseItems,
+        { path: '/admin/users', label: '用户管理', icon: Wrench },
+        { path: '/admin/aduit', label: '审计日志', icon: FileText },
+      ];
     }
     return baseItems;
   }, [user]);

@@ -4,6 +4,7 @@ import userService from '../services/UserService';
 import { requireAdmin } from '../middleware/auth';
 import { badRequest, forbidden, unauthorized } from '../utils/errors';
 import type { RequestWithUser } from '../types/auth';
+import { setAuditContext } from '../middleware/audit';
 
 const router = Router();
 
@@ -52,6 +53,13 @@ router.put('/:userId/profile', asyncHandler(async (req, res) => {
   const name = typeof req.body?.name === 'string' ? req.body.name : undefined;
   const aliases = typeof req.body?.aliases === 'string' ? req.body.aliases : undefined;
   const updated = await userService.updateProfile(targetUserId, { name, aliases });
+  setAuditContext(res, {
+    action: 'user_profile_update',
+    resource: 'user',
+    resourceId: targetUserId,
+    status: 'success',
+    details: { actorIsSelf: isSelf },
+  });
   res.json({
     user: {
       _id: updated._id.toString(),
@@ -76,6 +84,13 @@ router.put('/:userId/role', requireAdmin, asyncHandler(async (req, res) => {
     throw forbidden('Cannot change own role', 'user.cannot_change_self_role');
   }
   const updated = await userService.updateRole(userId, role);
+  setAuditContext(res, {
+    action: 'user_role_update',
+    resource: 'user',
+    resourceId: userId,
+    status: 'success',
+    details: { newRole: role },
+  });
   res.json({ user: { _id: updated._id.toString(), email: updated.email, name: updated.name, aliases: updated.aliases, role: updated.role } });
 }));
 

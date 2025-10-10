@@ -16,6 +16,7 @@ import type { RequestWithUser } from '../../types/auth';
 import { requireMemberOrOwner, requireOwner } from '../../middleware/auth';
 import { getPreferredLang } from '../../utils/lang';
 import { debug } from '../../utils/logger';
+import { setAuditContext } from '../../middleware/audit';
 import { getFilesBaseDir } from '../../utils/filePaths';
 import { decryptFileToTempPath, writeEncryptedFile } from '../../utils/audioEncryption';
 import { buildRecordingFilename, findRecordingFilePath } from '../../utils/recordingHelpers';
@@ -87,12 +88,6 @@ const responseToRecording = (response: RecordingResponse, meetingId: string): Re
     ? new ObjectId(response.ownerId)
     : undefined,
 });
-
-type RecordingPayload = Omit<Recording, '_id' | 'createdAt' | 'updatedAt'> & {
-  _id: string;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-};
 
 const toIsoString = (value?: Date | string): string | undefined => {
   if (!value) {
@@ -187,6 +182,13 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     throw badRequest('Unauthorized', 'auth.unauthorized');
   }
   const meeting = await meetingService.createMeeting(request, userId);
+  setAuditContext(res, {
+    action: 'meeting_create',
+    resource: 'meeting',
+    resourceId: meeting._id.toString(),
+    status: 'success',
+    details: { ownerId: userId },
+  });
   res.status(201).json(serializeMeeting(meeting));
 }));
 
@@ -201,6 +203,12 @@ router.put('/:id', requireOwner(), asyncHandler(async (req: Request, res: Respon
     throw notFound(`Meeting not found (ID: ${id})`, 'meeting.not_found');
   }
 
+  setAuditContext(res, {
+    action: 'meeting_update',
+    resource: 'meeting',
+    resourceId: id,
+    status: 'success',
+  });
   res.json(serializeMeeting(meeting));
 }));
 
@@ -214,6 +222,12 @@ router.delete('/:id', requireOwner(), asyncHandler(async (req: Request, res: Res
   }
 
   const lang = getPreferredLang(req);
+  setAuditContext(res, {
+    action: 'meeting_delete',
+    resource: 'meeting',
+    resourceId: id,
+    status: 'success',
+  });
   res.json({ message: lang === 'en' ? 'Meeting deleted successfully' : '会议删除成功' });
 }));
 
@@ -227,6 +241,13 @@ router.post('/:id/recordings', requireOwner(), asyncHandler(async (req: Request,
   }
 
   const meeting = await recordingService.addRecordingToMeeting(id, recordingId);
+  setAuditContext(res, {
+    action: 'meeting_add_recording',
+    resource: 'meeting',
+    resourceId: id,
+    status: 'success',
+    details: { recordingId },
+  });
 
   res.json(meeting);
 }));
@@ -240,6 +261,13 @@ router.delete('/:id/recordings/:recordingId', requireOwner(), asyncHandler(async
     throw notFound(`Meeting not found (ID: ${id})`, 'meeting.not_found');
   }
 
+  setAuditContext(res, {
+    action: 'meeting_remove_recording',
+    resource: 'meeting',
+    resourceId: id,
+    status: 'success',
+    details: { recordingId },
+  });
   res.json(serializeMeeting(meeting));
 }));
 

@@ -90,7 +90,10 @@ fi;
 header "📂 Ensure files directory";
 ssh "$REMOTE_HOST" "sudo mkdir -p '$REMOTE_PATH/files' && sudo chmod 777 '$REMOTE_PATH/files'";
 
-header "🔐 Sync production environment file";
+header "� Ensure logs directory";
+ssh "$REMOTE_HOST" "sudo mkdir -p '$REMOTE_PATH/logs' && sudo chmod 777 '$REMOTE_PATH/logs'";
+
+header "�🔐 Sync production environment file";
 if [ -f "$BACKEND_DIR/.env.production" ]; then
   if confirm "📝 Sync .env.production to $REMOTE_HOST:$REMOTE_PATH/.env?"; then
     rsync -avz "$BACKEND_DIR/.env.production" "$REMOTE_HOST:$REMOTE_PATH/.env";

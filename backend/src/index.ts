@@ -1,9 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import dotenv from 'dotenv';
 import { connectToDatabase } from './config/database';
-import { getFilesBaseDir } from './utils/filePaths';
 import filesRouter from './routes/files';
 
 // Load environment variables from .env file
@@ -19,12 +17,15 @@ import segmentationRouter from './routes/segmentation';
 import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings/index';
 import configRouter from './routes/config';
+import adminAuditRouter from './routes/adminAudit';
 import { LiveRecorderService } from './services/LiveRecorderService';
 import { checkAllServices, generateHealthTable } from './utils/healthChecker';
 import { errorHandler } from './middleware/errorHandler';
-import { authenticate } from './middleware/auth';
+import { authenticate, requireAdmin } from './middleware/auth';
 import { getPreferredLang } from './utils/lang';
 import { debug, debugWarn } from './utils/logger';
+import { ensureAuditLoggerReady, getAuditLogPath } from './utils/auditLogger';
+import { auditMiddleware } from './middleware/audit';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 2591;
@@ -33,6 +34,7 @@ const PORT = Number(process.env.PORT) || 2591;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(auditMiddleware());
 
 // Protected file streaming for audio files (router handles token via header or query)
 app.use('/files', filesRouter);
@@ -46,6 +48,7 @@ app.use('/api/segmentation', segmentationRouter);
 app.use('/api/aligner', alignerRouter);
 app.use('/api/recordings', authenticate, recordingsRouter);
 app.use('/api/config', configRouter);
+app.use('/api/admin/audit', authenticate, requireAdmin, adminAuditRouter);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -98,9 +101,12 @@ async function startServer() {
     // Connect to MongoDB
     await connectToDatabase();
     debug('MongoDB connection established');
+
+    await ensureAuditLoggerReady();
+    debug('Audit logger ready', { path: getAuditLogPath() });
     
     // Seed data if environment variable is set
-    if (!!process.env.SEED_DATA) {
+    if (process.env.SEED_DATA) {
       const seeder = new DataSeeder();
       await seeder.seedData();
       debug('Seed data completed');
@@ -116,7 +122,7 @@ async function startServer() {
     });
 
     // Initialize WebSocket services
-    const liveRecorderService = new LiveRecorderService(server);
+    new LiveRecorderService(server);
     debug('LiveRecorderService initialized');
   } catch (error) {
     console.error('❌ Failed to start server:', error);

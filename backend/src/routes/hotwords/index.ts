@@ -5,6 +5,7 @@ import { badRequest, unauthorized } from '../../utils/errors';
 import type { RequestWithUser } from '../../types/auth';
 import { authenticate } from '../../middleware/auth';
 import { getPreferredLang } from '../../utils/lang';
+import { setAuditContext } from '../../middleware/audit';
 
 const router = express.Router();
 const hotwordService = new HotwordService();
@@ -60,6 +61,16 @@ router.post('/bulk', asyncHandler(async (req: RequestWithUser, res) => {
   const makePublic = typeof isPublic === 'boolean' ? isPublic : undefined;
   const result = await hotwordService.createHotwordsBulk(list, req.user, makePublic);
 
+  setAuditContext(res, {
+    action: 'hotword_bulk_create',
+    resource: 'hotword',
+    status: 'success',
+    details: {
+      createdCount: result.created.length,
+      skippedCount: result.skipped.length,
+      isPublic: makePublic,
+    },
+  });
   res.status(201).json({
     created: result.created.map(toResponse),
     skipped: result.skipped,
@@ -78,6 +89,13 @@ router.post('/', asyncHandler(async (req: RequestWithUser, res) => {
 
   const makePublic = typeof isPublic === 'boolean' ? isPublic : undefined;
   const hotword = await hotwordService.createHotword(word, req.user, makePublic);
+  setAuditContext(res, {
+    action: 'hotword_create',
+    resource: 'hotword',
+    resourceId: hotword._id.toString(),
+    status: 'success',
+    details: { isPublic: hotword.isPublic },
+  });
   res.status(201).json(toResponse(hotword));
 }));
 
@@ -100,6 +118,15 @@ router.put('/:id', asyncHandler(async (req: RequestWithUser, res) => {
   }
 
   const hotword = await hotwordService.updateHotword(id, update, req.user);
+  setAuditContext(res, {
+    action: 'hotword_update',
+    resource: 'hotword',
+    resourceId: hotword._id.toString(),
+    status: 'success',
+    details: {
+      changedFields: Object.keys(update),
+    },
+  });
   res.json(toResponse(hotword));
 }));
 
@@ -109,6 +136,12 @@ router.delete('/:id', asyncHandler(async (req: RequestWithUser, res) => {
   if (!req.user) throw unauthorized('Unauthorized', 'auth.unauthorized');
   await hotwordService.deleteHotword(id, req.user);
   const lang = getPreferredLang(req);
+  setAuditContext(res, {
+    action: 'hotword_delete',
+    resource: 'hotword',
+    resourceId: id,
+    status: 'success',
+  });
   res.json({ message: lang === 'en' ? 'Hotword deleted successfully' : '热词删除成功' });
 }));
 

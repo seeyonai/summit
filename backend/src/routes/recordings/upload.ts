@@ -11,6 +11,7 @@ import { getPreferredLang } from '../../utils/lang';
 import recordingService from '../../services/RecordingService';
 import { writeEncryptedFile } from '../../utils/audioEncryption';
 import { buildRecordingFilename } from '../../utils/recordingHelpers';
+import { setAuditContext } from '../../middleware/audit';
 
 // Ensure files directory exists (storage for uploaded audio)
 import { getFilesBaseDir } from '../../utils/filePaths';
@@ -168,6 +169,17 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
     }
 
     const lang = getPreferredLang(req);
+    setAuditContext(res, {
+      action: 'recording_upload',
+      resource: 'recording',
+      resourceId: result._id.toString(),
+      status: 'success',
+      details: {
+        meetingId: meetingIdToAssign,
+        size,
+        format: result.format,
+      },
+    });
     res.status(201).json({
       message: lang === 'en' ? 'File uploaded successfully' : '文件上传成功',
       recording: result

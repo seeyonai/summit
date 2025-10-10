@@ -12,6 +12,7 @@ import { getMimeType, findRecordingFilePath } from '../utils/recordingHelpers';
 import { forbidden, notFound } from '../utils/errors';
 import { debug, debugWarn } from '../utils/logger';
 import { readDecryptedFile } from '../utils/audioEncryption';
+import { setAuditContext } from '../middleware/audit';
 
 const router = Router();
 
@@ -51,6 +52,14 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
     const token = header && header.startsWith('Bearer ') ? header.slice(7) : queryToken;
     if (!token) {
       debugWarn('File access denied: missing token');
+      setAuditContext(res, {
+        action: 'recording_stream',
+        status: 'access_denied',
+        resource: 'recording',
+        resourceId: typeof req.params?.id === 'string' ? req.params.id : undefined,
+        error: 'auth.unauthorized',
+        force: true,
+      });
       throw forbidden('Unauthorized', 'auth.unauthorized');
     }
     try {
@@ -60,6 +69,14 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
       debug('File access via query/header token', { userId, role });
     } catch {
       debugWarn('File access denied: invalid token');
+      setAuditContext(res, {
+        action: 'recording_stream',
+        status: 'access_denied',
+        resource: 'recording',
+        resourceId: typeof req.params?.id === 'string' ? req.params.id : undefined,
+        error: 'auth.unauthorized',
+        force: true,
+      });
       throw forbidden('Unauthorized', 'auth.unauthorized');
     }
   }
@@ -68,11 +85,27 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const rec = await findRecordingById(id);
   if (!rec) {
     debugWarn('File not found in DB', { id });
+    setAuditContext(res, {
+      action: 'recording_stream',
+      status: 'failure',
+      resource: 'recording',
+      resourceId: id,
+      error: 'recording.not_found',
+      force: true,
+    });
     throw notFound('Recording not found', 'recording.not_found');
   }
   const allowed = await userHasAccess(rec, userId!, role);
   if (!allowed) {
     debugWarn('File access forbidden', { id, userId, role });
+    setAuditContext(res, {
+      action: 'recording_stream',
+      status: 'access_denied',
+      resource: 'recording',
+      resourceId: rec._id.toString(),
+      error: 'recording.forbidden',
+      force: true,
+    });
     throw forbidden('Not allowed due to file access forbidden', 'recording.forbidden');
   }
 
@@ -80,6 +113,14 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const absolutePath = await findRecordingFilePath(baseDir, rec._id.toString(), rec.format ?? undefined);
   if (!absolutePath) {
     debugWarn('File not found on disk', { id, path: `${rec._id.toString()}.${rec.format ?? 'wav'}` });
+    setAuditContext(res, {
+      action: 'recording_stream',
+      status: 'failure',
+      resource: 'recording',
+      resourceId: rec._id.toString(),
+      error: 'recording.file_missing',
+      force: true,
+    });
     throw notFound('Recording file not found', 'recording.file_missing');
   }
 
@@ -87,6 +128,17 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const totalSize = fileBuffer.length;
   const mime = getMimeType(path.basename(absolutePath));
   const range = req.headers.range;
+  setAuditContext(res, {
+    action: 'recording_stream',
+    status: 'success',
+    resource: 'recording',
+    resourceId: rec._id.toString(),
+    details: {
+      range: Boolean(range),
+      format: rec.format,
+    },
+    force: true,
+  });
   res.setHeader('Accept-Ranges', 'bytes');
   if (range) {
     const match = /bytes=(\d*)-(\d*)/.exec(range);

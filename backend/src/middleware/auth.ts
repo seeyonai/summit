@@ -7,17 +7,30 @@ import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument } from '../types/documents';
 import type { RecordingDocument } from '../types/documents';
 import { debug, debugWarn } from '../utils/logger';
+import { setAuditContext } from './audit';
 
 export function authenticate(req: RequestWithUser, res: Response, next: NextFunction): void {
   const header = req.headers['authorization'] || req.headers['Authorization'];
   if (!header || typeof header !== 'string') {
     debugWarn('Auth failed: missing Authorization header');
+    setAuditContext(res, {
+      action: 'auth_check',
+      status: 'access_denied',
+      error: 'auth.missing_token',
+      force: true,
+    });
     next(unauthorized('Missing Authorization header', 'auth.missing_token'));
     return;
   }
   const [type, token] = header.split(' ');
   if (type !== 'Bearer' || !token) {
     debugWarn('Auth failed: invalid Authorization header');
+    setAuditContext(res, {
+      action: 'auth_check',
+      status: 'access_denied',
+      error: 'auth.invalid_header',
+      force: true,
+    });
     next(unauthorized('Invalid Authorization header', 'auth.invalid_header'));
     return;
   }
@@ -28,6 +41,12 @@ export function authenticate(req: RequestWithUser, res: Response, next: NextFunc
     next();
   } catch (err) {
     debugWarn('Auth failed: invalid or expired token');
+    setAuditContext(res, {
+      action: 'auth_check',
+      status: 'access_denied',
+      error: 'auth.invalid_token',
+      force: true,
+    });
     next(unauthorized('Invalid or expired token', 'auth.invalid_token'));
   }
 }
@@ -37,6 +56,14 @@ export function requireOwner() {
     const meetingId = req.params.id || req.params.meetingId;
     if (!req.user || !meetingId) {
       debugWarn('requireOwner: unauthorized or missing meetingId');
+      setAuditContext(res, {
+        action: 'meeting_access_owner',
+        status: 'access_denied',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: 'auth.unauthorized',
+        force: true,
+      });
       next(unauthorized('Unauthorized', 'auth.unauthorized'));
       return;
     }
@@ -49,11 +76,27 @@ export function requireOwner() {
     const meeting = await collection.findOne({ _id: new ObjectId(meetingId) });
     if (!meeting || !meeting.ownerId) {
       debugWarn('requireOwner: meeting not found or has no owner', { meetingId });
+      setAuditContext(res, {
+        action: 'meeting_access_owner',
+        status: 'failure',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: !meeting ? 'meeting.not_found' : 'meeting.missing_owner',
+        force: true,
+      });
       next(forbidden('Not allowed', 'auth.forbidden'));
       return;
     }
     if (meeting.ownerId.toString() !== req.user.userId) {
       debugWarn('requireOwner: user is not owner', { meetingId, userId: req.user.userId });
+      setAuditContext(res, {
+        action: 'meeting_access_owner',
+        status: 'access_denied',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: 'auth.forbidden',
+        force: true,
+      });
       next(forbidden('Not allowed', 'auth.forbidden'));
       return;
     }
@@ -67,6 +110,14 @@ export function requireMemberOrOwner() {
     const meetingId = req.params.id || req.params.meetingId;
     if (!req.user || !meetingId) {
       debugWarn('requireMemberOrOwner: unauthorized or missing meetingId');
+      setAuditContext(res, {
+        action: 'meeting_access_member',
+        status: 'access_denied',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: 'auth.unauthorized',
+        force: true,
+      });
       next(unauthorized('Unauthorized', 'auth.unauthorized'));
       return;
     }
@@ -79,6 +130,14 @@ export function requireMemberOrOwner() {
     const meeting = await collection.findOne({ _id: new ObjectId(meetingId) });
     if (!meeting) {
       debugWarn('requireMemberOrOwner: meeting not found', { meetingId });
+      setAuditContext(res, {
+        action: 'meeting_access_member',
+        status: 'failure',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: 'meeting.not_found',
+        force: true,
+      });
       next(forbidden('Not allowed', 'auth.forbidden'));
       return;
     }
@@ -86,6 +145,14 @@ export function requireMemberOrOwner() {
     const isMember = (meeting.members || []).some((m) => m.toString() === req.user?.userId);
     if (!isOwner && !isMember) {
       debugWarn('requireMemberOrOwner: access denied', { meetingId, userId: req.user.userId });
+      setAuditContext(res, {
+        action: 'meeting_access_member',
+        status: 'access_denied',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: 'auth.forbidden',
+        force: true,
+      });
       next(forbidden('Not allowed', 'auth.forbidden'));
       return;
     }
@@ -97,11 +164,23 @@ export function requireMemberOrOwner() {
 export function requireAdmin(req: RequestWithUser, res: Response, next: NextFunction): void {
   if (!req.user) {
     debugWarn('requireAdmin: missing user');
+    setAuditContext(res, {
+      action: 'admin_access',
+      status: 'access_denied',
+      error: 'auth.unauthorized',
+      force: true,
+    });
     next(unauthorized('Unauthorized', 'auth.unauthorized'));
     return;
   }
   if (req.user.role !== 'admin') {
     debugWarn('requireAdmin: user not admin', { userId: req.user.userId, role: req.user.role });
+    setAuditContext(res, {
+      action: 'admin_access',
+      status: 'access_denied',
+      error: 'auth.admin_only',
+      force: true,
+    });
     next(forbidden('Admin only', 'auth.admin_only'));
     return;
   }
@@ -134,6 +213,14 @@ export function requireRecordingReadAccess() {
   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
+        setAuditContext(res, {
+          action: 'recording_access_read',
+          status: 'access_denied',
+          resource: 'recording',
+          resourceId: recordingId,
+          error: 'auth.unauthorized',
+          force: true,
+        });
         next(unauthorized('Unauthorized', 'auth.unauthorized'));
         return;
       }
@@ -144,6 +231,14 @@ export function requireRecordingReadAccess() {
       const { recordingId } = req.params;
       const rec = await findRecordingByIdentifier(recordingId);
       if (!rec) {
+        setAuditContext(res, {
+          action: 'recording_access_read',
+          status: 'failure',
+          resource: 'recording',
+          resourceId: recordingId,
+          error: 'recording.not_found',
+          force: true,
+        });
         next(notFound('Recording not found', 'recording.not_found'));
         return;
       }
@@ -155,6 +250,14 @@ export function requireRecordingReadAccess() {
       if (rec.meetingId) {
         const meeting = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: rec.meetingId });
         if (!(await hasMeetingReadAccess(meeting, req.user.userId))) {
+          setAuditContext(res, {
+            action: 'recording_access_read',
+            status: 'access_denied',
+            resource: 'recording',
+            resourceId: recordingId,
+            error: 'recording.forbidden',
+            force: true,
+          });
           next(forbidden('Not allowed due to missing meeting read access', 'recording.forbidden'));
           return;
         }
@@ -170,6 +273,14 @@ export function requireRecordingWriteAccess() {
   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
+        setAuditContext(res, {
+          action: 'recording_access_write',
+          status: 'access_denied',
+          resource: 'recording',
+          resourceId: recordingId,
+          error: 'auth.unauthorized',
+          force: true,
+        });
         next(unauthorized('Unauthorized', 'auth.unauthorized'));
         return;
       }
@@ -180,6 +291,14 @@ export function requireRecordingWriteAccess() {
       const { recordingId } = req.params;
       const rec = await findRecordingByIdentifier(recordingId);
       if (!rec) {
+        setAuditContext(res, {
+          action: 'recording_access_write',
+          status: 'failure',
+          resource: 'recording',
+          resourceId: recordingId,
+          error: 'recording.not_found',
+          force: true,
+        });
         next(notFound('Recording not found', 'recording.not_found'));
         return;
       }
@@ -191,6 +310,14 @@ export function requireRecordingWriteAccess() {
       if (rec.meetingId) {
         const meeting = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: rec.meetingId });
         if (!(await hasMeetingWriteAccess(meeting, req.user.userId))) {
+          setAuditContext(res, {
+            action: 'recording_access_write',
+            status: 'access_denied',
+            resource: 'recording',
+            resourceId: recordingId,
+            error: 'recording.forbidden',
+            force: true,
+          });
           next(forbidden('Not allowed due to missing meeting write access', 'recording.forbidden'));
           return;
         }

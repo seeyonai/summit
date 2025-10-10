@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response, RequestHandler } from 'express';
 import { AppError, isAppError, internal } from '../utils/errors';
 import { debugWarn } from '../utils/logger';
+import { setAuditContext } from './audit';
 
 type AsyncRequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<unknown>;
 
@@ -24,8 +25,16 @@ export function errorHandler(error: unknown, req: Request, res: Response, next: 
     // eslint-disable-next-line no-console
     console.error('Unhandled error:', error);
     debugWarn('Unhandled error (debug):', { method: req.method, path: req.originalUrl });
+    setAuditContext(res, {
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Unhandled error',
+    });
   } else {
     debugWarn('Handled AppError', { method: req.method, path: req.originalUrl, code: resolvedError.code, status: resolvedError.status });
+    setAuditContext(res, {
+      status: resolvedError.status >= 500 ? 'error' : 'failure',
+      error: resolvedError.code,
+    });
   }
 
   const payload: Record<string, unknown> = {
