@@ -32,7 +32,7 @@ ENV NODE_ENV=production \
 
 # Install nginx and prepare directories
 RUN apt-get update \
-  && apt-get install -y nginx \
+  && apt-get install -y nginx ffmpeg \
   && rm -rf /var/lib/apt/lists/* \
   && mkdir -p /run/nginx \
   && mkdir -p /var/log/nginx \

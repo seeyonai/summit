@@ -9,7 +9,7 @@ import { requireRecordingWriteAccess } from '../../middleware/auth';
 import { badRequest } from '../../utils/errors';
 import { getPreferredLang } from '../../utils/lang';
 import { getFilesBaseDir, makeRelativeToBase } from '../../utils/filePaths';
-import { findRecordingFilePath } from '../../utils/recordingHelpers';
+import { findRecordingFilePath, findRecordingWorkingFilePath } from '../../utils/recordingHelpers';
 
 const router = Router({ mergeParams: true });
 
@@ -19,7 +19,8 @@ router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request
 
   const recording = await recordingService.getRecordingById(recordingId);
   const baseDir = getFilesBaseDir();
-  const absolutePath = await findRecordingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format);
+  const absolutePath = await findRecordingWorkingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format)
+    || await findRecordingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format);
   if (!absolutePath) {
     throw badRequest('Recording file path is missing', 'organize.file_missing');
   }

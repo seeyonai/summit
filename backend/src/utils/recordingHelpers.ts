@@ -64,6 +64,29 @@ export async function findRecordingFilePath(baseDir: string, id: string, format?
   return null;
 }
 
+export async function findRecordingWorkingFilePath(baseDir: string, id: string, format?: string): Promise<string | null> {
+  const preferredExts = (() => {
+    const ext = inferRecordingExtension(format);
+    return ext === 'wav' ? ['wav'] : ['wav', ext];
+  })();
+
+  for (const ext of preferredExts) {
+    const variants = getRecordingFilenameVariants(id, ext);
+    for (const candidate of variants) {
+      try {
+        const absolutePath = await resolveExistingPathFromCandidate(baseDir, candidate);
+        return absolutePath;
+      } catch (error) {
+        const nodeErr = error as NodeJS.ErrnoException;
+        if (!nodeErr.code || nodeErr.code !== 'ENOENT') {
+          throw error;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 export default {
   getMimeType,
   normalizeTranscriptText,
@@ -71,4 +94,5 @@ export default {
   buildRecordingFilename,
   getRecordingFilenameVariants,
   findRecordingFilePath,
+  findRecordingWorkingFilePath,
 };

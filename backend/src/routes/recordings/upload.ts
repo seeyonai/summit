@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
+import { spawn } from 'child_process';
 import { parseFile } from 'music-metadata';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { badRequest, internal, forbidden } from '../../utils/errors';
@@ -19,6 +21,20 @@ const filesDir = getFilesBaseDir();
 if (!fs.existsSync(filesDir)) {
   fs.mkdirSync(filesDir, { recursive: true });
 }
+
+const runProcess = (command: string, args: string[]): Promise<void> => new Promise((resolve, reject) => {
+  const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  let stderr = '';
+  child.stderr.on('data', (data) => { stderr += data.toString(); });
+  child.on('error', (error) => reject(error));
+  child.on('close', (code) => {
+    if (code !== 0) {
+      reject(new Error(`${command} exited with code ${code}: ${stderr.trim()}`));
+    } else {
+      resolve();
+    }
+  });
+});
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -158,10 +174,36 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
 
     // Encrypt and persist uploaded file to final id-based filename
     try {
-      const storedName = buildRecordingFilename(result._id.toString(), result.format);
-      const finalPath = path.join(filesDir, storedName);
+      const originalStoredName = buildRecordingFilename(result._id.toString(), result.format);
+      const originalFinalPath = path.join(filesDir, originalStoredName);
       const fileBuffer = await fs.promises.readFile(absolutePath);
-      await writeEncryptedFile(finalPath, fileBuffer);
+      await writeEncryptedFile(originalFinalPath, fileBuffer);
+
+      if ((result.format || '').toLowerCase() !== 'wav') {
+        try {
+          const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'summit-upload-convert-'));
+          const wavTempPath = path.join(tempDir, 'converted.wav');
+          const args = [
+            '-y',
+            '-i', absolutePath,
+            '-c:a', 'pcm_s16le',
+            '-ar', '16000',
+            '-ac', '1',
+            wavTempPath,
+          ];
+          await runProcess('ffmpeg', args);
+
+          const wavStoredName = buildRecordingFilename(result._id.toString(), 'wav');
+          const wavFinalPath = path.join(filesDir, wavStoredName);
+          const wavBuffer = await fs.promises.readFile(wavTempPath);
+          await writeEncryptedFile(wavFinalPath, wavBuffer);
+
+          await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => undefined);
+        } catch (convErr) {
+          console.error('Failed to convert and persist WAV working copy:', convErr);
+        }
+      }
+
       await fs.promises.unlink(absolutePath).catch(() => undefined);
     } catch (moveErr) {
       console.error('Failed to persist encrypted recording file:', moveErr);
