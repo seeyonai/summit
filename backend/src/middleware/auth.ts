@@ -217,7 +217,7 @@ export function requireRecordingReadAccess() {
           action: 'recording_access_read',
           status: 'access_denied',
           resource: 'recording',
-          resourceId: recordingId,
+          resourceId: '',
           error: 'auth.unauthorized',
           force: true,
         });
@@ -277,7 +277,7 @@ export function requireRecordingWriteAccess() {
           action: 'recording_access_write',
           status: 'access_denied',
           resource: 'recording',
-          resourceId: recordingId,
+          resourceId: '',
           error: 'auth.unauthorized',
           force: true,
         });
