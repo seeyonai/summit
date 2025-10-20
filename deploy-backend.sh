@@ -79,7 +79,7 @@ if [ ! -d "$BACKEND_DIR/dist" ]; then
   echo "Run the build step before syncing.";
 else
   if confirm "📤 Sync backend code to $REMOTE_HOST:$REMOTE_PATH?"; then
-    rsync -avz --delete --exclude '/node_modules' --exclude '/files'  --exclude '/customization.json' --exclude '/src' --exclude '.env' --exclude '.env.production' --exclude '.git' \
+    rsync -avz --delete --exclude '/node_modules' --exclude '/files' --exclude '/logs' --exclude '/customization.json' --exclude '/src' --exclude '.env' --exclude '.env.production' --exclude '.git' \
       "$BACKEND_DIR/" "$REMOTE_HOST:$REMOTE_PATH/";
     if confirm "📦 Install backend dependencies on $REMOTE_HOST?"; then
       ssh "$REMOTE_HOST" "cd '$REMOTE_PATH' && npm install --omit=dev";
