@@ -1,8 +1,12 @@
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { ensureTrailingSlash } from './httpClient';
 import { TRANSCRIPTION_SERVICE_BASE } from '../services/RecordingService';
 import { SEGMENTATION_SERVICE_URL } from '../services/SegmentationService';
 import { ALIGNER_SERVICE_URL } from '../services/AlignerService';
 import { debug } from './logger';
+
+const execAsync = promisify(exec);
 
 interface Service {
   name: string;
@@ -16,6 +20,7 @@ interface ServiceHealth extends Service {
 
 interface HealthCheckResult {
   services: ServiceHealth[];
+  ffmpegInstalled: boolean;
   allHealthy: boolean;
 }
 
@@ -56,24 +61,39 @@ async function checkServiceHealth(service: Service): Promise<string> {
   }
 }
 
+async function checkFfmpegInstalled(): Promise<boolean> {
+  try {
+    await execAsync('ffmpeg -version');
+    return true;
+  } catch (error) {
+    console.error('FFmpeg is not installed or not in PATH:', error);
+    return false;
+  }
+}
+
 export async function checkAllServices(): Promise<HealthCheckResult> {
   const healthPromises = SERVICES.map(async (service) => ({
     ...service,
     status: await checkServiceHealth(service),
   }));
 
-  const services = await Promise.all(healthPromises);
-  const allHealthy = services.every(service => service.status === '✓ Ready');
+  const [services, ffmpegInstalled] = await Promise.all([
+    Promise.all(healthPromises),
+    checkFfmpegInstalled(),
+  ]);
 
-  return { services, allHealthy };
+  const allHealthy = services.every(service => service.status === '✓ Ready') && ffmpegInstalled;
+
+  return { services, ffmpegInstalled, allHealthy };
 }
 
 export function generateHealthTable(healthResult: HealthCheckResult, apiPort: number): Array<{ Endpoint: string; URL: string; Status: string }> {
-  const { services } = healthResult;
+  const { services, ffmpegInstalled } = healthResult;
 
   const tableData = [
     { Endpoint: 'Health check', URL: `http://localhost:${apiPort}/health`, Status: '✓ Ready' },
     { Endpoint: 'Database', URL: 'MongoDB', Status: '✓ Connected' },
+    { Endpoint: 'FFmpeg', URL: 'System binary', Status: ffmpegInstalled ? '✓ Installed' : '✗ Not Installed' },
     { Endpoint: 'Live Recorder WebSocket', URL: `ws://localhost:${apiPort}/ws/live-recorder`, Status: '✓ Ready' },
     ...services.map(service => ({
       Endpoint: service.name,
