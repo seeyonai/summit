@@ -36,6 +36,11 @@ const runProcess = (command: string, args: string[]): Promise<void> => new Promi
   });
 });
 
+const decodeLatin1ToUtf8 = (value: string): string => {
+  const decoded = Buffer.from(value, 'latin1').toString('utf-8');
+  return Buffer.from(decoded, 'utf-8').toString('latin1') === value ? decoded : value;
+};
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -44,8 +49,9 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     // Generate unique filename with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
+    const originalName = decodeLatin1ToUtf8(file.originalname);
+    const ext = path.extname(originalName);
+    const name = path.basename(originalName, ext);
     cb(null, `${name}-${timestamp}${ext}`);
   }
 });
@@ -102,6 +108,7 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
   }
 
   const { filename: tempFilename, originalname, size, mimetype, path: tempPath } = req.file;
+  const decodedOriginalName = decodeLatin1ToUtf8(originalname);
   const absolutePath = path.join(filesDir, tempFilename);
 
   let duration = 0;
@@ -158,7 +165,7 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
       meetingIdToAssign = meetingIdParam;
     }
     const recordingData = {
-      originalFileName: originalname,
+      originalFileName: decodedOriginalName,
       fileSize: size,
       format: (detectedFormat || '').toLowerCase(),
       mimeType: mimetype,
