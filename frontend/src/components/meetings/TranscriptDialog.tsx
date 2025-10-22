@@ -16,20 +16,13 @@ interface TranscriptDialogProps {
   concatenatedRecording?: Recording;
 }
 
-function TranscriptDialog({
-  open,
-  onOpenChange,
-  title,
-  recordings,
-  showConcatenatedRecording,
-  concatenatedRecording,
-}: TranscriptDialogProps) {
+function TranscriptDialog({ open, onOpenChange, title, recordings, showConcatenatedRecording, concatenatedRecording }: TranscriptDialogProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  const recordingsToShow = useMemo(() =>
-    showConcatenatedRecording && concatenatedRecording
-      ? [concatenatedRecording]
-      : recordings, [showConcatenatedRecording, concatenatedRecording, recordings]);
+  const recordingsToShow = useMemo(
+    () => (showConcatenatedRecording && concatenatedRecording ? [concatenatedRecording] : recordings),
+    [showConcatenatedRecording, concatenatedRecording, recordings]
+  );
 
   const handleCopy = useCallback(async (text: string, index: number) => {
     try {
@@ -44,11 +37,18 @@ function TranscriptDialog({
 
   const handleDownload = useCallback(() => {
     const allTranscriptions = recordingsToShow
-      .filter(r => r.transcription)
-      .map(r => `=== ${showConcatenatedRecording ? '拼接录音' : (r as any).originalFileName || (r as any)._id} ===\n\n${r.transcription}`)
+      .filter((r) => r.transcription)
+      .map(
+        (r) =>
+          `=== ${showConcatenatedRecording ? '拼接录音' : (r as any).label || (r as any).originalFileName || (r as any)._id} ===\n\n${
+            r.transcription
+          }`
+      )
       .join('\n\n' + '='.repeat(50) + '\n\n');
 
-    const blob = new Blob([allTranscriptions], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([allTranscriptions], {
+      type: 'text/plain;charset=utf-8',
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -71,9 +71,7 @@ function TranscriptDialog({
               </div>
               <div>
                 <DialogTitle className="text-xl">会议完整转录</DialogTitle>
-                <DialogDescription className="mt-1">
-                  {title} 的完整转录内容
-                </DialogDescription>
+                <DialogDescription className="mt-1">{title} 的完整转录内容</DialogDescription>
               </div>
             </div>
             <Button
@@ -87,7 +85,7 @@ function TranscriptDialog({
             </Button>
           </div>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-y-auto space-y-6 py-4">
           {recordingsToShow.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
@@ -95,47 +93,42 @@ function TranscriptDialog({
               <p className="text-sm text-muted-foreground">暂无转录内容</p>
             </div>
           ) : (
-            recordingsToShow.map((recording, index) => (
-              recording.transcription && (
-                <div
-                  key={showConcatenatedRecording ? 'concatenated' : index}
-                  className="space-y-3 animate-in fade-in-50 slide-in-from-bottom-2"
-                >
-                  <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
-                    <h4 className="font-medium text-sm flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-primary" />
-                      {showConcatenatedRecording ? '拼接录音' : ((recording as any).originalFileName || (recording as any)._id)}
-                    </h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopy(recording.transcription || '', index)}
-                      className="gap-1.5 text-xs hover:bg-primary/10 hover:text-primary"
-                    >
-                      {copiedIndex === index ? (
-                        <>
-                          <CheckCheck className="w-3.5 h-3.5 text-success" />
-                          已复制
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          复制
-                        </>
-                      )}
-                    </Button>
+            recordingsToShow.map(
+              (recording, index) =>
+                recording.transcription && (
+                  <div key={showConcatenatedRecording ? 'concatenated' : index} className="space-y-3 animate-in fade-in-50 slide-in-from-bottom-2">
+                    <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
+                      <h4 className="font-medium text-sm flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-primary" />
+                        {showConcatenatedRecording
+                          ? '拼接录音'
+                          : (recording as any).label || (recording as any).originalFileName || (recording as any)._id}
+                      </h4>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopy(recording.transcription || '', index)}
+                        className="gap-1.5 text-xs hover:bg-primary/10 hover:text-primary"
+                      >
+                        {copiedIndex === index ? (
+                          <>
+                            <CheckCheck className="w-3.5 h-3.5 text-success" />
+                            已复制
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            复制
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <div className={cn('p-4 rounded-lg bg-gradient-to-br from-muted/20 to-muted/30', 'border border-border/50 shadow-sm')}>
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-muted-foreground">{recording.transcription}</p>
+                    </div>
                   </div>
-                  <div className={cn(
-                    'p-4 rounded-lg bg-gradient-to-br from-muted/20 to-muted/30',
-                    'border border-border/50 shadow-sm'
-                  )}>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed text-muted-foreground">
-                      {recording.transcription}
-                    </p>
-                  </div>
-                </div>
-              )
-            ))
+                )
+            )
           )}
         </div>
       </DialogContent>

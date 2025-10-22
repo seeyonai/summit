@@ -1,16 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  Item,
-  ItemMedia,
-  ItemContent,
-  ItemTitle,
-  ItemDescription,
-  ItemActions,
-  ItemGroup,
-  ItemSeparator
-} from '@/components/ui/item';
+import { Item, ItemMedia, ItemContent, ItemTitle, ItemDescription, ItemActions } from '@/components/ui/item';
 import type { Recording } from '@/types';
 
 import { formatDuration, formatFileSize, formatDate } from '@/utils/formatHelpers';
@@ -27,7 +18,7 @@ import {
   UploadIcon,
   RadioIcon,
   MergeIcon,
-  HelpCircleIcon
+  HelpCircleIcon,
 } from 'lucide-react';
 
 interface RecordingListItemProps {
@@ -42,15 +33,9 @@ interface RecordingListItemProps {
   className?: string;
 }
 
-function RecordingListItem({
-  recording,
-  showSource = false,
-  actions = {},
-  onClick,
-  className = ''
-}: RecordingListItemProps) {
+function RecordingListItem({ recording, showSource = false, actions = {}, onClick, className = '' }: RecordingListItemProps) {
   const { playingAudio, toggleAudioPlayback } = useAudioPlayback();
-  
+
   const recordingId = ('_id' in recording ? (recording as any)._id : '') as string;
 
   const getSourceIcon = (source?: 'live' | 'upload' | 'concatenated') => {
@@ -85,13 +70,12 @@ function RecordingListItem({
     }
   };
 
-  const handleAction = (actionFn?: (recording: Recording, e?: React.MouseEvent) => void) => 
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (actionFn) {
-        actionFn(recording, e);
-      }
-    };
+  const handleAction = (actionFn?: (recording: Recording, e?: React.MouseEvent) => void) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (actionFn) {
+      actionFn(recording, e);
+    }
+  };
 
   // Default action handlers
   const defaultActions = {
@@ -99,33 +83,25 @@ function RecordingListItem({
       e?.stopPropagation();
       window.open(audioUrlFor(recordingId), '_blank');
     },
-    ...actions
+    ...actions,
   };
 
   return (
-    <Item
-      variant="outline"
-      className={className}
-      onClick={handleCardClick}
-    >
+    <Item variant="outline" className={className} onClick={handleCardClick}>
       {/* Play Button as Media */}
       <ItemMedia>
         <button
           onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recordingId), e)}
           className="w-12 h-12 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center text-primary-foreground shadow-lg dark:shadow-primary/20 hover:scale-105 transition-transform"
         >
-          {playingAudio === recordingId ? (
-            <PauseIcon className="w-5 h-5" />
-          ) : (
-            <PlayIcon className="w-5 h-5 ml-0.5" />
-          )}
+          {playingAudio === recordingId ? <PauseIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5 ml-0.5" />}
         </button>
       </ItemMedia>
 
       {/* Recording Content */}
       <ItemContent>
         <ItemTitle>
-          {(recording as any).originalFileName || recordingId}
+          {recording.label || (recording as any).originalFileName || recordingId}
           {/* Source Icon */}
           {showSource && (
             <TooltipProvider>
@@ -159,15 +135,22 @@ function RecordingListItem({
             <Badge
               variant="outline"
               className={
-                recording.meeting.status === 'completed' ? 'bg-green-500/10 text-green-600 border-green-500/20 ml-2' :
-                recording.meeting.status === 'in_progress' ? 'bg-primary/10 text-primary border-primary/20 ml-2' :
-                recording.meeting.status === 'scheduled' ? 'bg-muted text-muted-foreground border-border ml-2' :
-                'bg-destructive/10 text-destructive border-destructive/20 ml-2'
+                recording.meeting.status === 'completed'
+                  ? 'bg-green-500/10 text-green-600 border-green-500/20 ml-2'
+                  : recording.meeting.status === 'in_progress'
+                  ? 'bg-primary/10 text-primary border-primary/20 ml-2'
+                  : recording.meeting.status === 'scheduled'
+                  ? 'bg-muted text-muted-foreground border-border ml-2'
+                  : 'bg-destructive/10 text-destructive border-destructive/20 ml-2'
               }
             >
-              {recording.meeting.status === 'completed' ? '已完成' :
-               recording.meeting.status === 'in_progress' ? '进行中' :
-               recording.meeting.status === 'scheduled' ? '已排期' : '失败'}
+              {recording.meeting.status === 'completed'
+                ? '已完成'
+                : recording.meeting.status === 'in_progress'
+                ? '进行中'
+                : recording.meeting.status === 'scheduled'
+                ? '已排期'
+                : '失败'}
             </Badge>
           )}
         </ItemTitle>
@@ -196,31 +179,19 @@ function RecordingListItem({
             </span>
           </div>
 
-          {recording.transcription && (
-            <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
-              {recording.transcription}
-            </p>
-          )}
+          {recording.transcription && <p className="mt-2 text-sm text-muted-foreground line-clamp-1">{recording.transcription}</p>}
         </ItemDescription>
       </ItemContent>
 
       {/* Actions */}
       <ItemActions>
         {defaultActions.onAssociate && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleAction(defaultActions.onAssociate)}
-          >
+          <Button size="sm" variant="ghost" onClick={handleAction(defaultActions.onAssociate)}>
             <LinkIcon className="w-4 h-4" />
           </Button>
         )}
 
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={handleAction(defaultActions.onDownload)}
-        >
+        <Button size="sm" variant="ghost" onClick={handleAction(defaultActions.onDownload)}>
           <DownloadIcon className="w-4 h-4" />
         </Button>
 

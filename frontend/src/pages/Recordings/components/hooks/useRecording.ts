@@ -4,6 +4,7 @@ import { apiService, fileUrlFor } from '@/services/api';
 import type { Recording } from '@/types';
 
 export interface EditForm {
+  label?: string;
   transcription?: string;
   verbatimTranscript?: string;
 }
@@ -54,6 +55,7 @@ export function useRecording() {
       setEditForm({});
     } else {
       setEditForm({
+        label: recording.label,
         transcription: recording.transcription,
         verbatimTranscript: recording.verbatimTranscript,
       });
@@ -92,7 +94,7 @@ export function useRecording() {
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = (recording as any).originalFileName || `recording-${recording._id}.${recording.format || 'wav'}`;
+      link.download = (recording as any).label || (recording as any).originalFileName || `recording-${recording._id}.${recording.format || 'wav'}`;
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();

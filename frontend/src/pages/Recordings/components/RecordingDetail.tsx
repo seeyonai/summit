@@ -1,15 +1,16 @@
 import { useMemo, useState } from 'react';
- 
+
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
- 
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import BackButton from '@/components/BackButton';
 import StatisticsCard from '@/components/StatisticsCard';
- 
+
 import RecordingTranscription from './RecordingTranscription';
 import RecordingAlignment from './RecordingAlignment';
 import RecordingAnalysis from './RecordingAnalysis';
@@ -18,6 +19,7 @@ import RecordingOrganize from './RecordingOrganize';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
 import { useRecording } from './hooks/useRecording';
 import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
+import { apiService } from '@/services/api';
 import {
   SaveIcon,
   LinkIcon,
@@ -33,16 +35,18 @@ import {
   InfoIcon,
   Link2Icon,
   DownloadIcon,
-  Trash2Icon
+  Trash2Icon,
+  EditIcon,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getSourceIcon, getSourceLabel } from '@/utils/recordingSource';
-
 
 function RecordingDetailRedesign() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showAssociateModal, setShowAssociateModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditLabelDialog, setShowEditLabelDialog] = useState(false);
+  const [labelInput, setLabelInput] = useState('');
 
   const {
     recording,
@@ -75,7 +79,7 @@ function RecordingDetailRedesign() {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 B';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
   const formatDate = (date: Date | string) => {
@@ -102,7 +106,24 @@ function RecordingDetailRedesign() {
     deleteRecording();
   };
 
+  // Open edit label dialog
+  const openEditLabelDialog = () => {
+    setLabelInput(recording?.label || '');
+    setShowEditLabelDialog(true);
+  };
 
+  // Handle label update
+  const handleLabelUpdate = async () => {
+    if (!recording) return;
+    try {
+      await apiService.updateRecording(recording._id, { label: labelInput });
+      await fetchRecording();
+      setShowEditLabelDialog(false);
+      setSuccess('录音名称已更新');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '更新失败');
+    }
+  };
 
   if (loading) {
     return (
@@ -145,11 +166,7 @@ function RecordingDetailRedesign() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleDownloadRecording}
-                    >
+                    <Button variant="outline" size="icon" onClick={handleDownloadRecording}>
                       <DownloadIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
@@ -160,11 +177,7 @@ function RecordingDetailRedesign() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={openAssociateModal}
-                    >
+                    <Button variant="outline" size="icon" onClick={openAssociateModal}>
                       <Link2Icon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
@@ -214,10 +227,26 @@ function RecordingDetailRedesign() {
                           </TooltipProvider>
                         );
                       })()}
-                      <h1 className="text-xl font-bold text-foreground mb-2">
-                        {(recording as any).originalFileName || recording._id}
-                      </h1>
+                      <div className="flex items-center gap-3">
+                        <h1 className="text-xl font-bold text-foreground mb-2">
+                          {recording.label || (recording as any).originalFileName || recording._id}
+                        </h1>
+                        <Button onClick={openEditLabelDialog} variant="ghost" size="sm" className="mb-2">
+                          <EditIcon className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
+
+                    {/* Original Filename (shown when label exists) */}
+                    {recording.label && (recording as any).originalFileName && (
+                      <div className="mb-2">
+                        <div className="inline-flex items-center gap-2 text-sm text-foreground">
+                          <FileAudioIcon className="w-4 h-4" />
+                          <span className="">原始文件:</span>
+                          <span className="font-mono text-gray-700 dark:text-gray-300">{(recording as any).originalFileName}</span>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Meeting Information */}
                     {recording.meeting && (
@@ -227,19 +256,32 @@ function RecordingDetailRedesign() {
                           <span className="">关联会议:</span>
                           <span className="font-medium text-gray-900 dark:text-gray-100">{recording.meeting.title}</span>
                           <Badge
-                            variant={recording.meeting.status === 'completed' ? 'default' :
-                              recording.meeting.status === 'in_progress' ? 'secondary' :
-                                recording.meeting.status === 'scheduled' ? 'outline' : 'destructive'}
+                            variant={
+                              recording.meeting.status === 'completed'
+                                ? 'default'
+                                : recording.meeting.status === 'in_progress'
+                                ? 'secondary'
+                                : recording.meeting.status === 'scheduled'
+                                ? 'outline'
+                                : 'destructive'
+                            }
                             className={
-                              recording.meeting.status === 'completed' ? 'bg-completed' :
-                                recording.meeting.status === 'in_progress' ? 'bg-success' :
-                                  recording.meeting.status === 'scheduled' ? 'bg-info' :
-                                    'bg-destructive'
+                              recording.meeting.status === 'completed'
+                                ? 'bg-completed'
+                                : recording.meeting.status === 'in_progress'
+                                ? 'bg-success'
+                                : recording.meeting.status === 'scheduled'
+                                ? 'bg-info'
+                                : 'bg-destructive'
                             }
                           >
-                            {recording.meeting.status === 'completed' ? '已完成' :
-                              recording.meeting.status === 'in_progress' ? '进行中' :
-                                recording.meeting.status === 'scheduled' ? '已排期' : '失败'}
+                            {recording.meeting.status === 'completed'
+                              ? '已完成'
+                              : recording.meeting.status === 'in_progress'
+                              ? '进行中'
+                              : recording.meeting.status === 'scheduled'
+                              ? '已排期'
+                              : '失败'}
                           </Badge>
                         </div>
                       </div>
@@ -264,26 +306,16 @@ function RecordingDetailRedesign() {
               </div>
 
               <div className="flex gap-2">
-                {isEditing ? (
-                  <Button
-                    onClick={updateRecording}
-                    className="bg-blue-600 hover:bg-primary text-white"
-                  >
+                {isEditing && (
+                  <Button onClick={updateRecording} className="bg-blue-600 hover:bg-primary text-white">
                     <SaveIcon className="w-4 h-4 mr-2" />
                     保存更改
                   </Button>
-                ) : (
-                  <>
-                    <Button
-                      onClick={() => setShowInfoModal(true)}
-                      variant="outline"
-                      aria-label="查看录音信息"
-                    >
-                      <InfoIcon className="w-4 h-4" />
-                      查看录音信息
-                    </Button>
-                  </>
                 )}
+                <Button onClick={() => setShowInfoModal(true)} variant="outline" aria-label="查看录音信息">
+                  <InfoIcon className="w-4 h-4" />
+                  查看录音信息
+                </Button>
               </div>
             </div>
 
@@ -292,7 +324,10 @@ function RecordingDetailRedesign() {
               <StatisticsCard
                 icon={<ActivityIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
                 label="比特率"
-                value={`${recording.metadata?.bitrate || (recording.fileSize && recording.duration ? Math.round((recording.fileSize / recording.duration) * 8 / 1000) : '-')} kbps`}
+                value={`${
+                  recording.metadata?.bitrate ||
+                  (recording.fileSize && recording.duration ? Math.round(((recording.fileSize / recording.duration) * 8) / 1000) : '-')
+                } kbps`}
                 description={recording.metadata?.codec || recording.format || 'WAV'}
               />
 
@@ -313,7 +348,7 @@ function RecordingDetailRedesign() {
               <StatisticsCard
                 icon={<UsersIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
                 label="说话人数"
-                value={recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map(s => s.speakerIndex)).size : 0)}
+                value={recording.numSpeakers || (recording.speakerSegments ? new Set(recording.speakerSegments.map((s) => s.speakerIndex)).size : 0)}
                 description={`声道数: ${recording.metadata?.channels || recording.channels || '-'}`}
               />
             </div>
@@ -330,10 +365,12 @@ function RecordingDetailRedesign() {
               <AudioPlayer
                 showFilename={false}
                 recording={recording}
-                timestamps={recording.speakerSegments?.map(segment => ({
-                  time: segment.startTime,
-                  label: getSpeakerDisplayName(segment.speakerIndex, speakerNameMap)
-                })) || []}
+                timestamps={
+                  recording.speakerSegments?.map((segment) => ({
+                    time: segment.startTime,
+                    label: getSpeakerDisplayName(segment.speakerIndex, speakerNameMap),
+                  })) || []
+                }
               />
             </div>
           </div>
@@ -354,28 +391,12 @@ function RecordingDetailRedesign() {
             />
           </div>
 
-          <RecordingAlignment
-            recording={recording}
-            isEditing={isEditing}
-            editForm={editForm}
-            setSuccess={setSuccess}
-            setError={setError}
-          />
+          <RecordingAlignment recording={recording} isEditing={isEditing} editForm={editForm} setSuccess={setSuccess} setError={setError} />
 
-          <RecordingAnalysis
-            recording={recording}
-            onRefresh={fetchRecording}
-            setSuccess={setSuccess}
-            setError={setError}
-          />
+          <RecordingAnalysis recording={recording} onRefresh={fetchRecording} setSuccess={setSuccess} setError={setError} />
 
           <div className="lg:col-span-2">
-            <RecordingOrganize
-              recording={recording}
-              setSuccess={setSuccess}
-              setError={setError}
-              onRefresh={fetchRecording}
-            />
+            <RecordingOrganize recording={recording} setSuccess={setSuccess} setError={setError} onRefresh={fetchRecording} />
           </div>
         </div>
 
@@ -429,29 +450,54 @@ function RecordingDetailRedesign() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>确认删除录音</DialogTitle>
-              <DialogDescription>
-                您确定要删除这个录音吗？此操作不可撤销，录音文件和所有相关数据将被永久删除。
-              </DialogDescription>
+              <DialogDescription>您确定要删除这个录音吗？此操作不可撤销，录音文件和所有相关数据将被永久删除。</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteDialog(false)}
-              >
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
                 取消
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteConfirm}
-              >
+              <Button variant="destructive" onClick={handleDeleteConfirm}>
                 <Trash2Icon className="w-4 h-4 mr-2" />
                 确认删除
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Label Dialog */}
+        <Dialog open={showEditLabelDialog} onOpenChange={setShowEditLabelDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>编辑录音名称</DialogTitle>
+              <DialogDescription>为录音设置一个更易识别的显示名称</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">显示名称</label>
+              <Input
+                placeholder="输入录音名称"
+                value={labelInput}
+                onChange={(e) => setLabelInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleLabelUpdate();
+                  }
+                }}
+              />
+              <p className="mt-2 text-xs text-muted-foreground">留空将使用原始文件名或录音 ID</p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEditLabelDialog(false)}>
+                取消
+              </Button>
+              <Button onClick={handleLabelUpdate}>
+                <SaveIcon className="w-4 h-4 mr-2" />
+                保存
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-    </div >
+    </div>
   );
 }
 

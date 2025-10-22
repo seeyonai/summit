@@ -37,6 +37,7 @@ export interface MeetingRecordingOrderItem {
 }
 
 export interface Recording {
+  label?: string;
   originalFileName?: string;
   duration?: number;
   fileSize?: number;
@@ -89,14 +90,7 @@ export interface DisputedIssue {
   parties?: string[];
 }
 
-export type AgendaItemStatus =
-  | "draft"
-  | "scheduled"
-  | "in_progress"
-  | "skipped"
-  | "completed"
-  | "deferred"
-  | "cancelled";
+export type AgendaItemStatus = 'draft' | 'scheduled' | 'in_progress' | 'skipped' | 'completed' | 'deferred' | 'cancelled';
 
 export interface AgendaItem {
   order: number;

@@ -12,7 +12,6 @@ interface AudioPlayerProps {
   onTimestampClick?: (time: number) => void;
 }
 
-
 function AudioPlayer({ recording, onTimestampClick, showFilename = true }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const speakerNames = recording.speakerNames;
@@ -33,17 +32,14 @@ function AudioPlayer({ recording, onTimestampClick, showFilename = true }: Audio
     }
   };
 
-  const displayName = (recording as any).originalFileName || `${(recording as any)._id}.${(recording as any).format || 'wav'}`;
+  const displayName =
+    (recording as any).label || (recording as any).originalFileName || `${(recording as any)._id}.${(recording as any).format || 'wav'}`;
 
   return (
     <div className="">
       {showFilename && <h2 className="text-lg font-semibold text-gray-900 mb-4">{displayName}</h2>}
       <div className="space-y-4">
-        <audio
-          ref={audioRef}
-          controls
-          className="w-full"
-        >
+        <audio ref={audioRef} controls className="w-full">
           <source src={fileUrlFor((recording as any)._id)} type="audio/wav" />
           您的浏览器不支持音频播放
         </audio>
@@ -92,7 +88,6 @@ function AudioPlayer({ recording, onTimestampClick, showFilename = true }: Audio
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

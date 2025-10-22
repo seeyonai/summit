@@ -18,14 +18,10 @@ import { useRecordingList } from './hooks/useRecordingList';
 import RecordingCard from '@/components/RecordingCard';
 import RecordingListItem from '@/components/RecordingListItem';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
-import {
-  ItemGroup,
-  ItemSeparator
-} from '@/components/ui/item';
+import { ItemGroup, ItemSeparator } from '@/components/ui/item';
 import PageHeader from '@/components/PageHeader';
 import {
   MicIcon,
-  
   FilterIcon,
   ClockIcon,
   FileAudioIcon,
@@ -35,23 +31,14 @@ import {
   ActivityIcon,
   FolderOpenIcon,
   AlertCircleIcon,
-  UploadIcon
+  UploadIcon,
 } from 'lucide-react';
 
 function RecordingList() {
   const navigate = useNavigate();
   const { toggleFloatingPanel } = useRecordingPanel();
-  const {
-    recordings,
-    loading,
-    error,
-    fetchedAll,
-    fetchRecordings,
-    loadAll,
-    deleteRecording: deleteRecordingAPI,
-    setError
-  } = useRecordingList();
-  
+  const { recordings, loading, error, fetchedAll, fetchRecordings, loadAll, deleteRecording: deleteRecordingAPI, setError } = useRecordingList();
+
   const [recording, setRecording] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
   const [showAssociationModal, setShowAssociationModal] = useState(false);
@@ -60,7 +47,6 @@ function RecordingList() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'transcribed' | 'untranscribed'>('all');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-
 
   // Keep local button state in sync with panel actions
   useEffect(() => {
@@ -95,14 +81,33 @@ function RecordingList() {
     }
   };
 
-  
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     const inputEl = event.target as HTMLInputElement;
 
     // Validate file type
-    const allowedTypes = ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/aac', 'audio/x-aac', 'audio/alac', 'audio/x-ms-wma', 'audio/wma', 'audio/m4a', 'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/flac', 'audio/amr', 'audio/g722', 'audio/g72'];
+    const allowedTypes = [
+      'audio/wav',
+      'audio/wave',
+      'audio/x-wav',
+      'audio/mp3',
+      'audio/mpeg',
+      'audio/ogg',
+      'audio/aac',
+      'audio/x-aac',
+      'audio/alac',
+      'audio/x-ms-wma',
+      'audio/wma',
+      'audio/m4a',
+      'audio/x-m4a',
+      'audio/mp4',
+      'audio/webm',
+      'audio/flac',
+      'audio/amr',
+      'audio/g722',
+      'audio/g72',
+    ];
     if (!allowedTypes.includes(file.type)) {
       const errorMsg = '不支持的文件格式。请上传 WAV、MP3、OGG、M4A 或 WEBM 格式的音频文件。';
       toast.error(errorMsg);
@@ -155,16 +160,18 @@ function RecordingList() {
   // Filtered recordings based on search and filter
   const filteredRecordings = useMemo(() => {
     return recordings
-      .filter(recording => {
-        const name = (recording.originalFileName || recording._id).toLowerCase();
-        const matchesSearch = searchQuery === '' || 
+      .filter((recording) => {
+        const name = (recording.label || recording.originalFileName || recording._id).toLowerCase();
+        const matchesSearch =
+          searchQuery === '' ||
           name.includes(searchQuery.toLowerCase()) ||
           recording.transcription?.toLowerCase().includes(searchQuery.toLowerCase());
-        
-        const matchesFilter = filterStatus === 'all' ||
+
+        const matchesFilter =
+          filterStatus === 'all' ||
           (filterStatus === 'transcribed' && recording.transcription) ||
           (filterStatus === 'untranscribed' && !recording.transcription);
-        
+
         return matchesSearch && matchesFilter;
       })
       .sort((a, b) => {
@@ -179,14 +186,14 @@ function RecordingList() {
   const stats = useMemo(() => {
     const totalDuration = recordings.reduce((acc, r) => acc + (r.duration || 0), 0);
     const totalSize = recordings.reduce((acc, r) => acc + (r.fileSize || 0), 0);
-    const transcribedCount = recordings.filter(r => r.transcription).length;
-    
+    const transcribedCount = recordings.filter((r) => r.transcription).length;
+
     return {
       total: recordings.length,
       totalDuration,
       totalSize,
       transcribedCount,
-      transcriptionRate: recordings.length > 0 ? (transcribedCount / recordings.length) * 100 : 0
+      transcriptionRate: recordings.length > 0 ? (transcribedCount / recordings.length) * 100 : 0,
     };
   }, [recordings]);
 
@@ -195,269 +202,230 @@ function RecordingList() {
     const rec = recording as Record<string, unknown>;
     return (rec._id as string) || '';
   };
-  
+
   const recordingActions = {
     onAssociate: (recording: unknown, e?: React.MouseEvent) => openAssociationModal(recording as unknown as Recording, e),
-    onDelete: (recording: unknown, e?: React.MouseEvent) => deleteRecording(getRecordingId(recording), e)
+    onDelete: (recording: unknown, e?: React.MouseEvent) => deleteRecording(getRecordingId(recording), e),
   };
 
   const handleRecordingClick = (recording: unknown) => {
     navigate(`/recordings/${getRecordingId(recording)}`);
   };
 
-
   return (
     <div className="space-y-8">
-        <PageHeader
-          title="录音"
-          subline="智能管理和分析您的音频记录"
-          actionButtons={
-            <>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="audio/*"
-                  onChange={handleFileUpload}
-                  disabled={uploading || recording}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                  id="audio-upload"
-                />
-                <Button
-                  asChild
-                  disabled={uploading || recording}
-                  size="lg"
-                  variant="hero"
-                >
-                  <label htmlFor="audio-upload" className="cursor-pointer">
-                    {uploading ? (
-                      <>
-                        <div className="w-3 h-3 bg-primary rounded-full animate-spin mr-2" />
-                        上传中... {uploadProgress}%
-                      </>
-                    ) : (
-                      <>
-                        <UploadIcon className="w-5 h-5 mr-2" />
-                        上传音频
-                      </>
-                    )}
-                  </label>
-                </Button>
-              </div>
-              <Button
-                onClick={toggleFloatingPanel}
-                disabled={uploading}
-                size="lg"
-                variant="hero"
-              >
-                <MicIcon className="w-5 h-5 mr-2" />
-                快速录音
+      <PageHeader
+        title="录音"
+        subline="智能管理和分析您的音频记录"
+        actionButtons={
+          <>
+            <div className="relative">
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={handleFileUpload}
+                disabled={uploading || recording}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                id="audio-upload"
+              />
+              <Button asChild disabled={uploading || recording} size="lg" variant="hero">
+                <label htmlFor="audio-upload" className="cursor-pointer">
+                  {uploading ? (
+                    <>
+                      <div className="w-3 h-3 bg-primary rounded-full animate-spin mr-2" />
+                      上传中... {uploadProgress}%
+                    </>
+                  ) : (
+                    <>
+                      <UploadIcon className="w-5 h-5 mr-2" />
+                      上传音频
+                    </>
+                  )}
+                </label>
               </Button>
-            </>
-          }
-        >
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-content">
-                <div className="stat-info">
-                  <p className="stat-label">总录音数</p>
-                  <p className="stat-value">{stats.total}</p>
-                </div>
-                <FileAudioIcon className="stat-icon" />
-              </div>
             </div>
-            
-            <div className="stat-card">
-              <div className="stat-content">
-                <div className="stat-info">
-                  <p className="stat-label">总时长</p>
-                  <p className="stat-value">{formatDuration(stats.totalDuration)}</p>
-                </div>
-                <ClockIcon className="stat-icon" />
+            <Button onClick={toggleFloatingPanel} disabled={uploading} size="lg" variant="hero">
+              <MicIcon className="w-5 h-5 mr-2" />
+              快速录音
+            </Button>
+          </>
+        }
+      >
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">总录音数</p>
+                <p className="stat-value">{stats.total}</p>
               </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-content">
-                <div className="stat-info">
-                  <p className="stat-label">转录率</p>
-                  <p className="stat-value">{stats.transcriptionRate.toFixed(0)}%</p>
-                </div>
-                <ActivityIcon className="stat-icon" />
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-content">
-                <div className="stat-info">
-                  <p className="stat-label">存储空间</p>
-                  <p className="stat-value">{formatFileSize(stats.totalSize)}</p>
-                </div>
-                <FolderOpenIcon className="stat-icon" />
-              </div>
+              <FileAudioIcon className="stat-icon" />
             </div>
           </div>
-        </PageHeader>
 
-        {/* Search and Filter Bar */}
-        <div className="flex flex-col lg:flex-row gap-4">
-          <SearchInput
-            className="flex-1"
-            placeholder="搜索录音文件或转录内容..."
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-          
-          <div className="flex gap-2 items-center">
-            <Select value={filterStatus} onValueChange={(value: 'all' | 'transcribed' | 'untranscribed') => setFilterStatus(value)}>
-              <SelectTrigger className="w-[180px] h-11">
-                <FilterIcon className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="筛选状态" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部录音</SelectItem>
-                <SelectItem value="transcribed">已转录</SelectItem>
-                <SelectItem value="untranscribed">未转录</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <ButtonGroup>
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                onClick={() => setViewMode('grid')}
-                size="icon"
-                className="w-10 h-10"
-              >
-                <GridIcon className="w-5 h-5" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                onClick={() => setViewMode('list')}
-                size="icon"
-                className="w-10 h-10"
-              >
-                <ListIcon className="w-5 h-5" />
-              </Button>
-            </ButtonGroup>
-            
-            <Button
-              onClick={fetchRecordings}
-              variant="outline"
-              size="default"
-              className="h-11"
-            >
-              <RefreshCwIcon className="w-4 h-4 mr-2" />
-              刷新
-            </Button>
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">总时长</p>
+                <p className="stat-value">{formatDuration(stats.totalDuration)}</p>
+              </div>
+              <ClockIcon className="stat-icon" />
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">转录率</p>
+                <p className="stat-value">{stats.transcriptionRate.toFixed(0)}%</p>
+              </div>
+              <ActivityIcon className="stat-icon" />
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-content">
+              <div className="stat-info">
+                <p className="stat-label">存储空间</p>
+                <p className="stat-value">{formatFileSize(stats.totalSize)}</p>
+              </div>
+              <FolderOpenIcon className="stat-icon" />
+            </div>
           </div>
         </div>
+      </PageHeader>
 
-        {/* Truncation hint */}
-        {!loading && fetchedAll === false && (
-          <Alert>
-            <AlertCircleIcon className="h-4 w-4" />
-            <AlertTitle>显示最新 100 条录音</AlertTitle>
-            <AlertDescription>
-              为提升性能，仅展示最近创建的 100 条录音。您可以
-              <Button variant="link" className="px-1" onClick={loadAll}>点击这里加载全部</Button>
-              。
-            </AlertDescription>
-          </Alert>
-        )}
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        <SearchInput className="flex-1" placeholder="搜索录音文件或转录内容..." value={searchQuery} onChange={setSearchQuery} />
 
-        {/* Loading State */}
-        {loading && (
+        <div className="flex gap-2 items-center">
+          <Select value={filterStatus} onValueChange={(value: 'all' | 'transcribed' | 'untranscribed') => setFilterStatus(value)}>
+            <SelectTrigger className="w-[180px] h-11">
+              <FilterIcon className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="筛选状态" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部录音</SelectItem>
+              <SelectItem value="transcribed">已转录</SelectItem>
+              <SelectItem value="untranscribed">未转录</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <ButtonGroup>
+            <Button variant={viewMode === 'grid' ? 'default' : 'outline'} onClick={() => setViewMode('grid')} size="icon" className="w-10 h-10">
+              <GridIcon className="w-5 h-5" />
+            </Button>
+            <Button variant={viewMode === 'list' ? 'default' : 'outline'} onClick={() => setViewMode('list')} size="icon" className="w-10 h-10">
+              <ListIcon className="w-5 h-5" />
+            </Button>
+          </ButtonGroup>
+
+          <Button onClick={fetchRecordings} variant="outline" size="default" className="h-11">
+            <RefreshCwIcon className="w-4 h-4 mr-2" />
+            刷新
+          </Button>
+        </div>
+      </div>
+
+      {/* Truncation hint */}
+      {!loading && fetchedAll === false && (
+        <Alert>
+          <AlertCircleIcon className="h-4 w-4" />
+          <AlertTitle>显示最新 100 条录音</AlertTitle>
+          <AlertDescription>
+            为提升性能，仅展示最近创建的 100 条录音。您可以
+            <Button variant="link" className="px-1" onClick={loadAll}>
+              点击这里加载全部
+            </Button>
+            。
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="p-6">
+              <Skeleton className="h-4 w-3/4 mb-2" />
+              <Skeleton className="h-3 w-1/2 mb-4" />
+              <Skeleton className="h-16 w-full mb-4" />
+              <div className="flex gap-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-8 w-20" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Recordings Grid/List */}
+      {!loading &&
+        filteredRecordings.length > 0 &&
+        (viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="p-6">
-                <Skeleton className="h-4 w-3/4 mb-2" />
-                <Skeleton className="h-3 w-1/2 mb-4" />
-                <Skeleton className="h-16 w-full mb-4" />
-                <div className="flex gap-2">
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-8 w-20" />
-                </div>
-              </Card>
+            {filteredRecordings.map((recording) => (
+              <RecordingCard
+                key={recording._id}
+                recording={recording}
+                showMeetingInfo={true}
+                showTranscriptionPreview={true}
+                showSource
+                actions={recordingActions}
+                onClick={handleRecordingClick}
+              />
             ))}
           </div>
-        )}
+        ) : (
+          <ItemGroup>
+            {filteredRecordings.map((recording, index) => (
+              <div key={recording._id}>
+                <RecordingListItem recording={recording} showSource actions={recordingActions} onClick={handleRecordingClick} />
+                {index < filteredRecordings.length - 1 && <ItemSeparator />}
+              </div>
+            ))}
+          </ItemGroup>
+        ))}
 
+      {/* Empty State */}
+      {!loading && filteredRecordings.length === 0 && (
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileAudioIcon />
+            </EmptyMedia>
+            <EmptyTitle>{searchQuery || filterStatus !== 'all' ? '没有找到匹配的录音' : '暂无录音'}</EmptyTitle>
+            <EmptyDescription>
+              {searchQuery || filterStatus !== 'all' ? '尝试调整搜索条件或筛选器' : '点击"快速录音"开始录制您的第一个录音'}
+            </EmptyDescription>
+          </EmptyHeader>
+          {(searchQuery || filterStatus !== 'all') && (
+            <EmptyContent>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterStatus('all');
+                }}
+              >
+                清除筛选
+              </Button>
+            </EmptyContent>
+          )}
+        </Empty>
+      )}
 
-        {/* Recordings Grid/List */}
-        {!loading && filteredRecordings.length > 0 && (
-          viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRecordings.map((recording) => (
-                <RecordingCard 
-                  key={recording._id} 
-                  recording={recording}
-                  showMeetingInfo={true}
-                  showTranscriptionPreview={true}
-                  showSource
-                  actions={recordingActions}
-                  onClick={handleRecordingClick}
-                />
-              ))}
-            </div>
-          ) : (
-            <ItemGroup>
-              {filteredRecordings.map((recording, index) => (
-                <div key={recording._id}>
-                  <RecordingListItem
-                    recording={recording}
-                    showSource
-                    actions={recordingActions}
-                    onClick={handleRecordingClick}
-                  />
-                  {index < filteredRecordings.length - 1 && <ItemSeparator />}
-                </div>
-              ))}
-            </ItemGroup>
-          )
-        )}
-
-        {/* Empty State */}
-        {!loading && filteredRecordings.length === 0 && (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileAudioIcon />
-              </EmptyMedia>
-              <EmptyTitle>
-                {searchQuery || filterStatus !== 'all' ? '没有找到匹配的录音' : '暂无录音'}
-              </EmptyTitle>
-              <EmptyDescription>
-                {searchQuery || filterStatus !== 'all'
-                  ? '尝试调整搜索条件或筛选器'
-                  : '点击"快速录音"开始录制您的第一个录音'}
-              </EmptyDescription>
-            </EmptyHeader>
-            {(searchQuery || filterStatus !== 'all') && (
-              <EmptyContent>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setFilterStatus('all');
-                  }}
-                >
-                  清除筛选
-                </Button>
-              </EmptyContent>
-            )}
-          </Empty>
-        )}
-
-        {/* Association Modal */}
-        {selectedRecording && (
-          <AssociateMeetingDialog
-            isOpen={showAssociationModal}
-            onClose={() => setShowAssociationModal(false)}
-            recording={selectedRecording}
-            onSuccess={handleAssociationSuccess}
-            onError={setError}
-          />
-        )}
+      {/* Association Modal */}
+      {selectedRecording && (
+        <AssociateMeetingDialog
+          isOpen={showAssociationModal}
+          onClose={() => setShowAssociationModal(false)}
+          recording={selectedRecording}
+          onSuccess={handleAssociationSuccess}
+          onError={setError}
+        />
+      )}
     </div>
   );
 }

@@ -6,8 +6,7 @@ import { getCollection } from '../config/database';
 import { COLLECTIONS, RecordingDocument, MeetingDocument } from '../types/documents';
 import { recordingDocumentToResponse, meetingDocumentToMeeting } from '../utils/mongoMappers';
 import { SegmentationService } from './SegmentationService';
-import { ensureTrailingSlash, requestJson, uploadMultipart } from '../utils/httpClient';
-import type { JsonRequestOptions } from '../utils/httpClient';
+import { ensureTrailingSlash, uploadMultipart } from '../utils/httpClient';
 import { getFilesBaseDir, makeRelativeToBase } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
 import { getMimeType, normalizeTranscriptText, findRecordingFilePath, findRecordingWorkingFilePath } from '../utils/recordingHelpers';
@@ -23,33 +22,21 @@ interface TranscriptionServiceResponse {
   fileSize?: number;
 }
 
-const TRANSCRIPTION_SERVICE_URL = process.env.TRANSCRIPTION_SERVICE_URL
-  || process.env.TRANSCRIBE_SERVICE_URL
-  || 'http://localhost:2594';
+const TRANSCRIPTION_SERVICE_URL = process.env.TRANSCRIPTION_SERVICE_URL || process.env.TRANSCRIBE_SERVICE_URL || 'http://localhost:2594';
 
 // Module-level singletons and constants
 const RECORDINGS_DIR = getFilesBaseDir();
 export const TRANSCRIPTION_SERVICE_BASE = ensureTrailingSlash(TRANSCRIPTION_SERVICE_URL);
 const segmentationService = new SegmentationService();
 
-const MEETING_LOOKUP_FIELDS: Array<keyof Meeting> = [
-  'title',
-  'status',
-  'createdAt',
-  'updatedAt',
-  'scheduledStart',
-  'summary',
-];
+const MEETING_LOOKUP_FIELDS: Array<keyof Meeting> = ['title', 'status', 'createdAt', 'updatedAt', 'scheduledStart', 'summary'];
 
 // Shared helpers
 function recordingsCollection() {
   return getCollection<RecordingDocument>(COLLECTIONS.RECORDINGS);
 }
 
-async function buildRecordingResponse(
-  document: RecordingDocument,
-  meetingFields?: Array<keyof Meeting>,
-): Promise<RecordingResponse> {
+async function buildRecordingResponse(document: RecordingDocument, meetingFields?: Array<keyof Meeting>): Promise<RecordingResponse> {
   const response = recordingDocumentToResponse(document);
 
   if (!meetingFields?.length || !document.meetingId) {
@@ -57,8 +44,7 @@ async function buildRecordingResponse(
   }
 
   try {
-    const meetingDoc = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS)
-      .findOne({ _id: document.meetingId });
+    const meetingDoc = await getCollection<MeetingDocument>(COLLECTIONS.MEETINGS).findOne({ _id: document.meetingId });
 
     if (!meetingDoc) {
       return response;
@@ -107,7 +93,9 @@ async function findRecording(recordingId: string): Promise<RecordingDocument | n
   const collection = recordingsCollection();
 
   if (ObjectId.isValid(recordingId)) {
-    const byObjectId = await collection.findOne({ _id: new ObjectId(recordingId) });
+    const byObjectId = await collection.findOne({
+      _id: new ObjectId(recordingId),
+    });
     if (byObjectId) {
       return byObjectId;
     }
@@ -145,16 +133,18 @@ async function deleteRecordingFile(document: RecordingDocument): Promise<void> {
     candidates.push(`${id}.encrypted.${ext}`);
   });
 
-  await Promise.allSettled(candidates.map(async (rel) => {
-    const p = path.join(RECORDINGS_DIR, rel);
-    try {
-      await fs.unlink(p);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        throw error;
+  await Promise.allSettled(
+    candidates.map(async (rel) => {
+      const p = path.join(RECORDINGS_DIR, rel);
+      try {
+        await fs.unlink(p);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw error;
+        }
       }
-    }
-  }));
+    })
+  );
 }
 
 function buildTranscriptionUrl(pathname: string): string {
@@ -172,25 +162,19 @@ export async function getAllRecordings(limit?: number | 'all'): Promise<Recordin
   return Promise.all(documents.map((doc) => buildRecordingResponse(doc, MEETING_LOOKUP_FIELDS)));
 }
 
-export async function getRecordingsForUser(
-  userId: string,
-  includeMeeting: boolean = true,
-  limit?: number | 'all',
-): Promise<RecordingResponse[]> {
+export async function getRecordingsForUser(userId: string, includeMeeting: boolean = true, limit?: number | 'all'): Promise<RecordingResponse[]> {
   const meetingsCol = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
   const uid = new ObjectId(userId);
   const accessibleMeetingIds = await meetingsCol
-    .find({ $or: [ { ownerId: uid }, { members: { $elemMatch: { $eq: uid } } } ] }, { projection: { _id: 1 } })
+    .find({ $or: [{ ownerId: uid }, { members: { $elemMatch: { $eq: uid } } }] }, { projection: { _id: 1 } })
     .toArray();
   const ids = accessibleMeetingIds.map((m) => m._id);
   const collection = recordingsCollection();
-  const query: any = { $or: [ { ownerId: uid } ] };
+  const query: Record<string, unknown> = { $or: [{ ownerId: uid }] } as Record<string, unknown>;
   if (ids.length > 0) {
-    query.$or.push({ meetingId: { $in: ids } });
+    (query.$or as unknown[]).push({ meetingId: { $in: ids } });
   }
-  const cursor = collection
-    .find(query)
-    .sort({ createdAt: -1 });
+  const cursor = collection.find(query).sort({ createdAt: -1 });
 
   if (limit !== 'all') {
     cursor.limit(typeof limit === 'number' ? limit : 100);
@@ -257,9 +241,7 @@ export async function createRecording(recordingData: {
     channels: recordingData.channels || undefined,
     format: recordingData.format || undefined,
     source: recordingData.source || 'upload',
-    ownerId: recordingData.ownerId && ObjectId.isValid(recordingData.ownerId)
-      ? new ObjectId(recordingData.ownerId)
-      : undefined,
+    ownerId: recordingData.ownerId && ObjectId.isValid(recordingData.ownerId) ? new ObjectId(recordingData.ownerId) : undefined,
     meetingId: recordingData.meetingId && ObjectId.isValid(recordingData.meetingId) ? new ObjectId(recordingData.meetingId) : undefined,
     hotwords: normalizedHotwords && normalizedHotwords.length > 0 ? normalizedHotwords : undefined,
   };
@@ -319,7 +301,7 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
 
   return {
     id: inserted._id.toHexString(),
-    message:'录音已开始',
+    message: '录音已开始',
   };
 }
 
@@ -339,6 +321,12 @@ export async function updateRecording(recordingId: string, updateData: Recording
   if (typeof updateData.verbatimTranscript === 'string') {
     updates.verbatimTranscript = updateData.verbatimTranscript;
     remoteUpdates.verbatimTranscript = updateData.verbatimTranscript;
+  }
+
+  if (typeof (updateData as unknown as { label?: string }).label === 'string') {
+    const raw = (updateData as unknown as { label?: string }).label as string;
+    const trimmed = raw.trim();
+    updates.label = trimmed.length > 0 ? trimmed : undefined;
   }
 
   if (Array.isArray(updateData.organizedSpeeches)) {
@@ -396,10 +384,7 @@ export async function addRecordingToMeeting(meetingId: string, recordingId: stri
   }
 
   const collection = recordingsCollection();
-  await collection.updateOne(
-    { _id: recording._id },
-    { $set: { meetingId: new ObjectId(meetingId) } },
-  );
+  await collection.updateOne({ _id: recording._id }, { $set: { meetingId: new ObjectId(meetingId) } });
 
   await mergeHotwordsIntoMeeting(meetingId, recording.hotwords);
   return { message: '录音已附加到会议' };
@@ -407,8 +392,8 @@ export async function addRecordingToMeeting(meetingId: string, recordingId: stri
 
 export async function transcribeRecording(recordingId: string, hotword?: string): Promise<{ message: string; transcription: string }> {
   const document = await findRecordingOrThrow(recordingId);
-  const workingPath = await findRecordingWorkingFilePath(RECORDINGS_DIR, document._id.toString(), document.format)
-    || await resolveAbsoluteFilePath(document);
+  const workingPath =
+    (await findRecordingWorkingFilePath(RECORDINGS_DIR, document._id.toString(), document.format)) || (await resolveAbsoluteFilePath(document));
   debug('Transcribing recording:', workingPath);
   const fileBuffer = await readDecryptedFile(workingPath);
   const filename = path.basename(workingPath);
@@ -457,8 +442,8 @@ export async function transcribeRecording(recordingId: string, hotword?: string)
 export async function segmentRecording(recordingId: string, oracleNumSpeakers?: number): Promise<{ message: string; segments: SpeakerSegment[] }> {
   const document = await findRecordingOrThrow(recordingId);
   debug('Segmenting recording:', document);
-  const workingPath = await findRecordingWorkingFilePath(RECORDINGS_DIR, document._id.toString(), document.format)
-    || await resolveAbsoluteFilePath(document);
+  const workingPath =
+    (await findRecordingWorkingFilePath(RECORDINGS_DIR, document._id.toString(), document.format)) || (await resolveAbsoluteFilePath(document));
   const relativePath = makeRelativeToBase(RECORDINGS_DIR, workingPath);
 
   const segmentationResult = await segmentationService.analyzeSegmentation({

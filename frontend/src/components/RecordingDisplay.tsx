@@ -19,7 +19,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
   onOfflineTranscribe,
   isGeneratingVerbatim = false,
   isPolishing = false,
-  isOfflineTranscribing = false
+  isOfflineTranscribing = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'transcript' | 'verbatim' | 'segments'>('transcript');
 
@@ -34,7 +34,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
     const sizes = ['B', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 B';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
   const renderSpeakerSegments = () => {
@@ -59,9 +59,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
               <div className="text-sm text-muted-foreground">
                 {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
               </div>
-              <div className="text-xs text-muted-foreground">
-                时长: {formatTime(segment.endTime - segment.startTime)}
-              </div>
+              <div className="text-xs text-muted-foreground">时长: {formatTime(segment.endTime - segment.startTime)}</div>
             </div>
           </div>
         ))}
@@ -69,7 +67,7 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
     );
   };
 
-  const displayName = recording.originalFileName || `${recording._id}.${recording.format || 'wav'}`;
+  const displayName = (recording as any).label || recording.originalFileName || `${recording._id}.${recording.format || 'wav'}`;
 
   return (
     <div className="bg-card rounded-lg shadow-sm border border-border p-6">
@@ -78,18 +76,10 @@ const RecordingDisplay: React.FC<RecordingDisplayProps> = ({
         <div>
           <h3 className="text-lg font-semibold text-foreground">{displayName}</h3>
           <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
-            {recording.duration && (
-              <span>时长: {formatTime(recording.duration)}</span>
-            )}
-            {recording.fileSize && (
-              <span>大小: {formatFileSize(recording.fileSize)}</span>
-            )}
-            {recording.sampleRate && (
-              <span>采样率: {recording.sampleRate}Hz</span>
-            )}
-            {recording.numSpeakers && (
-              <span>说话人数: {recording.numSpeakers}</span>
-            )}
+            {recording.duration && <span>时长: {formatTime(recording.duration)}</span>}
+            {recording.fileSize && <span>大小: {formatFileSize(recording.fileSize)}</span>}
+            {recording.sampleRate && <span>采样率: {recording.sampleRate}Hz</span>}
+            {recording.numSpeakers && <span>说话人数: {recording.numSpeakers}</span>}
           </div>
         </div>
         <div className="flex items-center space-x-2">

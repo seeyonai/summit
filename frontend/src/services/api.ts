@@ -1,4 +1,15 @@
-import type { Meeting, MeetingWithRecordings, Recording, SegmentationModelInfo, SegmentationRequest, SegmentationResponse, SpeakerSegment, AppCustomization, DisputedIssue, Todo } from '@/types';
+import type {
+  Meeting,
+  MeetingWithRecordings,
+  Recording,
+  SegmentationModelInfo,
+  SegmentationRequest,
+  SegmentationResponse,
+  SpeakerSegment,
+  AppCustomization,
+  DisputedIssue,
+  Todo,
+} from '@/types';
 import { toast } from 'sonner';
 
 type ErrorPayload = {
@@ -22,15 +33,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function normalizeErrorPayload(raw: unknown, status: number): ErrorPayload {
   if (isRecord(raw)) {
     if (isRecord(raw.error)) {
-      const message = typeof raw.error.message === 'string' && raw.error.message.trim().length > 0
-        ? raw.error.message.trim()
-        : undefined;
-      const code = typeof raw.error.code === 'string' && raw.error.code.trim().length > 0
-        ? raw.error.code.trim()
-        : undefined;
-      const details = Object.prototype.hasOwnProperty.call(raw.error, 'details')
-        ? raw.error.details
-        : undefined;
+      const message = typeof raw.error.message === 'string' && raw.error.message.trim().length > 0 ? raw.error.message.trim() : undefined;
+      const code = typeof raw.error.code === 'string' && raw.error.code.trim().length > 0 ? raw.error.code.trim() : undefined;
+      const details = Object.prototype.hasOwnProperty.call(raw.error, 'details') ? raw.error.details : undefined;
       if (message) {
         return { message, code, details };
       }
@@ -70,9 +75,7 @@ function createApiError(payload: ErrorPayload, status: number): ApiError {
 
 // Resolve backend base URL internally (not exported)
 function resolveBaseUrl(): string {
-  const envBase = typeof import.meta !== 'undefined'
-    ? (import.meta.env?.VITE_API_BASE_URL as string | undefined)
-    : undefined;
+  const envBase = typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_API_BASE_URL as string | undefined) : undefined;
   if (envBase && typeof envBase === 'string' && envBase.trim().length > 0) {
     return envBase.replace(/\/$/, '');
   }
@@ -93,7 +96,7 @@ export async function api<T = unknown>(endpoint: string, options: RequestInit = 
   const method = typeof options.method === 'string' ? options.method.toUpperCase() : 'GET';
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
+    ...((options.headers as Record<string, string>) || {}),
   };
   try {
     const token = localStorage.getItem('auth_token');
@@ -150,6 +153,7 @@ export function fileUrlFor(id: string): string {
 }
 
 interface RecordingUpdatePayload {
+  label?: string;
   transcription?: string;
   verbatimTranscript?: string;
   hotwords?: string[];
@@ -169,7 +173,6 @@ interface RecordingUpdatePayload {
 type SegmentRecordingOptions = Pick<SegmentationRequest, 'oracleNumSpeakers' | 'returnText'>;
 
 class ApiService {
-
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     return api<T>(endpoint, options);
   }
@@ -181,14 +184,14 @@ class ApiService {
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 
   async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 
@@ -217,7 +220,10 @@ class ApiService {
     }
     if (isRecord(data) && Array.isArray((data as any).recordings)) {
       const fetchedAll = typeof (data as any).fetchedAll === 'boolean' ? (data as any).fetchedAll : undefined;
-      return { recordings: (data as any).recordings as Recording[], fetchedAll };
+      return {
+        recordings: (data as any).recordings as Recording[],
+        fetchedAll,
+      };
     }
     return { recordings: [] };
   }
@@ -232,9 +238,7 @@ class ApiService {
   }
 
   async startRecording(options?: { meetingId?: string }): Promise<{ id: string; message?: string }> {
-    const endpoint = options?.meetingId
-      ? `/api/recordings/start?meetingId=${encodeURIComponent(options.meetingId)}`
-      : '/api/recordings/start';
+    const endpoint = options?.meetingId ? `/api/recordings/start?meetingId=${encodeURIComponent(options.meetingId)}` : '/api/recordings/start';
     return this.post<{ id: string; message?: string }>(endpoint, {});
   }
 
@@ -246,10 +250,7 @@ class ApiService {
     return this.delete(`/api/recordings/${id}`);
   }
 
-  async uploadRecording(
-    file: File,
-    onProgress?: (percent: number) => void
-  ): Promise<{ message: string; recording: Recording }> {
+  async uploadRecording(file: File, onProgress?: (percent: number) => void): Promise<{ message: string; recording: Recording }> {
     const url = apiUrl('/api/recordings/upload');
     return new Promise((resolve, reject) => {
       const formData = new FormData();
@@ -315,15 +316,15 @@ class ApiService {
           xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         }
       } catch {
-    // Ignore URL parsing errors
-  }
+        // Ignore URL parsing errors
+      }
       xhr.send(formData);
     });
   }
 
   async transcribeRecording(id: string, hotword?: string): Promise<{ message: string; transcription: string }> {
     const payload: Record<string, unknown> = {};
-    
+
     if (hotword && typeof hotword === 'string' && hotword.trim().length > 0) {
       payload.hotword = hotword.trim();
     }
@@ -355,8 +356,26 @@ class ApiService {
     return this.post<{ message: string; polishedTranscription: string }>(`/api/recordings/${id}/polish`);
   }
 
-  async organizeRecording(id: string): Promise<{ speeches: Array<{ speakerIndex: number; startTime: number; endTime: number; rawText: string; polishedText: string }>; message: string }>{
-    const result = await this.post<{ speeches: Array<{ speakerIndex: number; startTime: number; endTime: number; rawText: string; polishedText: string }>; message: string }>(`/api/recordings/${id}/organize`);
+  async organizeRecording(id: string): Promise<{
+    speeches: Array<{
+      speakerIndex: number;
+      startTime: number;
+      endTime: number;
+      rawText: string;
+      polishedText: string;
+    }>;
+    message: string;
+  }> {
+    const result = await this.post<{
+      speeches: Array<{
+        speakerIndex: number;
+        startTime: number;
+        endTime: number;
+        rawText: string;
+        polishedText: string;
+      }>;
+      message: string;
+    }>(`/api/recordings/${id}/organize`);
     if (Array.isArray(result.speeches) && result.speeches.length > 0) {
       await this.updateRecording(id, { organizedSpeeches: result.speeches });
     }
@@ -364,11 +383,25 @@ class ApiService {
   }
 
   // Alignment
-  async getAlignerModelInfo(): Promise<{ model: string; modelRevision: string; task: string; available: boolean; description: string; }> {
+  async getAlignerModelInfo(): Promise<{
+    model: string;
+    modelRevision: string;
+    task: string;
+    available: boolean;
+    description: string;
+  }> {
     return this.get('/api/aligner/model-info');
   }
 
-  async alignRecording(id: string, text: string): Promise<{ success: boolean; alignments: Array<{ key: string; text: string; timestamp: number[][] }>; message: string; key: string | null; }> {
+  async alignRecording(
+    id: string,
+    text: string
+  ): Promise<{
+    success: boolean;
+    alignments: Array<{ key: string; text: string; timestamp: number[][] }>;
+    message: string;
+    key: string | null;
+  }> {
     return this.post(`/api/recordings/${id}/align`, { text });
   }
 
@@ -410,15 +443,24 @@ class ApiService {
     return this.put(`/api/meetings/${id}`, data);
   }
 
+  async generateMeetingFinalTranscript(id: string): Promise<{ success: boolean; finalTranscript: string; message?: string }> {
+    return this.post(`/api/meetings/${id}/final-transcript`);
+  }
+
   async updateMeetingTranscript(id: string, finalTranscript: string): Promise<{ success: boolean; message: string; meeting: Meeting }> {
-    return this.put(`/api/meetings/${id}/final-transcript`, { finalTranscript });
+    return this.put(`/api/meetings/${id}/final-transcript`, {
+      finalTranscript,
+    });
   }
 
   async deleteMeeting(id: string) {
     return this.delete(`/api/meetings/${id}`);
   }
 
-  async concatenateMeetingRecordings(meetingId: string, recordingIds?: string[]): Promise<{
+  async concatenateMeetingRecordings(
+    meetingId: string,
+    recordingIds?: string[]
+  ): Promise<{
     success?: boolean;
     meeting?: MeetingWithRecordings | null;
     recording: Recording;
@@ -490,7 +532,7 @@ class ApiService {
 
     const response = await fetch(url, {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     let data: unknown;

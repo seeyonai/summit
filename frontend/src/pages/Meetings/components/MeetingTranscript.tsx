@@ -6,12 +6,7 @@ import { ButtonGroup } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Meeting, OrganizedSpeech } from '@/types';
 import {
   FileTextIcon,
@@ -25,7 +20,7 @@ import {
   SearchIcon,
   XIcon,
   MaximizeIcon,
-  MessageSquareTextIcon
+  MessageSquareTextIcon,
 } from 'lucide-react';
 import AnnotatedMarkdown from '@/components/AnnotatedMarkdown';
 import markdownDocx, { Packer } from 'markdown-docx';
@@ -47,14 +42,16 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isGeneratingFromRecordings, setIsGeneratingFromRecordings] = useState(false);
 
   const exportTranscript = async (format: 'txt' | 'docx') => {
     if (!meeting.finalTranscript) return;
 
     try {
-      const aiWarning = "\n\n---\n⚠️ AI生成内容警告：此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。";
+      const aiWarning =
+        '\n\n---\n⚠️ AI生成内容警告：此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。';
       const content = meeting.finalTranscript + aiWarning;
-      
+
       if (format === 'docx') {
         // Convert markdown to DOCX
         const doc = await markdownDocx(content);
@@ -81,6 +78,27 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
       }
     } catch (err) {
       console.error('Export failed:', err);
+    }
+  };
+
+  const handleGenerateTranscriptFromRecordings = async () => {
+    if (!meeting.recordings || meeting.recordings.length === 0) {
+      return;
+    }
+
+    setIsGeneratingFromRecordings(true);
+    try {
+      const response = await apiService.generateMeetingFinalTranscript(meeting._id);
+      if (response.success && response.finalTranscript && onMeetingUpdate) {
+        onMeetingUpdate({
+          ...meeting,
+          finalTranscript: response.finalTranscript,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to generate transcript from recordings:', error);
+    } finally {
+      setIsGeneratingFromRecordings(false);
     }
   };
 
@@ -119,29 +137,23 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
   // Analyze speaker segments if available
   const speakerStats = sourceRecordings.reduce((acc, recording) => {
     if (recording.speakerSegments) {
-      recording.speakerSegments.forEach(segment => {
+      recording.speakerSegments.forEach((segment) => {
         const speakerId = `speaker_${segment.speakerIndex}`;
         if (!acc[speakerId]) {
           acc[speakerId] = {
             index: segment.speakerIndex,
             segments: 0,
-            totalDuration: 0
+            totalDuration: 0,
           };
         }
         acc[speakerId].segments++;
-        acc[speakerId].totalDuration += (segment.endTime - segment.startTime);
+        acc[speakerId].totalDuration += segment.endTime - segment.startTime;
       });
     }
     return acc;
   }, {} as Record<string, { index: number; segments: number; totalDuration: number }>);
 
-  const speakerColors = [
-    'bg-badge-info',
-    'bg-badge-success',
-    'bg-badge-warning',
-    'bg-badge-accent',
-    'bg-badge-primary'
-  ];
+  const speakerColors = ['bg-badge-info', 'bg-badge-success', 'bg-badge-warning', 'bg-badge-accent', 'bg-badge-primary'];
 
   // Combine organized speeches from all recordings
   const combinedOrganizedSpeeches: OrganizedSpeech[] | undefined = sourceRecordings.reduce<OrganizedSpeech[]>((acc, recording) => {
@@ -161,11 +173,13 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
     if (!query.trim()) return text;
 
     const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
-    return parts.map((part, index) => 
-      part.toLowerCase() === query.toLowerCase() 
-        ? `<mark class="bg-yellow-200 dark:bg-yellow-900/50 text-foreground rounded px-0.5">${part}</mark>`
-        : part
-    ).join('');
+    return parts
+      .map((part, index) =>
+        part.toLowerCase() === query.toLowerCase()
+          ? `<mark class="bg-yellow-200 dark:bg-yellow-900/50 text-foreground rounded px-0.5">${part}</mark>`
+          : part
+      )
+      .join('');
   };
 
   // Get highlighted transcript for text view
@@ -203,7 +217,10 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
           <StatisticsCard
             icon={<MessageSquareIcon className="w-4 h-4 text-success" />}
             label="句数"
-            value={meeting.finalTranscript.split(/[。！？.!?]+/).filter(s => s.trim()).length.toLocaleString()}
+            value={meeting.finalTranscript
+              .split(/[。！？.!?]+/)
+              .filter((s) => s.trim())
+              .length.toLocaleString()}
             description="按句号/问号/感叹号划分"
           />
         </div>
@@ -263,14 +280,12 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                   const seconds = Math.floor(speech.startTime % 60);
                   const endMinutes = Math.floor(speech.endTime / 60);
                   const endSeconds = Math.floor(speech.endTime % 60);
-                  
+
                   return (
                     <div key={index} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <Badge className={speakerColorClass}>
-                            发言人 {speech.speakerIndex + 1}
-                          </Badge>
+                          <Badge className={speakerColorClass}>发言人 {speech.speakerIndex + 1}</Badge>
                           <span className="text-sm text-muted-foreground">
                             {minutes}:{seconds.toString().padStart(2, '0')} - {endMinutes}:{endSeconds.toString().padStart(2, '0')}
                           </span>
@@ -356,12 +371,16 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                 )}
                 <div className="relative">
                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input type="text" placeholder="搜索会议记录..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-20" />
+                  <Input
+                    type="text"
+                    placeholder="搜索会议记录..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-20"
+                  />
                   {searchQuery && (
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {matchCount} 个匹配
-                      </span>
+                      <span className="text-xs text-muted-foreground">{matchCount} 个匹配</span>
                       <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} className="h-6 w-6 p-0">
                         <XIcon className="w-3 h-3" />
                       </Button>
@@ -384,11 +403,12 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                 {viewMode === 'text' ? (
                   <div className="prose max-w-none">
                     {searchQuery ? (
-                      <div className="text-foreground whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: highlightedTranscript || '' }} />
+                      <div
+                        className="text-foreground whitespace-pre-wrap leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: highlightedTranscript || '' }}
+                      />
                     ) : (
-                      <p className="text-foreground whitespace-pre-wrap leading-relaxed">
-                        {meeting.finalTranscript}
-                      </p>
+                      <p className="text-foreground whitespace-pre-wrap leading-relaxed">{meeting.finalTranscript}</p>
                     )}
                   </div>
                 ) : (
@@ -402,7 +422,9 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                     <span className="text-amber-600 dark:text-amber-400 text-sm">⚠️</span>
                     <div className="text-sm text-amber-800 dark:text-amber-200">
                       <p className="font-medium mb-1">AI生成内容警告</p>
-                      <p className="text-amber-700 dark:text-amber-300">此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。</p>
+                      <p className="text-amber-700 dark:text-amber-300">
+                        此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -421,13 +443,12 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    disabled={!meeting.recordings || meeting.recordings.length === 0}
+                    disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
+                    onClick={handleGenerateTranscriptFromRecordings}
                   >
-                    根据录音转录
+                    {isGeneratingFromRecordings ? '生成中...' : '根据录音转录'}
                   </Button>
-                  <Button onClick={() => setIsUploadDialogOpen(true)}>
-                    手工添加...
-                  </Button>
+                  <Button onClick={() => setIsUploadDialogOpen(true)}>手工添加...</Button>
                 </div>
               </EmptyContent>
             </Empty>
@@ -445,20 +466,12 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
 
       {/* Fullscreen Markdown Viewer */}
       {isFullscreen && meeting.finalTranscript && (
-        <FullscreenMarkdownViewer
-          content={meeting.finalTranscript}
-          onClose={() => setIsFullscreen(false)}
-        />
+        <FullscreenMarkdownViewer content={meeting.finalTranscript} onClose={() => setIsFullscreen(false)} />
       )}
 
       {/* Transcript Chat Panel */}
       {meeting.finalTranscript && (
-        <TranscriptChatPanel
-          open={isChatOpen}
-          onOpenChange={setIsChatOpen}
-          meetingId={meeting._id}
-          meetingTitle={meeting.title}
-        />
+        <TranscriptChatPanel open={isChatOpen} onOpenChange={setIsChatOpen} meetingId={meeting._id} meetingTitle={meeting.title} />
       )}
     </div>
   );

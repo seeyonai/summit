@@ -1,6 +1,6 @@
-import * as baseTypes from "@base/types";
-import { AlignmentItem, TimeStampedNote } from "@base/types";
-import { ObjectId } from "mongodb";
+import * as baseTypes from '@base/types';
+import { AlignmentItem, TimeStampedNote } from '@base/types';
+import { ObjectId } from 'mongodb';
 
 export type SpeakerSegment = baseTypes.SpeakerSegment;
 
@@ -17,15 +17,18 @@ interface Id {
   _id: ObjectId;
 }
 
-export type Recording = baseTypes.Recording & Timestamp & Id & {
-  meetingId?: ObjectId;
-  ownerId?: ObjectId;
-};
+export type Recording = baseTypes.Recording &
+  Timestamp &
+  Id & {
+    meetingId?: ObjectId;
+    ownerId?: ObjectId;
+  };
 
 export interface RecordingResponse {
   _id: string;
   meetingId?: string;
   ownerId?: string;
+  label?: string;
   originalFileName?: string;
   createdAt: string;
   updatedAt?: string;
@@ -82,29 +85,22 @@ type MeetingBase = Omit<baseTypes.Meeting, 'recordingOrder'> & {
   recordingOrder?: MeetingRecordingOrderItem[];
 };
 
-export type Meeting = MeetingBase & Timestamp & Id & {
-  ownerId?: ObjectId;
-  members?: ObjectId[];
-  concatenatedRecording?: Recording | null;
-  recordings?: Recording[];
-};
+export type Meeting = MeetingBase &
+  Timestamp &
+  Id & {
+    ownerId?: ObjectId;
+    members?: ObjectId[];
+    concatenatedRecording?: Recording | null;
+    recordings?: Recording[];
+  };
 
 export type MeetingCreate = Omit<baseTypes.Meeting, 'recordingOrder'> & {
   recordingOrder?: MeetingRecordingOrderItem[];
 };
 
-export type MeetingUpdate = Partial<Pick<
-  Meeting,
-  'title' |
-  'summary' |
-  'status' |
-  'agenda' |
-  'scheduledStart' |
-  'finalTranscript' |
-  'recordingOrder' |
-  'hotwords'
->>;
-
+export type MeetingUpdate = Partial<
+  Pick<Meeting, 'title' | 'summary' | 'status' | 'agenda' | 'scheduledStart' | 'finalTranscript' | 'recordingOrder' | 'hotwords'>
+>;
 
 export interface SegmentationResponse {
   success: boolean;
@@ -139,10 +135,12 @@ export interface SpeechModelInfo {
 }
 
 // Hotword management types
-export type Hotword = Omit<baseTypes.Hotword, 'ownerId' | 'isPublic'> & Timestamp & Id & {
-  isPublic: boolean;
-  ownerId?: ObjectId;
-};
+export type Hotword = Omit<baseTypes.Hotword, 'ownerId' | 'isPublic'> &
+  Timestamp &
+  Id & {
+    isPublic: boolean;
+    ownerId?: ObjectId;
+  };
 
 export type HotwordCreate = baseTypes.Hotword & {
   isPublic?: boolean;

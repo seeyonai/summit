@@ -1,15 +1,5 @@
-import {
-  Meeting,
-  Hotword,
-  Recording,
-  RecordingResponse,
-  MeetingStatus,
-} from '../types';
-import {
-  MeetingDocument,
-  HotwordDocument,
-  RecordingDocument,
-} from '../types/documents';
+import { Meeting, Hotword, Recording, RecordingResponse, MeetingStatus } from '../types';
+import { MeetingDocument, HotwordDocument, RecordingDocument } from '../types/documents';
 import { ObjectId } from 'mongodb';
 import { normalizeAgendaItems } from './agendaUtils';
 
@@ -19,12 +9,8 @@ const normalizeRecording = (recording?: Recording | null): Recording | null | un
   if (recording === undefined || recording === null) {
     return recording;
   }
-  const createdAt = recording.createdAt instanceof Date
-    ? recording.createdAt
-    : new Date(recording.createdAt);
-  const updatedAt = recording.updatedAt instanceof Date || recording.updatedAt === undefined
-    ? recording.updatedAt
-    : new Date(recording.updatedAt);
+  const createdAt = recording.createdAt instanceof Date ? recording.createdAt : new Date(recording.createdAt);
+  const updatedAt = recording.updatedAt instanceof Date || recording.updatedAt === undefined ? recording.updatedAt : new Date(recording.updatedAt);
   return {
     ...recording,
     createdAt,
@@ -36,9 +22,7 @@ const normalizeRecordings = (recordings?: Recording[] | null): Recording[] | und
   if (!recordings) {
     return undefined;
   }
-  return recordings
-    .map((recording) => normalizeRecording(recording))
-    .filter((value): value is Recording => value !== undefined && value !== null);
+  return recordings.map((recording) => normalizeRecording(recording)).filter((value): value is Recording => value !== undefined && value !== null);
 };
 
 export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
@@ -66,11 +50,7 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
               return null;
             }
             const raw = entry.recordingId;
-            const recordingId = raw instanceof ObjectId
-              ? raw
-              : ObjectId.isValid(raw)
-                ? new ObjectId(raw)
-                : null;
+            const recordingId = raw instanceof ObjectId ? raw : ObjectId.isValid(raw) ? new ObjectId(raw) : null;
             if (!recordingId) {
               return null;
             }
@@ -80,7 +60,15 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
               enabled: entry.enabled !== false,
             };
           })
-          .filter((value): value is { recordingId: ObjectId; index: number; enabled: boolean } => value !== null)
+          .filter(
+            (
+              value
+            ): value is {
+              recordingId: ObjectId;
+              index: number;
+              enabled: boolean;
+            } => value !== null
+          )
           .sort((a, b) => a.index - b.index)
           .map((entry, idx) => ({
             ...entry,
@@ -91,9 +79,7 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
 }
 
 export function hotwordDocumentToHotword(hotwordDoc: HotwordDocument): Hotword {
-  const createdAt = typeof hotwordDoc.createdAt === 'string'
-    ? new Date(hotwordDoc.createdAt)
-    : hotwordDoc.createdAt;
+  const createdAt = typeof hotwordDoc.createdAt === 'string' ? new Date(hotwordDoc.createdAt) : hotwordDoc.createdAt;
 
   return {
     _id: hotwordDoc._id,
@@ -112,6 +98,7 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
     _id: recordingDoc._id.toHexString(),
     meetingId: toHex(recordingDoc.meetingId),
     ownerId: toHex(recordingDoc.ownerId),
+    label: (recordingDoc as any).label,
     originalFileName: recordingDoc.originalFileName,
     createdAt: recordingDoc.createdAt.toISOString(),
     updatedAt: toIsoString(recordingDoc.updatedAt),
