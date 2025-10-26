@@ -17,7 +17,7 @@ function getStatusColor(status: MeetingStatus) {
     case 'scheduled': return 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary/80';
     case 'in_progress': return 'bg-success/10 dark:bg-success/20 text-success dark:text-success/80';
     case 'completed': return 'bg-muted text-muted-foreground';
-    case 'failed': return 'bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive/80';
+    case 'cancelled': return 'bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive/80';
     default: return 'bg-muted text-muted-foreground';
   }
 }
@@ -27,7 +27,7 @@ function getStatusText(status: MeetingStatus) {
     case 'scheduled': return '已排期';
     case 'in_progress': return '进行中';
     case 'completed': return '已完成';
-    case 'failed': return '失败';
+    case 'cancelled': return '已取消';
     default: return status;
   }
 }

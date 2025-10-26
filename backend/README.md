@@ -77,7 +77,7 @@ interface Meeting {
   id: string;
   title: string;
   description?: string;
-  status: 'scheduled' | 'in_progress' | 'completed' | 'failed';
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   created_at: Date;
   updated_at: Date;
   scheduled_start?: Date;

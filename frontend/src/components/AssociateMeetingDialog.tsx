@@ -110,7 +110,7 @@ function AssociateMeetingDialog({
                       >
                         {meeting.status === 'completed' ? '已完成' :
                          meeting.status === 'in_progress' ? '进行中' :
-                         meeting.status === 'scheduled' ? '已排期' : '失败'}
+                         meeting.status === 'scheduled' ? '已排期' : '已取消'}
                       </Badge>
                       {meeting.scheduledStart && (
                         <span className="text-xs text-gray-500 dark:text-gray-400">

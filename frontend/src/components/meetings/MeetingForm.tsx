@@ -270,7 +270,7 @@ function MeetingForm({
                       <SelectItem value="scheduled">已排期</SelectItem>
                       <SelectItem value="in_progress">进行中</SelectItem>
                       <SelectItem value="completed">已完成</SelectItem>
-                      <SelectItem value="failed">失败</SelectItem>
+                      <SelectItem value="cancelled">已取消</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

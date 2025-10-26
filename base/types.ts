@@ -74,7 +74,7 @@ export interface Recording {
 
 export type RecordingUpdate = Partial<Recording>;
 
-export type MeetingStatus = 'scheduled' | 'in_progress' | 'completed' | 'failed';
+export type MeetingStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface Todo {
   text: string;

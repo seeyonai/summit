@@ -150,7 +150,7 @@ function RecordingListItem({ recording, showSource = false, actions = {}, onClic
                 ? '进行中'
                 : recording.meeting.status === 'scheduled'
                 ? '已排期'
-                : '失败'}
+                : '已取消'}
             </Badge>
           )}
         </ItemTitle>

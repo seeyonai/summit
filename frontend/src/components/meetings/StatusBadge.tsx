@@ -1,8 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { AgendaItemStatus } from '@base/types';
+import type { AgendaItemStatus, MeetingStatus } from '@base/types';
 
-export type MeetingStatus = 'in_progress' | 'completed' | 'scheduled' | 'failed';
 export type AgendaStatus = AgendaItemStatus;
 export type TodoPriority = 'high' | 'medium' | 'low';
 
@@ -30,8 +29,8 @@ const statusConfig = {
       className: 'bg-badge-info',
       dotClass: 'bg-primary',
     },
-    failed: {
-      label: '失败',
+    cancelled: {
+      label: '已取消',
       className: 'bg-badge-destructive',
       dotClass: 'bg-destructive',
     },

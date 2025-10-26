@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMeetingDetail } from "@/hooks/useMeetingDetail";
 import { useTodoAdvice } from "@/hooks/useTodoAdvice";
 import useMeetingMembers from "@/hooks/useMeetingMembers";
@@ -33,6 +34,7 @@ import {
   HeadphonesIcon,
   ListIcon,
   RadarIcon,
+  ChevronDownIcon,
 } from "lucide-react";
 
 function MeetingDetail() {
@@ -159,6 +161,44 @@ function MeetingDetail() {
     setSuccess("转录内容已更新");
   }, [refresh]);
 
+  const handleQuickStatusChange = useCallback(async (newStatus: string) => {
+    if (!meeting || updatingStatus) {
+      return;
+    }
+
+    // Confirm certain status changes
+    if (newStatus === "in_progress" && meeting.status !== "in_progress") {
+      if (!confirm("确定要开始这个会议吗？")) {
+        return;
+      }
+    }
+
+    if (newStatus === "completed" && meeting.status !== "completed") {
+      if (!confirm("确定要将会议标记为已完成吗？")) {
+        return;
+      }
+    }
+
+    if (newStatus === "cancelled" && meeting.status !== "cancelled") {
+      if (!confirm("确定要将会议标记为已取消吗？")) {
+        return;
+      }
+    }
+
+    try {
+      setUpdatingStatus(true);
+      await updateMeetingStatus(newStatus as any);
+
+      const statusText = getStatusText(newStatus);
+      setSuccess(`会议状态已更新为: ${statusText}`);
+    } catch (error) {
+      console.error("Failed to update meeting status", error);
+      alert("更新会议状态失败，请稍后重试。");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }, [meeting, updateMeetingStatus, updatingStatus]);
+
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -176,7 +216,7 @@ function MeetingDetail() {
         return "bg-success/10 dark:bg-success/20 text-success dark:text-success/80";
       case "completed":
         return "bg-muted text-muted-foreground";
-      case "failed":
+      case "cancelled":
         return "bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive/80";
       default:
         return "bg-muted text-muted-foreground";
@@ -191,8 +231,8 @@ function MeetingDetail() {
         return "进行中";
       case "completed":
         return "已完成";
-      case "failed":
-        return "失败";
+      case "cancelled":
+        return "已取消";
       default:
         return status || "未知";
     }
@@ -209,6 +249,17 @@ function MeetingDetail() {
       default:
         return ClockIcon;
     }
+  };
+
+  const getAvailableStatusOptions = (currentStatus?: string) => {
+    const allStatuses = [
+      { value: "scheduled", label: "已排期", icon: CalendarIcon },
+      { value: "in_progress", label: "进行中", icon: PlayIcon },
+      { value: "completed", label: "已完成", icon: PauseIcon },
+      { value: "cancelled", label: "已取消", icon: AlertCircleIcon },
+    ];
+
+    return allStatuses.filter(status => status.value !== currentStatus);
   };
 
   if (loading) {
@@ -258,13 +309,36 @@ function MeetingDetail() {
               <h1 className="text-3xl font-bold text-foreground dark:text-foreground">
                 {meeting.title}
               </h1>
-              <Badge
-                variant="outline"
-                className={getStatusColor(meeting.status)}
-              >
-                <StatusIcon className="w-3 h-3 mr-1" />
-                {getStatusText(meeting.status)}
-              </Badge>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`h-7 px-3 ${getStatusColor(meeting.status)} hover:opacity-80 transition-opacity`}
+                    disabled={updatingStatus}
+                  >
+                    <StatusIcon className="w-3 h-3 mr-1" />
+                    {getStatusText(meeting.status)}
+                    <ChevronDownIcon className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {getAvailableStatusOptions(meeting.status).map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => handleQuickStatusChange(option.value)}
+                        disabled={updatingStatus}
+                        className="flex items-center gap-2"
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{option.label}</span>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <p className="text-muted-foreground dark:text-muted-foreground mb-3">{meeting.summary || "暂无概要"}</p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-muted-foreground">

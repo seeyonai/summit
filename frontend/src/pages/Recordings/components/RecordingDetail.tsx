@@ -281,7 +281,7 @@ function RecordingDetailRedesign() {
                               ? '进行中'
                               : recording.meeting.status === 'scheduled'
                               ? '已排期'
-                              : '失败'}
+                              : '已取消'}
                           </Badge>
                         </div>
                       </div>

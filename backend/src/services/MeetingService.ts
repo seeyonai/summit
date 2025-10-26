@@ -207,7 +207,7 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
   const collection = getMeetingsCollection();
   const now = new Date();
   const normalizedHotwords = normalizeHotwords(request.hotwords);
-  const validStatuses: Meeting['status'][] = ['scheduled', 'in_progress', 'completed', 'failed'];
+  const validStatuses: Meeting['status'][] = ['scheduled', 'in_progress', 'completed', 'cancelled'];
   const status: Meeting['status'] = request.status && validStatuses.includes(request.status)
     ? request.status
     : 'scheduled';
