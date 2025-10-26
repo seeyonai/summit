@@ -135,12 +135,8 @@ export class HotwordService {
       throw forbidden('Not allowed', 'hotword.forbidden');
     }
 
-    const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: { isActive: false } }
-    );
-
-    if (!result) {
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    if (result.deletedCount === 0) {
       throw notFound('Hotword not found', 'hotword.not_found');
     }
   }
