@@ -7,6 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Meeting, OrganizedSpeech } from '@/types';
 import {
   FileTextIcon,
@@ -16,11 +26,11 @@ import {
   UsersIcon,
   HashIcon,
   EyeIcon,
-  CodeIcon,
   SearchIcon,
   XIcon,
   MaximizeIcon,
   MessageSquareTextIcon,
+  RefreshCwIcon,
 } from 'lucide-react';
 import AnnotatedMarkdown from '@/components/AnnotatedMarkdown';
 import markdownDocx, { Packer } from 'markdown-docx';
@@ -43,6 +53,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isGeneratingFromRecordings, setIsGeneratingFromRecordings] = useState(false);
+  const [isRegenerateDialogOpen, setIsRegenerateDialogOpen] = useState(false);
 
   const exportTranscript = async (format: 'txt' | 'docx') => {
     if (!meeting.finalTranscript) return;
@@ -112,7 +123,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
     }
   };
 
-  const handleTranscriptAdd = async (content: string, filename?: string) => {
+  const handleTranscriptAdd = async (content: string) => {
     if (!content.trim()) {
       return;
     }
@@ -174,7 +185,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
 
     const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
     return parts
-      .map((part, index) =>
+      .map((part) =>
         part.toLowerCase() === query.toLowerCase()
           ? `<mark class="bg-yellow-200 dark:bg-yellow-900/50 text-foreground rounded px-0.5">${part}</mark>`
           : part
@@ -295,7 +306,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                         {speech.polishedText && (
                           <div>
                             <p className="text-sm text-muted-foreground mb-1">整理内容：</p>
-                            <p className="text-gray-900 leading-relaxed">{speech.polishedText}</p>
+                            <p className="leading-relaxed">{speech.polishedText}</p>
                           </div>
                         )}
                         {speech.rawText && (
@@ -354,6 +365,21 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>复制</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={() => setIsRegenerateDialogOpen(true)}
+                            variant="outline"
+                            size="icon"
+                            disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
+                          >
+                            <RefreshCwIcon className={`w-4 h-4 ${isGeneratingFromRecordings ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{isGeneratingFromRecordings ? '生成中...' : '重新生成'}</p>
                         </TooltipContent>
                       </Tooltip>
                       <Select onValueChange={(value) => exportTranscript(value as 'txt' | 'docx')}>
@@ -473,6 +499,29 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
       {meeting.finalTranscript && (
         <TranscriptChatPanel open={isChatOpen} onOpenChange={setIsChatOpen} meetingId={meeting._id} meetingTitle={meeting.title} />
       )}
+
+      {/* Re-generate Confirmation Dialog */}
+      <AlertDialog open={isRegenerateDialogOpen} onOpenChange={setIsRegenerateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>重新生成会议记录？</AlertDialogTitle>
+            <AlertDialogDescription>
+              这将根据会议录音重新生成完整的会议记录。当前的记录内容将被覆盖，此操作无法撤销。确定要继续吗？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setIsRegenerateDialogOpen(false);
+                handleGenerateTranscriptFromRecordings();
+              }}
+            >
+              确定重新生成
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
