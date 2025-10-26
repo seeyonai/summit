@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMeetingDetail } from "@/hooks/useMeetingDetail";
 import { useTodoAdvice } from "@/hooks/useTodoAdvice";
@@ -46,6 +47,12 @@ function MeetingDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "recordings";
   const activeSubtab = searchParams.get("subtab") || "disputedIssues";
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void | Promise<void>;
+  }>({ open: false, title: '', description: '', onConfirm: () => {} });
 
   // Use custom hooks
   const {
@@ -81,12 +88,17 @@ function MeetingDetail() {
 
   // Event handlers
 
-  const handleDeleteMeeting = async () => {
-    if (!confirm("确定要删除这个会议吗？此操作不可撤销。")) {
-      return;
-    }
-    await deleteMeeting();
-    navigate("/meetings");
+  const handleDeleteMeeting = () => {
+    setConfirmDialog({
+      open: true,
+      title: '确认删除',
+      description: '确定要删除这个会议吗？此操作不可撤销。',
+      onConfirm: async () => {
+        await deleteMeeting();
+        navigate("/meetings");
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      },
+    });
   };
 
   const handleAnalysisComplete = useCallback(() => {
@@ -126,31 +138,35 @@ function MeetingDetail() {
       setSuccess("会议已开始");
     } catch (error) {
       console.error("Failed to start meeting", error);
-      alert("开始会议失败，请稍后重试。");
+      setSuccess("开始会议失败，请稍后重试。");
     } finally {
       setUpdatingStatus(false);
     }
   }, [meeting, updateMeetingStatus, updatingStatus]);
 
-  const handleEndMeeting = useCallback(async () => {
+  const handleEndMeeting = useCallback(() => {
     if (!meeting || updatingStatus) {
       return;
     }
 
-    if (!confirm("确认要结束当前会议吗？")) {
-      return;
-    }
-
-    try {
-      setUpdatingStatus(true);
-      await updateMeetingStatus("completed");
-      setSuccess("会议已结束");
-    } catch (error) {
-      console.error("Failed to end meeting", error);
-      alert("结束会议失败，请稍后重试。");
-    } finally {
-      setUpdatingStatus(false);
-    }
+    setConfirmDialog({
+      open: true,
+      title: '确认结束会议',
+      description: '确认要结束当前会议吗？',
+      onConfirm: async () => {
+        try {
+          setUpdatingStatus(true);
+          await updateMeetingStatus("completed");
+          setSuccess("会议已结束");
+        } catch (error) {
+          console.error("Failed to end meeting", error);
+          setSuccess("结束会议失败，请稍后重试。");
+        } finally {
+          setUpdatingStatus(false);
+          setConfirmDialog(prev => ({ ...prev, open: false }));
+        }
+      },
+    });
   }, [meeting, updateMeetingStatus, updatingStatus]);
 
   const handleMeetingUpdate = useCallback((updatedMeeting: any) => {
@@ -161,42 +177,59 @@ function MeetingDetail() {
     setSuccess("转录内容已更新");
   }, [refresh]);
 
-  const handleQuickStatusChange = useCallback(async (newStatus: string) => {
+  const handleQuickStatusChange = useCallback((newStatus: string) => {
     if (!meeting || updatingStatus) {
       return;
     }
 
+    const performStatusChange = async () => {
+      try {
+        setUpdatingStatus(true);
+        await updateMeetingStatus(newStatus as any);
+        const statusText = getStatusText(newStatus);
+        setSuccess(`会议状态已更新为: ${statusText}`);
+      } catch (error) {
+        console.error("Failed to update meeting status", error);
+        setSuccess("更新会议状态失败，请稍后重试。");
+      } finally {
+        setUpdatingStatus(false);
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      }
+    };
+
     // Confirm certain status changes
     if (newStatus === "in_progress" && meeting.status !== "in_progress") {
-      if (!confirm("确定要开始这个会议吗？")) {
-        return;
-      }
+      setConfirmDialog({
+        open: true,
+        title: '确认开始会议',
+        description: '确定要开始这个会议吗？',
+        onConfirm: performStatusChange,
+      });
+      return;
     }
 
     if (newStatus === "completed" && meeting.status !== "completed") {
-      if (!confirm("确定要将会议标记为已完成吗？")) {
-        return;
-      }
+      setConfirmDialog({
+        open: true,
+        title: '确认完成会议',
+        description: '确定要将会议标记为已完成吗？',
+        onConfirm: performStatusChange,
+      });
+      return;
     }
 
     if (newStatus === "cancelled" && meeting.status !== "cancelled") {
-      if (!confirm("确定要将会议标记为已取消吗？")) {
-        return;
-      }
+      setConfirmDialog({
+        open: true,
+        title: '确认取消会议',
+        description: '确定要将会议标记为已取消吗？',
+        onConfirm: performStatusChange,
+      });
+      return;
     }
 
-    try {
-      setUpdatingStatus(true);
-      await updateMeetingStatus(newStatus as any);
-
-      const statusText = getStatusText(newStatus);
-      setSuccess(`会议状态已更新为: ${statusText}`);
-    } catch (error) {
-      console.error("Failed to update meeting status", error);
-      alert("更新会议状态失败，请稍后重试。");
-    } finally {
-      setUpdatingStatus(false);
-    }
+    // For other status changes, no confirmation needed
+    performStatusChange();
   }, [meeting, updateMeetingStatus, updatingStatus]);
 
   useEffect(() => {
@@ -513,6 +546,20 @@ function MeetingDetail() {
           </Alert>
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog(prev => ({ ...prev, open: false }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmDialog.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDialog.onConfirm}>确认</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -2,13 +2,11 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { X, Pause, Square, ExternalLink, Loader2, CheckCircle2, UsersIcon } from 'lucide-react';
+import { X, Pause, Square, ExternalLink, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAudioRecording } from '@/hooks/useAudioRecording';
-import { useMeetings } from '@/hooks/useMeetings';
 import { apiService } from '@/services/api';
 import type { Meeting } from '@/types';
-import { Badge } from '@/components/ui/badge';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import MeetingPicker from './MeetingPicker';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface FloatingRecordingPanelProps {
@@ -20,14 +18,12 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isPaused, setIsPaused] = useState(false);
-  const [showMeetingMenu, setShowMeetingMenu] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [displayTime, setDisplayTime] = useState(0);
   const [showStopDialog, setShowStopDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedRecordingId, setSavedRecordingId] = useState<string | null>(null);
   const [savedFilename, setSavedFilename] = useState<string | null>(null);
-  const menuRef = React.useRef<HTMLDivElement>(null);
   
   // Drag functionality state
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -55,28 +51,6 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
       }
     }
   });
-  const { meetings, loading: loadingMeetings } = useMeetings();
-  
-  // Filter and sort meetings: exclude completed, sort in_progress first, then scheduled (oldest first)
-  const filteredMeetings = React.useMemo(() => {
-    return meetings
-      .filter(m => m.status !== 'completed')
-      .sort((a, b) => {
-        // Sort by status priority
-        const statusOrder = { in_progress: 0, scheduled: 1 };
-        const priorityA = statusOrder[a.status as keyof typeof statusOrder] ?? 999;
-        const priorityB = statusOrder[b.status as keyof typeof statusOrder] ?? 999;
-        
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        
-        // Within same status, sort by oldest first (scheduledStart)
-        const dateA = a.scheduledStart ? new Date(a.scheduledStart).getTime() : 0;
-        const dateB = b.scheduledStart ? new Date(b.scheduledStart).getTime() : 0;
-        return dateA - dateB;
-      });
-  }, [meetings]);
   
   // Update display time only when not paused
   React.useEffect(() => {
@@ -95,7 +69,6 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
     startRecording();
     setIsPaused(false);
     setDisplayTime(0);
-    setShowMeetingMenu(false);
   };
 
   const handleStopClick = () => {
@@ -138,30 +111,7 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
     // Note: Audio recording continues in background, only UI timer pauses
   };
 
-  const handleMeetingSelect = async (meeting: Meeting) => {
-    setSelectedMeeting(meeting);
-    setShowMeetingMenu(false);
-  };
-
-  const handleDisassociateMeeting = () => {
-    setSelectedMeeting(null);
-    setShowMeetingMenu(false);
-  };
-
-  // Close menu when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMeetingMenu(false);
-      }
-    };
-
-    if (showMeetingMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showMeetingMenu]);
-
+  
   // Drag functionality
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // Don't start dragging if clicking on buttons or interactive elements
@@ -247,100 +197,21 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
               </TooltipContent>
             </Tooltip>
 
-            {/* Meeting Selection Button */}
-            <div className="relative" ref={menuRef}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setShowMeetingMenu(!showMeetingMenu)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                      selectedMeeting
-                        ? 'bg-gray-700 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200'
-                        : 'bg-gray-700/10 hover:bg-gray-700/20 border border-gray-700/20'
-                    }`}
-                  >
-                    <UsersIcon className={`w-5 h-5 ${
-                      selectedMeeting
-                        ? 'text-white dark:text-gray-700 stroke-[2.5]'
-                        : 'text-gray-700 dark:text-gray-400'
-                    }`} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{selectedMeeting ? '已关联会议' : '关联到会议'}</p>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Meeting Selection Menu */}
-              {showMeetingMenu && (
-                <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">选择会议</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">将录音关联到会议</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {selectedMeeting && (
-                      <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">当前关联</p>
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{selectedMeeting.title}</p>
-                          </div>
-                          <button
-                            onClick={handleDisassociateMeeting}
-                            className="flex-shrink-0 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                          >
-                            取消关联
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {loadingMeetings ? (
-                      <div className="flex items-center justify-center py-8">
-                        <LoadingSpinner size="sm" />
-                        <span className="ml-2 text-xs text-gray-500">加载中...</span>
-                      </div>
-                    ) : filteredMeetings.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-gray-500">暂无可用会议</div>
-                    ) : (
-                      <div className="py-1">
-                        {filteredMeetings.map((meeting) => (
-                          <button
-                            key={meeting._id}
-                            onClick={() => handleMeetingSelect(meeting)}
-                            className="w-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left disabled:opacity-50"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                  {meeting.title}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge
-                                    variant={meeting.status === 'completed' ? 'default' : meeting.status === 'in_progress' ? 'secondary' : 'outline'}
-                                    className="text-xs"
-                                  >
-                                    {meeting.status === 'completed' ? '已完成' : meeting.status === 'in_progress' ? '进行中' : '已排期'}
-                                  </Badge>
-                                  {meeting.scheduledStart && (
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                      {new Date(meeting.scheduledStart).toLocaleDateString('zh-CN')}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              {selectedMeeting?._id === meeting._id && (
-                                <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5" />
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+            {/* Meeting Picker */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <MeetingPicker
+                    selectedMeeting={selectedMeeting}
+                    onMeetingSelect={setSelectedMeeting}
+                    disabled={isRecording}
+                  />
                 </div>
-              )}
-            </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{selectedMeeting ? '已关联会议' : '关联到会议'}</p>
+              </TooltipContent>
+            </Tooltip>
 
             {/* Close Button (stopped state) */}
             <Tooltip>

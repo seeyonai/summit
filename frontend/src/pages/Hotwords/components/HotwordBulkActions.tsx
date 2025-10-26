@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Download, Upload } from 'lucide-react';
 import type { Hotword } from '@/types';
@@ -20,10 +21,11 @@ const HotwordBulkActions: React.FC<HotwordBulkActionsProps> = ({
   isLoading = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [invalidFileError, setInvalidFileError] = useState<string | null>(null);
 
   const handleFileUpload = async (file: File) => {
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
-      alert('请上传 CSV 或 TXT 格式的文件');
+      setInvalidFileError('请上传 CSV 或 TXT 格式的文件');
       return;
     }
 
@@ -114,6 +116,19 @@ const HotwordBulkActions: React.FC<HotwordBulkActionsProps> = ({
           支持 CSV 和 TXT 格式，每行一个热词
         </p>
       </div>
+
+      {/* Invalid File Error Dialog */}
+      <AlertDialog open={invalidFileError !== null} onOpenChange={(open) => !open && setInvalidFileError(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>文件格式错误</AlertDialogTitle>
+            <AlertDialogDescription>{invalidFileError}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setInvalidFileError(null)}>确定</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

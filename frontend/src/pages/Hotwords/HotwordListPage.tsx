@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,6 +31,8 @@ function HotwordListPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingHotword, setEditingHotword] = useState<Hotword | null>(null);
   const [opError, setOpError] = useState<string | undefined>(undefined);
+  const [deletingHotwordId, setDeletingHotwordId] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
 
   const filtered = useMemo(() => filterHotwords(hotwords, searchTerm, statusFilter), [hotwords, searchTerm, statusFilter]);
 
@@ -59,13 +62,19 @@ function HotwordListPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个热词吗？此操作不可撤销。')) return;
+  const handleDeleteClick = (id: string) => {
+    setDeletingHotwordId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingHotwordId) return;
     try {
       setOpError(undefined);
-      await actions.deleteHotword(id);
+      await actions.deleteHotword(deletingHotwordId);
+      setDeletingHotwordId(null);
     } catch (e) {
       setOpError(e instanceof Error ? e.message : '删除失败');
+      setDeletingHotwordId(null);
     }
   };
 
@@ -91,8 +100,8 @@ function HotwordListPage() {
 
       const createdCount = result.created?.length || 0;
       const skippedCount = result.skipped?.length || 0;
-      // Light feedback without introducing new UI state
-      alert(`导入完成：新增 ${createdCount} 个，跳过 ${skippedCount} 个`);
+      setImportSuccess(`导入完成：新增 ${createdCount} 个，跳过 ${skippedCount} 个`);
+      setTimeout(() => setImportSuccess(null), 5000);
     } catch (e) {
       setOpError(e instanceof Error ? e.message : '导入失败');
     }
@@ -203,13 +212,21 @@ function HotwordListPage() {
         </Alert>
       )}
 
+      {importSuccess && (
+        <Alert>
+          <AlertCircleIcon className="h-4 w-4" />
+          <AlertTitle>导入成功</AlertTitle>
+          <AlertDescription>{importSuccess}</AlertDescription>
+        </Alert>
+      )}
+
       {!loading && !error && filtered.length > 0 && (
         viewMode === 'grid' ? (
           /* Reuse existing card list component */
           <HotwordCards
             hotwords={filtered}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onDelete={handleDeleteClick}
             onToggleActive={handleToggleActive}
             isLoading={loading}
           />
@@ -220,7 +237,7 @@ function HotwordListPage() {
                 key={h._id}
                 hotword={h}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
+                onDelete={handleDeleteClick}
                 onToggleActive={handleToggleActive}
                 isLoading={loading}
               />
@@ -283,6 +300,20 @@ function HotwordListPage() {
         isLoading={loading}
         error={opError}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deletingHotwordId !== null} onOpenChange={(open) => !open && setDeletingHotwordId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>确定要删除这个热词吗？此操作不可撤销。</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>删除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

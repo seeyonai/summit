@@ -24,6 +24,7 @@ interface ChatMessageListProps {
 
 function ChatMessageList({ messages, isStreaming, isWaitingForFirstToken, streamingContent, suggestedQuestions = [], isLoadingQuestions, onSelectSuggestedQuestion, onRefreshQuestions, onRegenerateMessage }: ChatMessageListProps) {
   const endRef = useRef<HTMLDivElement>(null);
+  const shouldShowLoadingMessage = isWaitingForFirstToken && !streamingContent;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -81,7 +82,7 @@ function ChatMessageList({ messages, isStreaming, isWaitingForFirstToken, stream
           />
         );
       })}
-      {isWaitingForFirstToken && <ChatLoadingMessage />}
+      {shouldShowLoadingMessage && <ChatLoadingMessage />}
       {isStreaming && streamingContent && (
         <ChatMessage role="assistant" content={streamingContent} isStreaming showActions={false} />
       )}

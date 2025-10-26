@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SearchInput from '@/components/SearchInput';
@@ -48,6 +49,7 @@ function MeetingList() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set(['completed']));
+  const [deletingMeetingId, setDeletingMeetingId] = useState<string | null>(null);
 
   const openCreateModal = (variant: 'scheduled' | 'quick') => {
     setCreateVariant(variant);
@@ -85,17 +87,21 @@ function MeetingList() {
     }
   };
 
-  const deleteMeeting = async (id: string, e?: React.MouseEvent) => {
+  const handleDeleteClick = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!confirm('确定要删除这个会议吗？此操作不可撤销。')) {
-      return;
-    }
+    setDeletingMeetingId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingMeetingId) return;
 
     try {
-      await apiService.deleteMeeting(id);
+      await apiService.deleteMeeting(deletingMeetingId);
       refetch();
+      setDeletingMeetingId(null);
     } catch (err) {
       console.error('Error deleting meeting:', err);
+      setDeletingMeetingId(null);
     }
   };
 
@@ -388,14 +394,14 @@ function MeetingList() {
                     viewMode === 'grid' ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {group.meetings.map((meeting) => (
-                          <MeetingCard key={meeting._id} meeting={meeting} onDelete={deleteMeeting} />
+                          <MeetingCard key={meeting._id} meeting={meeting} onDelete={handleDeleteClick} />
                         ))}
                       </div>
                     ) : (
                       <ItemGroup>
                         {group.meetings.map((meeting, index) => (
                           <div key={meeting._id}>
-                            <MeetingListItem meeting={meeting} onDelete={deleteMeeting} />
+                            <MeetingListItem meeting={meeting} onDelete={handleDeleteClick} />
                             {index < group.meetings.length - 1 && <ItemSeparator />}
                           </div>
                         ))}
@@ -473,6 +479,20 @@ function MeetingList() {
             />
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deletingMeetingId !== null} onOpenChange={(open) => !open && setDeletingMeetingId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>确认删除</AlertDialogTitle>
+              <AlertDialogDescription>确定要删除这个会议吗？此操作不可撤销。</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>删除</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }

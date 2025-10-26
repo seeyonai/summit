@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import SearchInput from '@/components/SearchInput';
@@ -47,6 +48,7 @@ function RecordingList() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'transcribed' | 'untranscribed'>('all');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [deletingRecordingId, setDeletingRecordingId] = useState<string | null>(null);
 
   // Keep local button state in sync with panel actions
   useEffect(() => {
@@ -68,16 +70,20 @@ function RecordingList() {
     }
   }, [error]);
 
-  const deleteRecording = async (id: string, e?: React.MouseEvent) => {
+  const handleDeleteClick = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!confirm('确定要删除这个录音吗？此操作不可撤销。')) {
-      return;
-    }
+    setDeletingRecordingId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingRecordingId) return;
 
     try {
-      await deleteRecordingAPI(id);
+      await deleteRecordingAPI(deletingRecordingId);
+      setDeletingRecordingId(null);
     } catch (err) {
       // Error already handled by the hook
+      setDeletingRecordingId(null);
     }
   };
 
@@ -205,7 +211,7 @@ function RecordingList() {
 
   const recordingActions = {
     onAssociate: (recording: unknown, e?: React.MouseEvent) => openAssociationModal(recording as unknown as Recording, e),
-    onDelete: (recording: unknown, e?: React.MouseEvent) => deleteRecording(getRecordingId(recording), e),
+    onDelete: (recording: unknown, e?: React.MouseEvent) => handleDeleteClick(getRecordingId(recording), e),
   };
 
   const handleRecordingClick = (recording: unknown) => {
@@ -426,6 +432,20 @@ function RecordingList() {
           onError={setError}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deletingRecordingId !== null} onOpenChange={(open) => !open && setDeletingRecordingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>确定要删除这个录音吗？此操作不可撤销。</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>删除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

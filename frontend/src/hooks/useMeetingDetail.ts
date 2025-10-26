@@ -127,7 +127,7 @@ export function useMeetingDetail(meetingId: string | undefined): UseMeetingDetai
   }, [meetingId]);
 
   const deleteMeeting = useCallback(async () => {
-    if (!meetingId || !confirm('确定要删除这个会议吗？此操作不可撤销。')) {
+    if (!meetingId) {
       return;
     }
 
