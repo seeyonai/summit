@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ interface CalendarDay {
 }
 
 function MeetingCalendar({ meetings, loading }: MeetingCalendarProps) {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const daysInMonth = useMemo(() => {
@@ -161,7 +163,11 @@ function MeetingCalendar({ meetings, loading }: MeetingCalendarProps) {
                             : '';
                           
                           return (
-                            <div key={idx} className={`group p-1 rounded text-[10px] border ${getStatusColor(meeting.status)} hover:shadow-sm transition-all cursor-pointer`}>
+                            <div
+                              key={idx}
+                              className={`group p-1 rounded text-[10px] border ${getStatusColor(meeting.status)} hover:shadow-sm transition-all cursor-pointer select-none`}
+                              onClick={() => navigate(`/meetings/${meeting._id}`)}
+                            >
                               <div className="flex items-center gap-1">
                                 <Clock className="w-2.5 h-2.5 flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
