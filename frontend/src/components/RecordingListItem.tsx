@@ -20,6 +20,7 @@ import {
   MergeIcon,
   HelpCircleIcon,
 } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface RecordingListItemProps {
   recording: Recording;
@@ -34,7 +35,13 @@ interface RecordingListItemProps {
 }
 
 function RecordingListItem({ recording, showSource = false, actions = {}, onClick, className = '' }: RecordingListItemProps) {
-  const { playingAudio, toggleAudioPlayback } = useAudioPlayback();
+  const { playingAudio, toggleAudioPlayback, stopAllAudio } = useAudioPlayback();
+
+  useEffect(() => {
+    return () => {
+      stopAllAudio();
+    };
+  }, [stopAllAudio]);
 
   const recordingId = ('_id' in recording ? (recording as any)._id : '') as string;
 

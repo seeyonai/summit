@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { getSourceIcon, getSourceLabel } from '@/utils/recordingSource';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 interface RecordingCardProps {
   recording: Recording;
@@ -49,8 +50,14 @@ function RecordingCard({
   actions = {},
   onClick,
 }: RecordingCardProps) {
-  const { playingAudio, toggleAudioPlayback } = useAudioPlayback();
+  const { playingAudio, toggleAudioPlayback, stopAllAudio } = useAudioPlayback();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    return () => {
+      stopAllAudio();
+    };
+  }, [stopAllAudio]);
   const recordingId = ('_id' in recording ? (recording as any)._id : '') as string;
   const hasTranscription = !!recording.transcription;
   const hasSpeakers = recording.speakerSegments && recording.speakerSegments.length > 0;
