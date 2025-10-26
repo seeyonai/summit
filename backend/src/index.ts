@@ -4,9 +4,17 @@ import dotenv from 'dotenv';
 import { connectToDatabase } from './config/database';
 import filesRouter from './routes/files';
 
-// Load environment variables from .env file
-dotenv.config({ quiet: true, path: ".env" });
-dotenv.config({ quiet: true, path: ".env.local" });
+// Load environment variables from .env files
+// Priority (later files override earlier ones):
+// 1. .env (base)
+// 2. .env.${NODE_ENV} (environment-specific, e.g., .env.production)
+// 3. .env.${NODE_ENV}.local (environment-specific local, e.g., .env.production.local)
+// 4. .env.local (local overrides - highest priority)
+const nodeEnv = process.env.NODE_ENV || 'development';
+dotenv.config({ quiet: true, path: '.env' });
+dotenv.config({ quiet: true, path: `.env.${nodeEnv}` });
+dotenv.config({ quiet: true, path: `.env.${nodeEnv}.local` });
+dotenv.config({ quiet: true, path: '.env.local' });
 
 import { DataSeeder } from './utils/seedData';
 import meetingsRouter from './routes/meetings/index';
@@ -57,21 +65,21 @@ app.get('/health', async (req, res) => {
     const { getDb } = await import('./config/database');
     const db = getDb();
     await db.command({ ping: 1 });
-    
-    res.json({ 
-      status: 'healthy', 
-      service: 'Summit API', 
+
+    res.json({
+      status: 'healthy',
+      service: 'Summit API',
       port: PORT,
-      database: 'connected'
+      database: 'connected',
     });
   } catch (error) {
     debugWarn('Health check failed:', error);
-    res.json({ 
-      status: 'unhealthy', 
-      service: 'Summit API', 
+    res.json({
+      status: 'unhealthy',
+      service: 'Summit API',
       port: PORT,
       database: 'disconnected',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -104,14 +112,14 @@ async function startServer() {
 
     await ensureAuditLoggerReady();
     debug('Audit logger ready', { path: getAuditLogPath() });
-    
+
     // Seed data if environment variable is set
     if (process.env.SEED_DATA) {
       const seeder = new DataSeeder();
       await seeder.seedData();
       debug('Seed data completed');
     }
-    
+
     // Check all external services health
     const healthResult = await checkAllServices();
 
