@@ -120,6 +120,25 @@ export interface HotwordBulkImportResult {
   skipped: { word: string; reason: string }[];
 }
 
+export interface HotwordImportIssue {
+  line: number;
+  value: string;
+  reason: 'empty' | 'too_short' | 'too_long' | 'invalid_chars' | 'duplicate';
+}
+
+export interface HotwordImportResponse extends HotwordBulkImportResult {
+  invalid?: HotwordImportIssue[];
+  duplicates?: string[];
+  summary?: {
+    total: number;
+    valid: number;
+    invalid: number;
+    duplicates: number;
+    created: number;
+    skipped: number;
+  };
+}
+
 export type MeetingStatus = baseTypes.MeetingStatus;
 
 export type Todo = baseTypes.Todo;

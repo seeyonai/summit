@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card } from '@/components/ui/card';
@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { AlertCircle as AlertCircleIcon, PlusIcon, TrendingUp, Clock, Users, FolderOpenIcon } from 'lucide-react';
-import type { Hotword, HotwordUpdate, HotwordCreate } from '@/types';
+import type { Hotword, HotwordUpdate, HotwordCreate, HotwordImportResponse } from '@/types';
 import createHotwordService from '@/services/hotwordService';
 import { useHotwords } from '@/hooks/useHotwords';
-import { getHotwordAnalytics, filterHotwords, exportHotwords, readHotwordsFromFile } from '@/utils/hotwords';
+import { getHotwordAnalytics, filterHotwords } from '@/utils/hotwords';
 import PageHeader from '@/components/PageHeader';
 import HotwordToolbar from '@/pages/Hotwords/components/HotwordToolbar';
 import HotwordCreateModal from '@/pages/Hotwords/components/HotwordCreateModal';
@@ -32,7 +32,9 @@ function HotwordListPage() {
   const [editingHotword, setEditingHotword] = useState<Hotword | null>(null);
   const [opError, setOpError] = useState<string | undefined>(undefined);
   const [deletingHotwordId, setDeletingHotwordId] = useState<string | null>(null);
-  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<HotwordImportResponse | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const filtered = useMemo(() => filterHotwords(hotwords, searchTerm, statusFilter), [hotwords, searchTerm, statusFilter]);
 
@@ -90,35 +92,63 @@ function HotwordListPage() {
   const handleImport = async (file: File) => {
     try {
       setOpError(undefined);
-      const parsed = await readHotwordsFromFile(file);
-      if (parsed.valid.length === 0) {
-        setOpError('未找到可导入的热词');
-        return;
-      }
-
-      const result = await actions.importHotwordsBulk(parsed.valid);
-
-      const createdCount = result.created?.length || 0;
-      const skippedCount = result.skipped?.length || 0;
-      setImportSuccess(`导入完成：新增 ${createdCount} 个，跳过 ${skippedCount} 个`);
-      setTimeout(() => setImportSuccess(null), 5000);
+      setImporting(true);
+      const result = await actions.importHotwordsFromFile(file);
+      setImportResult(result);
     } catch (e) {
       setOpError(e instanceof Error ? e.message : '导入失败');
+      setImportResult(null);
+    } finally {
+      setImporting(false);
     }
   };
 
-  const handleExport = () => {
-    const csv = exportHotwords(hotwords);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `hotwords-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    try {
+      setOpError(undefined);
+      setExporting(true);
+      const { blob, filename } = await actions.exportHotwords();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setOpError(err instanceof Error ? err.message : '导出失败');
+    } finally {
+      setExporting(false);
+    }
   };
+
+  useEffect(() => {
+    if (!importResult) {
+      return undefined;
+    }
+    const timer = setTimeout(() => setImportResult(null), 5000);
+    return () => clearTimeout(timer);
+  }, [importResult]);
+
+  const importSummary = useMemo(() => {
+    if (!importResult) {
+      return null;
+    }
+    const summary = importResult.summary ?? {
+      total:
+        importResult.created.length
+        + (importResult.skipped?.length ?? 0)
+        + (importResult.invalid?.length ?? 0)
+        + (importResult.duplicates?.length ?? 0),
+      valid: importResult.created.length,
+      invalid: importResult.invalid?.length ?? 0,
+      duplicates: importResult.duplicates?.length ?? 0,
+      created: importResult.created.length,
+      skipped: importResult.skipped?.length ?? 0,
+    };
+    return summary;
+  }, [importResult]);
 
   return (
     <div className="space-y-8">
@@ -212,11 +242,24 @@ function HotwordListPage() {
         </Alert>
       )}
 
-      {importSuccess && (
+      {importSummary && (
         <Alert>
           <AlertCircleIcon className="h-4 w-4" />
-          <AlertTitle>导入成功</AlertTitle>
-          <AlertDescription>{importSuccess}</AlertDescription>
+          <AlertTitle>导入完成</AlertTitle>
+          <AlertDescription>
+            <div className="space-y-1">
+              <div>
+                共 {importSummary.total} 条，新增 {importSummary.created} 条，跳过 {importSummary.skipped} 条。
+              </div>
+              {(importResult?.invalid?.length || 0) > 0 || (importResult?.duplicates?.length || 0) > 0 ? (
+                <div className="text-muted-foreground">
+                  {(importResult?.invalid?.length || 0) > 0 && `无效 ${importResult?.invalid?.length || 0} 条`}
+                  {(importResult?.invalid?.length || 0) > 0 && (importResult?.duplicates?.length || 0) > 0 && '，'}
+                  {(importResult?.duplicates?.length || 0) > 0 && `重复 ${importResult?.duplicates?.length || 0} 条`}
+                </div>
+              ) : null}
+            </div>
+          </AlertDescription>
         </Alert>
       )}
 
@@ -280,7 +323,13 @@ function HotwordListPage() {
         </Empty>
       )}
 
-      <HotwordBulkActions hotwords={hotwords} onImport={handleImport} onExport={handleExport} isLoading={loading} />
+      <HotwordBulkActions
+        hotwords={hotwords}
+        onImport={handleImport}
+        onExport={handleExport}
+        isImporting={importing}
+        isExporting={exporting}
+      />
 
       {/* Modals */}
       <HotwordCreateModal

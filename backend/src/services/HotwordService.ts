@@ -3,8 +3,9 @@ import { ObjectId, OptionalUnlessRequiredId } from 'mongodb';
 import { getCollection } from '../config/database';
 import { COLLECTIONS, HotwordDocument } from '../types/documents';
 import { hotwordDocumentToHotword } from '../utils/mongoMappers';
-import { conflict, forbidden, internal, notFound } from '../utils/errors';
+import { badRequest, conflict, forbidden, internal, notFound } from '../utils/errors';
 import type { JwtPayload } from '../types/auth';
+import { sanitizeHotword, validateHotword } from '../utils/hotwordValidation';
 
 const hasErrorCode = (value: unknown): value is { code: unknown } => (
   typeof value === 'object'
@@ -27,7 +28,11 @@ export class HotwordService {
   }
 
   async createHotword(word: string, user: JwtPayload, isPublic?: boolean): Promise<Hotword> {
-    const trimmedWord = word.trim();
+    const trimmedWord = sanitizeHotword(word);
+    const validationError = validateHotword(trimmedWord);
+    if (validationError) {
+      throw badRequest('Invalid hotword', `hotword.${validationError}`);
+    }
     const collection = getCollection<HotwordDocument>(COLLECTIONS.HOTWORDS);
 
     // Check if hotword already exists
@@ -206,23 +211,13 @@ export class HotwordService {
 
     const makePublic = isPublic === true;
 
-    const validate = (w: string): string | null => {
-      const trimmed = w.trim();
-      if (!trimmed) return 'empty';
-      if (trimmed.length < 1) return 'too_short';
-      if (trimmed.length > 50) return 'too_long';
-      const re = /^[\u4e00-\u9fa5a-zA-Z0-9\s\-_]+$/;
-      if (!re.test(trimmed)) return 'invalid_chars';
-      return null;
-    };
-
     for (const raw of words) {
       if (typeof raw !== 'string') {
         skipped.push({ word: String(raw), reason: 'not_string' });
         continue;
       }
 
-      const word = raw.trim().replace(/\s+/g, ' ');
+      const word = sanitizeHotword(raw);
       const key = word.toLowerCase();
       if (seen.has(key)) {
         skipped.push({ word, reason: 'duplicate' });
@@ -230,7 +225,7 @@ export class HotwordService {
       }
       seen.add(key);
 
-      const validationError = validate(word);
+      const validationError = validateHotword(word);
       if (validationError) {
         skipped.push({ word, reason: validationError });
         continue;

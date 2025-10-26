@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 import { HotwordService } from '../../services/HotwordService';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { badRequest, unauthorized } from '../../utils/errors';
@@ -6,9 +7,27 @@ import type { RequestWithUser } from '../../types/auth';
 import { authenticate } from '../../middleware/auth';
 import { getPreferredLang } from '../../utils/lang';
 import { setAuditContext } from '../../middleware/audit';
+import { parseHotwordsFromBuffer } from '../../utils/hotwordImport';
 
 const router = express.Router();
 const hotwordService = new HotwordService();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 512 * 1024 } });
+
+function parseBoolean(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y'].includes(normalized)) {
+      return true;
+    }
+    if (['false', '0', 'no', 'n'].includes(normalized)) {
+      return false;
+    }
+  }
+  return undefined;
+}
 
 // Helper to transform to API response
 function toResponse(h: any) {
@@ -25,6 +44,77 @@ function toResponse(h: any) {
 
 // Require authentication for all hotword routes
 router.use(authenticate);
+
+router.get('/export', asyncHandler(async (req: RequestWithUser, res) => {
+  if (!req.user) throw unauthorized('Unauthorized', 'auth.unauthorized');
+  const hotwords = await hotwordService.getHotwordsForUser(req.user);
+  const headers = ['word', 'isActive', 'isPublic', 'createdAt', 'updatedAt'];
+  const rows = hotwords.map((h) => [
+    h.word,
+    h.isActive ? 'true' : 'false',
+    h.isPublic ? 'true' : 'false',
+    h.createdAt ? new Date(h.createdAt).toISOString() : '',
+    h.updatedAt ? new Date(h.updatedAt).toISOString() : '',
+  ]);
+  const csvLines = [headers.join(','), ...rows.map((row) => row.map((value) => {
+    const cell = value ?? '';
+    return typeof cell === 'string' && cell.includes(',') ? `"${cell.replace(/"/g, '""')}"` : cell;
+  }).join(','))];
+  const csvContent = `\uFEFF${csvLines.join('\n')}`;
+  const filename = `hotwords-${new Date().toISOString().slice(0, 10)}.csv`;
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  setAuditContext(res, {
+    action: 'hotword_export',
+    resource: 'hotword',
+    status: 'success',
+    details: { count: hotwords.length },
+  });
+  res.send(csvContent);
+}));
+
+router.post('/import', upload.single('file'), asyncHandler(async (req: RequestWithUser, res) => {
+  if (!req.user) throw unauthorized('Unauthorized', 'auth.unauthorized');
+  if (!req.file || !req.file.buffer) {
+    throw badRequest('Import file is required', 'hotword.import_file_required');
+  }
+
+  const parsed = parseHotwordsFromBuffer(req.file.buffer);
+
+  if (parsed.valid.length === 0) {
+    throw badRequest('No valid hotwords found in file', 'hotword.import_no_valid');
+  }
+
+  const isPublic = parseBoolean((req.body ?? {}).isPublic);
+  const result = await hotwordService.createHotwordsBulk(parsed.valid, req.user, isPublic);
+
+  setAuditContext(res, {
+    action: 'hotword_import',
+    resource: 'hotword',
+    status: 'success',
+    details: {
+      createdCount: result.created.length,
+      skippedCount: result.skipped.length,
+      invalidCount: parsed.invalid.length,
+      duplicateCount: parsed.duplicates.length,
+    },
+  });
+
+  res.status(201).json({
+    created: result.created.map(toResponse),
+    skipped: result.skipped,
+    invalid: parsed.invalid,
+    duplicates: parsed.duplicates,
+    summary: {
+      total: parsed.totalEntries,
+      valid: parsed.valid.length,
+      invalid: parsed.invalid.length,
+      duplicates: parsed.duplicates.length,
+      created: result.created.length,
+      skipped: result.skipped.length,
+    },
+  });
+}));
 
 // Get all hotwords (public active + own)
 router.get('/', asyncHandler(async (req: RequestWithUser, res) => {
