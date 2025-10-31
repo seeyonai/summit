@@ -224,7 +224,7 @@ function Settings() {
         )}
 
         {/* Notification Settings */}
-        {showNotificationSettings && (
+        {debugMode && showNotificationSettings && (
           <Card className="hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -275,7 +275,7 @@ function Settings() {
         )}
 
         {/* System Settings */}
-        {showSystemSettings && (
+        {debugMode && showSystemSettings && (
           <Card className="hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
               <div className="flex items-center gap-3">
