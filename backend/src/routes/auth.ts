@@ -48,7 +48,7 @@ function toAuthUser(u: AuthUserSource): AuthResponseUser {
 router.post('/register', asyncHandler(async (req, res) => {
   const body = req.body as Partial<CreateUserDto>;
   if (!body?.email || !body?.password) {
-    throw badRequest('Email and password are required', 'auth.invalid_payload');
+    throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
   }
   const user = await userService.createUser(
     body.email,
@@ -70,11 +70,11 @@ router.post('/register', asyncHandler(async (req, res) => {
 router.post('/login', asyncHandler(async (req, res) => {
   const body = req.body as Partial<LoginDto>;
   if (!body?.email || !body?.password) {
-    throw badRequest('Email and password are required', 'auth.invalid_payload');
+    throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
   }
   const user = await userService.findByEmail(body.email);
   if (!user || !userService.verifyPassword(user, body.password)) {
-    throw unauthorized('Invalid credentials', 'auth.invalid_credentials');
+    throw unauthorized('邮箱或密码错误', 'auth.invalid_credentials');
   }
   const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
   setAuditContext(res, {
@@ -90,11 +90,11 @@ router.post('/login', asyncHandler(async (req, res) => {
 router.get('/me', authenticate, asyncHandler(async (req, res) => {
   const r = req as RequestWithUser;
   if (!r.user) {
-    throw unauthorized('Unauthorized', 'auth.unauthorized');
+    throw unauthorized('未授权', 'auth.unauthorized');
   }
   const user = await userService.getById(r.user.userId);
   if (!user) {
-    throw unauthorized('Unauthorized', 'auth.unauthorized');
+    throw unauthorized('未授权', 'auth.unauthorized');
   }
   res.json({ user: toAuthUser(user) });
 }));
@@ -103,12 +103,12 @@ router.get('/me', authenticate, asyncHandler(async (req, res) => {
 router.put('/password', authenticate, asyncHandler(async (req, res) => {
   const r = req as RequestWithUser;
   if (!r.user) {
-    throw unauthorized('Unauthorized', 'auth.unauthorized');
+    throw unauthorized('未授权', 'auth.unauthorized');
   }
   const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
   const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
   if (!currentPassword || !newPassword) {
-    throw badRequest('Current and new passwords are required', 'auth.invalid_payload');
+    throw badRequest('当前密码和新密码为必填项', 'auth.invalid_payload');
   }
   await userService.updatePassword(r.user.userId, currentPassword, newPassword);
   const lang = getPreferredLang(req);
@@ -127,7 +127,7 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
   const unsafeAuthServiceBaseURL = process.env.UNSAFE_AUTH_SERVICE_BASE_URL || 'http://localhost:4423';
   if (!unsafeAuthServiceBaseURL) {
     console.error('Unsafe auth service base URL is not defined');
-    throw badRequest('Unsafe auth service base URL is not defined', 'auth.service_not_configured');
+    throw badRequest('外部认证服务地址未配置', 'auth.service_not_configured');
   }
 
   const payload = req.body;
@@ -149,20 +149,20 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
 
   if (!isCustomSignOnResponse(loginResultJson)) {
     console.error('Unexpected login response format:', loginResultJson);
-    throw badRequest('Invalid login response', 'auth.external_invalid_response');
+    throw badRequest('无效的登录响应', 'auth.external_invalid_response');
   }
 
   const loginResult = loginResultJson;
 
   if (!loginResult.valid) {
-    throw unauthorized(loginResult.error || 'Authentication failed', 'auth.external_failed');
+    throw unauthorized(loginResult.error || '认证失败', 'auth.external_failed');
   }
 
   // Handle successful login
   const tokenEncoded = loginResult.token;
   if (!tokenEncoded || tokenEncoded.split('.').length !== 3) {
     console.error('Invalid token:', tokenEncoded);
-    throw badRequest('Invalid token', 'auth.invalid_token');
+    throw badRequest('无效的令牌', 'auth.invalid_token');
   }
 
   const payloadPartEncoded = tokenEncoded.split('.')[1];
@@ -175,7 +175,7 @@ router.post('/custom-sign-on', asyncHandler(async (req, res) => {
 
   // Validate the payload
   if (!email || typeof email !== 'string' || !name || typeof name !== 'string' || !id || typeof id !== 'string') {
-    throw badRequest(`Invalid payload. Missing required fields: ${!email ? 'email' : ''}${!name ? ' name' : ''}${!id ? ' id' : ''}`, 'auth.invalid_payload');
+    throw badRequest(`无效的数据。缺少必填字段：${!email ? '邮箱' : ''}${!name ? ' 姓名' : ''}${!id ? ' ID' : ''}`, 'auth.invalid_payload');
   }
 
   // Find user by external user ID or email, or create if not exists

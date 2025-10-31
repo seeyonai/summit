@@ -58,7 +58,7 @@ function normalizeErrorPayload(raw: unknown, status: number): ErrorPayload {
     return { message: raw.trim() };
   }
 
-  return { message: `Request failed with status ${status}` };
+  return { message: `请求失败，状态码 ${status}` };
 }
 
 function createApiError(payload: ErrorPayload, status: number): ApiError {
@@ -289,22 +289,22 @@ class ApiService {
           }
           resolve(data as { message: string; recording: Recording });
         } catch (err) {
-          reject(err instanceof Error ? err : new Error('Invalid server response'));
+          reject(err instanceof Error ? err : new Error('无效的服务器响应'));
         }
       });
 
       xhr.addEventListener('error', () => {
-        const payload = { message: 'Network error' };
+        const payload = { message: '网络错误' };
         toast.error(payload.message);
         reject(createApiError(payload, xhr.status || 0));
       });
       xhr.addEventListener('abort', () => {
-        const payload = { message: 'Upload aborted' };
+        const payload = { message: '上传已取消' };
         toast.error(payload.message);
         reject(createApiError(payload, xhr.status || 0));
       });
       xhr.addEventListener('timeout', () => {
-        const payload = { message: 'Upload timed out' };
+        const payload = { message: '上传超时' };
         toast.error(payload.message);
         reject(createApiError(payload, xhr.status || 0));
       });
@@ -549,7 +549,7 @@ class ApiService {
     }
 
     if (typeof data === 'undefined') {
-      const payload = { message: 'Invalid server response' };
+      const payload = { message: '无效的服务器响应' };
       toast.error(payload.message);
       throw createApiError(payload, response.status);
     }

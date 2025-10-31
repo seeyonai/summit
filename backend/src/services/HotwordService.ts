@@ -31,7 +31,7 @@ export class HotwordService {
     const trimmedWord = sanitizeHotword(word);
     const validationError = validateHotword(trimmedWord);
     if (validationError) {
-      throw badRequest('Invalid hotword', `hotword.${validationError}`);
+      throw badRequest('无效的热词', `hotword.${validationError}`);
     }
     const collection = getCollection<HotwordDocument>(COLLECTIONS.HOTWORDS);
 
@@ -42,7 +42,7 @@ export class HotwordService {
     });
 
     if (existing) {
-      throw conflict('Hotword already exists', 'hotword.exists');
+      throw conflict('热词已存在', 'hotword.exists');
     }
 
     const makePublic = isPublic === true;
@@ -60,7 +60,7 @@ export class HotwordService {
     const insertedHotword = await collection.findOne({ _id: result.insertedId });
     
     if (!insertedHotword) {
-      throw internal('Failed to create hotword', 'hotword.create_failed');
+      throw internal('创建热词失败', 'hotword.create_failed');
     }
     
     return hotwordDocumentToHotword(insertedHotword);
@@ -72,14 +72,14 @@ export class HotwordService {
     // Check if hotword exists
     const hotword = await collection.findOne({ _id: new ObjectId(id) });
     if (!hotword) {
-      throw notFound('Hotword not found', 'hotword.not_found');
+      throw notFound('未找到热词', 'hotword.not_found');
     }
 
     const isOwner = hotword.ownerId ? hotword.ownerId.toString() === user.userId : false;
     const isAdmin = user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      throw forbidden('Not allowed', 'hotword.forbidden');
+      throw forbidden('无权限操作', 'hotword.forbidden');
     }
 
     // Check if new word already exists (excluding current hotword)
@@ -90,7 +90,7 @@ export class HotwordService {
       });
 
       if (existing && existing._id.toString() !== id) {
-        throw conflict('Hotword already exists', 'hotword.exists');
+        throw conflict('热词已存在', 'hotword.exists');
       }
     }
 
@@ -99,7 +99,7 @@ export class HotwordService {
     if (typeof update.isActive === 'boolean') setUpdate.isActive = update.isActive;
     if (typeof update.isPublic === 'boolean') {
       if (!isOwner && !isAdmin) {
-        throw forbidden('Not allowed', 'hotword.forbidden');
+        throw forbidden('无权限操作', 'hotword.forbidden');
       }
       setUpdate.isPublic = update.isPublic;
       if (!hotword.ownerId) {
@@ -114,7 +114,7 @@ export class HotwordService {
     );
 
     if (!result) {
-      throw internal('Failed to update hotword', 'hotword.update_failed');
+      throw internal('更新热词失败', 'hotword.update_failed');
     }
 
     return hotwordDocumentToHotword(result);
@@ -125,19 +125,19 @@ export class HotwordService {
     
     const existing = await collection.findOne({ _id: new ObjectId(id) });
     if (!existing) {
-      throw notFound('Hotword not found', 'hotword.not_found');
+      throw notFound('未找到热词', 'hotword.not_found');
     }
 
     const isOwner = existing.ownerId ? existing.ownerId.toString() === user.userId : false;
     const isAdmin = user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      throw forbidden('Not allowed', 'hotword.forbidden');
+      throw forbidden('无权限操作', 'hotword.forbidden');
     }
 
     const result = await collection.deleteOne({ _id: new ObjectId(id) });
     if (result.deletedCount === 0) {
-      throw notFound('Hotword not found', 'hotword.not_found');
+      throw notFound('未找到热词', 'hotword.not_found');
     }
   }
 
@@ -188,7 +188,7 @@ export class HotwordService {
     );
 
     if (!result) {
-      throw notFound('Hotword not found', 'hotword.not_found');
+      throw notFound('未找到热词', 'hotword.not_found');
     }
 
     return hotwordDocumentToHotword(result);

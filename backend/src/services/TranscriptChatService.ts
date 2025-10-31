@@ -18,7 +18,7 @@ class TranscriptChatService {
 
     if (!apiKey) {
       throw internal(
-        'SUMMIT_OPENAI_API_KEY or OPENAI_API_KEY environment variable is required',
+        '需要设置 SUMMIT_OPENAI_API_KEY 或 OPENAI_API_KEY 环境变量',
         'chat.api_key_missing'
       );
     }
@@ -37,7 +37,7 @@ class TranscriptChatService {
     }
 
     if (!this.client) {
-      throw internal('Chat service not initialized', 'chat.not_initialized');
+      throw internal('聊天服务未初始化', 'chat.not_initialized');
     }
 
     const prompt = `根据以下会议记录，生成 3-5 个最相关和有价值的问题，帮助用户快速了解会议内容。
@@ -105,7 +105,7 @@ ${transcript.slice(0, 8000)}${transcript.length > 8000 ? '...' : ''}
     }
 
     if (!this.client) {
-      throw internal('Chat service not initialized', 'chat.not_initialized');
+      throw internal('聊天服务未初始化', 'chat.not_initialized');
     }
 
     const systemPrompt = `你是一个专业的会议记录分析助手。你的任务是帮助用户理解和分析会议内容。

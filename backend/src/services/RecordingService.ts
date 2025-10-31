@@ -108,7 +108,7 @@ async function findRecordingOrThrow(recordingId: string): Promise<RecordingDocum
   const document = await findRecording(recordingId);
 
   if (!document) {
-    throw notFound('Recording not found', 'recording.not_found');
+    throw notFound('未找到录音', 'recording.not_found');
   }
 
   return document;
@@ -117,7 +117,7 @@ async function findRecordingOrThrow(recordingId: string): Promise<RecordingDocum
 async function resolveAbsoluteFilePath(document: RecordingDocument): Promise<string> {
   const absolutePath = await findRecordingFilePath(RECORDINGS_DIR, document._id.toString(), document.format);
   if (!absolutePath) {
-    throw notFound('Recording file not found', 'recording.file_missing');
+    throw notFound('未找到录音文件', 'recording.file_missing');
   }
   return absolutePath;
 }
@@ -187,7 +187,7 @@ export async function getRecordingsForUser(userId: string, includeMeeting: boole
 
 export async function getRecordingsByMeetingId(meetingId: string, includeMeeting: boolean = true): Promise<RecordingResponse[]> {
   if (!ObjectId.isValid(meetingId)) {
-    throw badRequest('Invalid meeting ID', 'meeting.invalid_id');
+    throw badRequest('无效的会议 ID', 'meeting.invalid_id');
   }
 
   const collection = recordingsCollection();
@@ -203,7 +203,7 @@ export async function getRecordingById(recordingId: string): Promise<RecordingRe
   const document = await findRecording(recordingId);
 
   if (!document) {
-    throw notFound('Recording not found', 'recording.not_found');
+    throw notFound('未找到录音', 'recording.not_found');
   }
 
   return buildRecordingResponse(document, MEETING_LOOKUP_FIELDS);
@@ -251,7 +251,7 @@ export async function createRecording(recordingData: {
   const inserted = await collection.findOne({ _id: insertResult.insertedId });
 
   if (!inserted) {
-    throw internal('Failed to persist recording', 'recording.persist_failed');
+    throw internal('保存录音失败', 'recording.persist_failed');
   }
 
   if (inserted.meetingId) {
@@ -263,7 +263,7 @@ export async function createRecording(recordingData: {
 
 export async function startRecording(ownerId: string, meetingId?: string): Promise<{ id: string; message: string }> {
   if (!ownerId || !ObjectId.isValid(ownerId)) {
-    throw badRequest('ownerId is required and must be a valid ObjectId', 'recording.missing_owner_id');
+    throw badRequest('所有者 ID 为必填项且必须是有效的 ObjectId', 'recording.missing_owner_id');
   }
 
   const now = new Date();
@@ -292,7 +292,7 @@ export async function startRecording(ownerId: string, meetingId?: string): Promi
   const inserted = await collection.findOne({ _id: insertResult.insertedId });
 
   if (!inserted) {
-    throw internal('Failed to persist recording', 'recording.persist_failed');
+    throw internal('保存录音失败', 'recording.persist_failed');
   }
 
   if (inserted.meetingId) {
@@ -380,7 +380,7 @@ export async function addRecordingToMeeting(meetingId: string, recordingId: stri
   const recording = await findRecordingOrThrow(recordingId);
 
   if (!ObjectId.isValid(meetingId)) {
-    throw badRequest('Invalid meeting ID', 'meeting.invalid_id');
+    throw badRequest('无效的会议 ID', 'meeting.invalid_id');
   }
 
   const collection = recordingsCollection();
@@ -476,7 +476,7 @@ export async function polishTranscription(recordingId: string): Promise<{ messag
   const sourceText = document.transcription || document.verbatimTranscript;
 
   if (!sourceText) {
-    throw badRequest('No transcription available to polish', 'recording.transcription_missing');
+    throw badRequest('没有可供优化的转录文本', 'recording.transcription_missing');
   }
 
   const polished = normalizeTranscriptText(sourceText);

@@ -29,12 +29,12 @@ function generateSalt(): string {
 export async function createUser(email: string, password: string, name?: string, aliases?: string) {
   const emailNorm = email.trim().toLowerCase();
   if (!emailNorm || !password) {
-    throw badRequest('Email and password are required', 'user.invalid_payload');
+    throw badRequest('邮箱和密码为必填项', 'user.invalid_payload');
   }
   const col = usersCollection();
   const existing = await col.findOne({ email: emailNorm });
   if (existing) {
-    throw conflict('Email already registered', 'user.email_taken');
+    throw conflict('该邮箱已被注册', 'user.email_taken');
   }
   const salt = generateSalt();
   const passwordHash = hashPassword(password, salt);
@@ -55,7 +55,7 @@ export async function createUser(email: string, password: string, name?: string,
   const result = await col.insertOne(doc);
   const inserted = await col.findOne({ _id: result.insertedId });
   if (!inserted) {
-    throw internal('Failed to create user', 'user.create_failed');
+    throw internal('创建用户失败', 'user.create_failed');
   }
   return inserted;
 }
@@ -63,12 +63,12 @@ export async function createUser(email: string, password: string, name?: string,
 export async function createExternalUser(email: string, name: string, externalUserId: string, authType: 'unsafe_auth' = 'unsafe_auth') {
   const emailNorm = email.trim().toLowerCase();
   if (!emailNorm || !name || !externalUserId) {
-    throw badRequest('Email, name, and external user ID are required', 'user.invalid_payload');
+    throw badRequest('邮箱、姓名和外部用户ID为必填项', 'user.invalid_payload');
   }
   const col = usersCollection();
   const existing = await col.findOne({ email: emailNorm });
   if (existing) {
-    throw conflict('Email already registered', 'user.email_taken');
+    throw conflict('该邮箱已被注册', 'user.email_taken');
   }
   const role: 'admin' | 'user' = (await countUsers()) === 0 ? 'admin' : 'user';
   const now = new Date();
@@ -87,7 +87,7 @@ export async function createExternalUser(email: string, name: string, externalUs
   const result = await col.insertOne(doc);
   const inserted = await col.findOne({ _id: result.insertedId });
   if (!inserted) {
-    throw internal('Failed to create user', 'user.create_failed');
+    throw internal('创建用户失败', 'user.create_failed');
   }
   return inserted;
 }
@@ -117,10 +117,7 @@ export async function searchUsers(q: string, limit: number = 20): Promise<Array<
   const query: Record<string, unknown> = {};
   if (q && q.trim().length > 0) {
     const regex = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    query.$or = [
-      { email: { $regex: regex } },
-      { name: { $regex: regex } },
-    ];
+    query.$or = [{ email: { $regex: regex } }, { name: { $regex: regex } }];
   }
   const docs = await col.find(query).limit(limit).toArray();
   return docs.map((u) => ({ _id: u._id, email: u.email, name: u.name, aliases: u.aliases, role: u.role }));
@@ -129,7 +126,11 @@ export async function searchUsers(q: string, limit: number = 20): Promise<Array<
 export async function findByIds(ids: string[]): Promise<Array<Pick<UserDocument, '_id' | 'email' | 'name' | 'aliases' | 'role'>>> {
   const objectIds = ids
     .map((id) => {
-      try { return new ObjectId(id); } catch { return null; }
+      try {
+        return new ObjectId(id);
+      } catch {
+        return null;
+      }
     })
     .filter((v): v is ObjectId => !!v);
   if (objectIds.length === 0) return [];
@@ -140,13 +141,9 @@ export async function findByIds(ids: string[]): Promise<Array<Pick<UserDocument,
 
 export async function updateRole(userId: string, role: 'admin' | 'user'): Promise<Pick<UserDocument, '_id' | 'email' | 'name' | 'aliases' | 'role'>> {
   const col = usersCollection();
-  const result = await col.findOneAndUpdate(
-    { _id: new ObjectId(userId) },
-    { $set: { role, updatedAt: new Date() } },
-    { returnDocument: 'after' }
-  );
+  const result = await col.findOneAndUpdate({ _id: new ObjectId(userId) }, { $set: { role, updatedAt: new Date() } }, { returnDocument: 'after' });
   if (!result) {
-    throw notFound('User not found', 'user.not_found');
+    throw notFound('未找到用户', 'user.not_found');
   }
   return { _id: result._id, email: result.email, name: result.name, aliases: result.aliases, role: result.role };
 }
@@ -164,35 +161,28 @@ export async function updateProfile(
   if (typeof updates.aliases === 'string') {
     setDoc.aliases = updates.aliases.trim();
   }
-  const result = await col.findOneAndUpdate(
-    { _id: new ObjectId(userId) },
-    { $set: setDoc },
-    { returnDocument: 'after' }
-  );
+  const result = await col.findOneAndUpdate({ _id: new ObjectId(userId) }, { $set: setDoc }, { returnDocument: 'after' });
   if (!result) {
-    throw notFound('User not found', 'user.not_found');
+    throw notFound('未找到用户', 'user.not_found');
   }
   return { _id: result._id, email: result.email, name: result.name, aliases: result.aliases, role: result.role };
 }
 
 export async function updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
   if (!currentPassword || !newPassword) {
-    throw badRequest('Current and new passwords are required', 'auth.invalid_payload');
+    throw badRequest('当前密码和新密码为必填项', 'auth.invalid_payload');
   }
   const col = usersCollection();
   const user = await col.findOne({ _id: new ObjectId(userId) });
   if (!user) {
-    throw notFound('User not found', 'user.not_found');
+    throw notFound('未找到用户', 'user.not_found');
   }
   if (!verifyPassword(user, currentPassword)) {
-    throw unauthorized('Current password is incorrect', 'auth.invalid_password');
+    throw unauthorized('当前密码不正确', 'auth.invalid_password');
   }
   const salt = generateSalt();
   const passwordHash = hashPassword(newPassword, salt);
-  await col.updateOne(
-    { _id: user._id },
-    { $set: { salt, passwordHash, updatedAt: new Date() } }
-  );
+  await col.updateOne({ _id: user._id }, { $set: { salt, passwordHash, updatedAt: new Date() } });
 }
 
 export const userService = {

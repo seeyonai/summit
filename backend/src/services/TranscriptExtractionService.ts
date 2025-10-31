@@ -18,7 +18,7 @@ function createOpenAIClient(apiKey: string, baseURL = 'https://api.openai.com/v1
           });
           if (!res.ok) {
             const errorText = await res.text();
-            throw internal(`LLM error ${res.status}: ${errorText}`, 'analysis.llm_error');
+            throw internal(`LLM 错误 ${res.status}: ${errorText}`, 'analysis.llm_error');
           }
           return res.json();
         },
@@ -101,7 +101,7 @@ class TranscriptExtractionService {
     const apiKey = process.env.SUMMIT_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     const baseURL = process.env.SUMMIT_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
     if (!apiKey) {
-      throw internal('SUMMIT_OPENAI_API_KEY or OPENAI_API_KEY environment variable is required', 'analysis.api_key_missing');
+      throw internal('需要设置 SUMMIT_OPENAI_API_KEY 或 OPENAI_API_KEY 环境变量', 'analysis.api_key_missing');
     }
 
     const openai = createOpenAIClient(apiKey, baseURL);
@@ -127,11 +127,11 @@ class TranscriptExtractionService {
     }
 
     if (!transcript || transcript.trim().length === 0) {
-      throw badRequest('Transcript text is required', 'analysis.transcript_required');
+      throw badRequest('转录文本为必填项', 'analysis.transcript_required');
     }
 
     if (!this.intext) {
-      throw internal('Transcript extraction service not initialized', 'analysis.not_initialized');
+      throw internal('转录提取服务未初始化', 'analysis.not_initialized');
     }
 
     const intextParams = {
@@ -157,7 +157,7 @@ class TranscriptExtractionService {
       const recordings = await recordingService.getRecordingsByMeetingId(meetingId, false);
       
       if (!recordings || recordings.length === 0) {
-        throw badRequest('No recordings found for this meeting', 'analysis.no_recordings');
+        throw badRequest('未找到该会议的录音', 'analysis.no_recordings');
       }
 
       // Collect all organized speeches from recordings
@@ -180,7 +180,7 @@ class TranscriptExtractionService {
       // They will be accessible via meeting.concatenatedRecording if needed
 
       if (allSpeeches.length === 0) {
-        throw badRequest('No organized speeches found in any recordings', 'analysis.no_speeches');
+        throw badRequest('所有录音中未找到整理后的发言', 'analysis.no_speeches');
       }
 
       // Sort speeches by start time to create chronological transcript

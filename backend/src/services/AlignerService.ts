@@ -73,11 +73,11 @@ export class AlignerService {
     const { audioFilePath, text } = options;
 
     if (!audioFilePath || typeof audioFilePath !== 'string') {
-      throw badRequest('audioFilePath is required', 'alignment.audio_required');
+      throw badRequest('音频文件路径为必填项', 'alignment.audio_required');
     }
 
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      throw badRequest('text is required', 'alignment.text_required');
+      throw badRequest('文本内容为必填项', 'alignment.text_required');
     }
 
     const normalizedPath = normalizePublicOrRelative(audioFilePath);
@@ -109,7 +109,7 @@ export class AlignerService {
   private resolveAudioFilePath(candidate: string): string {
     const absolutePath = resolvePathFromCandidate(this.recordingsDir, candidate);
     if (!fs.existsSync(absolutePath)) {
-      throw notFound(`Audio file not found: ${candidate}`, 'alignment.audio_not_found');
+      throw notFound(`未找到音频文件: ${candidate}`, 'alignment.audio_not_found');
     }
     return absolutePath;
   }
@@ -180,13 +180,13 @@ export class AlignerService {
     });
 
     if (response.data.length === 0) {
-      throw internal('Aligner service returned empty response', 'alignment.empty_response');
+      throw internal('对齐服务返回空响应', 'alignment.empty_response');
     }
 
     try {
       return JSON.parse(response.data.toString('utf8')) as ApiAlignmentResponse;
     } catch (error) {
-      throw internal(`Failed to parse alignment response: ${(error as Error).message}`, 'alignment.parse_failed');
+      throw internal(`解析对齐响应失败: ${(error as Error).message}`, 'alignment.parse_failed');
     }
   }
 
@@ -208,19 +208,19 @@ export class AlignerService {
       const detail = this.extractErrorDetail(error.body);
       if (error.status === 404) {
         throw notFound(
-          detail || (context?.audioFilePath ? `Audio file not found: ${context.audioFilePath}` : 'Resource not found'),
+          detail || (context?.audioFilePath ? `未找到音频文件: ${context.audioFilePath}` : '未找到资源'),
           'alignment.audio_not_found'
         );
       }
       if (error.status === 400) {
-        throw badRequest(detail || 'Invalid alignment request', 'alignment.invalid_request');
+        throw badRequest(detail || '无效的对齐请求', 'alignment.invalid_request');
       }
-      throw internal(detail || 'Aligner service error', 'alignment.service_error');
+      throw internal(detail || '对齐服务错误', 'alignment.service_error');
     }
     if (error instanceof Error) {
       throw error;
     }
-    throw internal('Unknown aligner service error', 'alignment.unknown_error');
+    throw internal('未知的对齐服务错误', 'alignment.unknown_error');
   }
 }
 

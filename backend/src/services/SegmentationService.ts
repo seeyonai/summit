@@ -102,7 +102,7 @@ export class SegmentationService {
 
   async analyzeSegmentation(request: SegmentationRequest): Promise<SegmentationResponse> {
     if (!request.audioFilePath) {
-      throw badRequest('audioFilePath is required', 'segmentation.audio_required');
+      throw badRequest('音频文件路径为必填项', 'segmentation.audio_required');
     }
 
     const normalizedPath = normalizePublicOrRelative(request.audioFilePath);
@@ -168,7 +168,7 @@ export class SegmentationService {
   private resolveAudioFilePath(candidate: string): string {
     const absolutePath = resolvePathFromCandidate(this.recordingsDir, candidate);
     if (!fs.existsSync(absolutePath)) {
-      throw notFound(`Audio file not found: ${candidate}`, 'segmentation.audio_not_found');
+      throw notFound(`未找到音频文件: ${candidate}`, 'segmentation.audio_not_found');
     }
     return absolutePath;
   }
@@ -257,23 +257,23 @@ export class SegmentationService {
 
       if (error.status === 404) {
         throw notFound(
-          detail || (context?.audioFilePath ? `Audio file not found: ${context.audioFilePath}` : 'Resource not found'),
+          detail || (context?.audioFilePath ? `未找到音频文件: ${context.audioFilePath}` : '未找到资源'),
           'segmentation.audio_not_found'
         );
       }
 
       if (error.status === 400) {
-        throw badRequest(detail || 'Invalid segmentation request', 'segmentation.invalid_request');
+        throw badRequest(detail || '无效的分段请求', 'segmentation.invalid_request');
       }
 
-      throw internal(detail || 'Segmentation service error', 'segmentation.service_error');
+      throw internal(detail || '分段服务错误', 'segmentation.service_error');
     }
 
     if (error instanceof Error) {
       throw error;
     }
 
-    throw internal('Unknown segmentation service error', 'segmentation.unknown_error');
+    throw internal('未知的分段服务错误', 'segmentation.unknown_error');
   }
 
   private determineContentType(filePath: string): string {
@@ -308,13 +308,13 @@ export class SegmentationService {
     });
 
     if (response.data.length === 0) {
-      throw internal('Segmentation service returned empty response', 'segmentation.empty_response');
+      throw internal('分段服务返回空响应', 'segmentation.empty_response');
     }
 
     try {
       return JSON.parse(response.data.toString('utf8')) as ApiSegmentationResponse;
     } catch (error) {
-      throw internal(`Failed to parse segmentation response: ${(error as Error).message}`, 'segmentation.parse_failed');
+      throw internal(`解析分段响应失败: ${(error as Error).message}`, 'segmentation.parse_failed');
     }
   }
 }

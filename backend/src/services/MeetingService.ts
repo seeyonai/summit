@@ -240,7 +240,7 @@ export const createMeeting = async (request: MeetingCreate, ownerId?: string): P
   const insertedMeeting = await collection.findOne({ _id: result.insertedId });
 
   if (!insertedMeeting) {
-    throw internal('Failed to create meeting', 'meeting.create_failed');
+    throw internal('创建会议失败', 'meeting.create_failed');
   }
 
   return meetingDocumentToMeeting(insertedMeeting);
