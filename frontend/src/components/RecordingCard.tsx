@@ -24,6 +24,23 @@ import { getSourceIcon, getSourceLabel } from '@/utils/recordingSource';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
+const downloadAudioFile = async (recordingId: string, fileName?: string) => {
+  try {
+    const response = await fetch(audioUrlFor(recordingId));
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName || `${recordingId}.wav`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Failed to download audio file:', error);
+  }
+};
+
 interface RecordingCardProps {
   recording: Recording;
   variant?: 'default' | 'concatenated' | 'compact';
@@ -84,7 +101,8 @@ function RecordingCard({
     },
     onDownload: (recording: Recording, e?: React.MouseEvent) => {
       e?.stopPropagation();
-      window.open(audioUrlFor(recordingId), '_blank');
+      const fileName = recording.label || (recording as any).originalFileName || `${recordingId}.${recording.format || 'wav'}`;
+      downloadAudioFile(recordingId, fileName);
     },
     ...actions,
   };
