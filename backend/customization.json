@@ -5,6 +5,7 @@
   "logoDarkUrl": null,
   "faviconUrl": null,
   "features": {
-    "shorthandNotes": true
+    "shorthandNotes": false,
+    "enableLocalAccounts": false
   }
 }

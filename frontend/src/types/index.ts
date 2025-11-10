@@ -184,6 +184,7 @@ export interface AppCustomization {
   faviconUrl?: string | null;
   features?: {
     shorthandNotes?: boolean;
+    enableLocalAccounts?: boolean;
   };
 }
 

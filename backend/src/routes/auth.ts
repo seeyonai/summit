@@ -8,8 +8,33 @@ import { signJwt } from '../utils/jwt';
 import { authenticate } from '../middleware/auth';
 import { getPreferredLang } from '../utils/lang';
 import { setAuditContext } from '../middleware/audit';
+import path from 'path';
+import fs from 'fs/promises';
 
 const router = Router();
+
+function candidatePaths(): string[] {
+  const fromCwd = path.resolve(process.cwd(), 'customization.json');
+  const fromDist = path.resolve(__dirname, '..', '..', 'customization.json');
+  const fromSrc = path.resolve(__dirname, '..', 'customization.json');
+  return [fromCwd, fromDist, fromSrc];
+}
+
+async function isLocalAccountsEnabled(): Promise<boolean> {
+  const paths = candidatePaths();
+  for (const filePath of paths) {
+    try {
+      const data = await fs.readFile(filePath, 'utf-8');
+      const json = JSON.parse(data);
+      // Default to true if not specified
+      return json.features?.enableLocalAccounts ?? true;
+    } catch (_) {
+      // try next candidate
+    }
+  }
+  // If config file not found, default to true
+  return true;
+}
 
 interface CustomSignOnResponse {
   valid: boolean;
@@ -46,6 +71,12 @@ function toAuthUser(u: AuthUserSource): AuthResponseUser {
 }
 
 router.post('/register', asyncHandler(async (req, res) => {
+  // Check if local account registration is enabled
+  const localAccountsEnabled = await isLocalAccountsEnabled();
+  if (!localAccountsEnabled) {
+    throw badRequest('本地账户注册已被禁用', 'auth.registration_disabled');
+  }
+
   const body = req.body as Partial<CreateUserDto>;
   if (!body?.email || !body?.password) {
     throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
