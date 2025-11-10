@@ -96,7 +96,7 @@ ssh "$REMOTE_HOST" "sudo mkdir -p '$REMOTE_PATH/logs' && sudo chmod 777 '$REMOTE
 header "�🔐 Sync production environment file";
 if [ -f "$BACKEND_DIR/.env.production" ]; then
   if confirm "📝 Sync .env.production to $REMOTE_HOST:$REMOTE_PATH/.env?"; then
-    rsync -avz "$BACKEND_DIR/.env.production" "$REMOTE_HOST:$REMOTE_PATH/.env";
+    rsync -avz "$BACKEND_DIR/.env.production" "$REMOTE_HOST:$REMOTE_PATH/";
   fi;
 else
   echo "No .env.production file found at $BACKEND_DIR/.env.production, skipping.";
@@ -104,7 +104,7 @@ fi;
 
 if [ -f "$BACKEND_DIR/.env.production.local" ]; then
   if confirm "📝 Sync .env.production.local to $REMOTE_HOST:$REMOTE_PATH/.env.local?"; then
-    rsync -avz "$BACKEND_DIR/.env.production.local" "$REMOTE_HOST:$REMOTE_PATH/.env.local";
+    rsync -avz "$BACKEND_DIR/.env.production.local" "$REMOTE_HOST:$REMOTE_PATH";
   fi;
 else
   echo "No .env.production.local file found at $BACKEND_DIR/.env.production.local, skipping.";
