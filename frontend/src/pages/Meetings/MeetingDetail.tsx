@@ -538,6 +538,8 @@ function MeetingDetail() {
         </TabsContent>
       </Tabs>
 
+      {/* <p className="mt-6 text-xs text-gray-500 dark:text-gray-400">AI生成的内容不保证准确性。请在生成PPT之前仔细审查和编辑内容。</p> */}
+
       {/* Transcript Dialog */}
       <TranscriptDialog
         open={showTranscript}

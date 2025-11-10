@@ -417,6 +417,8 @@ function RecordingDetailContent({
           <div className="lg:col-span-2">
             <RecordingOrganize recording={recording} setSuccess={setSuccess} setError={setError} onRefresh={fetchRecording} />
           </div>
+
+          {/* <p className="text-xs text-gray-500 dark:text-gray-400">AI生成的内容不保证准确性。请在生成PPT之前仔细审查和编辑内容。</p> */}
         </div>
       )}
 
