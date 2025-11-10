@@ -1,26 +1,18 @@
+// Load environment variables FIRST, before any other imports
+import './config/env';
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { connectToDatabase } from './config/database';
 import filesRouter from './routes/files';
-
-// Load environment variables from .env files
-// Priority (later files override earlier ones):
-// 1. .env (base)
-// 2. .env.${NODE_ENV} (environment-specific, e.g., .env.production)
-// 3. .env.${NODE_ENV}.local (environment-specific local, e.g., .env.production.local)
-// 4. .env.local (local overrides - highest priority)
-const nodeEnv = process.env.NODE_ENV || 'development';
-dotenv.config({ quiet: true, path: '.env' });
-dotenv.config({ quiet: true, path: `.env.${nodeEnv}` });
-dotenv.config({ quiet: true, path: `.env.${nodeEnv}.local` });
-dotenv.config({ quiet: true, path: '.env.local' });
 
 import { DataSeeder } from './utils/seedData';
 import meetingsRouter from './routes/meetings/index';
 import authRouter from './routes/auth';
 import usersRouter from './routes/users';
 import hotwordsRouter from './routes/hotwords';
+import notesRouter from './routes/notes';
+import proofingRouter from './routes/proofing';
 import segmentationRouter from './routes/segmentation';
 import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings/index';
@@ -52,6 +44,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', authenticate, usersRouter);
 app.use('/api/meetings', authenticate, meetingsRouter);
 app.use('/api/hotwords', authenticate, hotwordsRouter);
+app.use('/api/notes', authenticate, notesRouter);
+app.use('/api/proofing', authenticate, proofingRouter);
 app.use('/api/segmentation', segmentationRouter);
 app.use('/api/aligner', alignerRouter);
 app.use('/api/recordings', authenticate, recordingsRouter);

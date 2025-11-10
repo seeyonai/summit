@@ -1,4 +1,4 @@
-import * as baseTypes from "@base/types";
+import * as baseTypes from '@base/types';
 
 interface Timestamp {
   createdAt: string;
@@ -159,19 +159,19 @@ type BaseMeeting = Omit<baseTypes.Meeting, 'recordingOrder'> & {
   recordingOrder?: MeetingRecordingOrderItem[];
 };
 
-export type Meeting = BaseMeeting & Id & Timestamp & {
-  ownerId?: string;
-  members?: string[];
-  concatenatedRecording?: Recording | null;
-  recordings?: Recording[];
-};
+export type Meeting = BaseMeeting &
+  Id &
+  Timestamp & {
+    ownerId?: string;
+    members?: string[];
+    concatenatedRecording?: Recording | null;
+    recordings?: Recording[];
+    notes?: Note[];
+  };
 
 export type MeetingWithRecordings = Meeting & { recordings: Recording[] };
 
-export type MeetingCreate = Pick<
-  baseTypes.Meeting,
-  'title' | 'summary' | 'scheduledStart' | 'status' | 'agenda'
->;
+export type MeetingCreate = Pick<baseTypes.Meeting, 'title' | 'summary' | 'scheduledStart' | 'status' | 'agenda'>;
 
 export type MeetingUpdate = Partial<Meeting> & Pick<Meeting, '_id'>;
 
@@ -182,6 +182,66 @@ export interface AppCustomization {
   logoUrl?: string | null;
   logoDarkUrl?: string | null;
   faviconUrl?: string | null;
+  features?: {
+    shorthandNotes?: boolean;
+  };
 }
 
 export type SpeakerName = baseTypes.SpeakerName;
+
+// Shorthand notes types
+export type NoteStatus = baseTypes.NoteStatus;
+
+export type Note = baseTypes.Note &
+  Id &
+  Timestamp & {
+    meetingId?: string;
+    ownerId?: string;
+    meeting?: {
+      _id: string;
+      title: string;
+      status: MeetingStatus;
+      createdAt: string;
+      updatedAt?: string;
+    };
+  };
+
+export type NoteCreate = Pick<baseTypes.Note, 'title' | 'content' | 'status' | 'tags'> & {
+  meetingId?: string;
+};
+
+export type NoteUpdate = Partial<Note> & Pick<Note, '_id'>;
+
+// Proofing/AutoCorrect types
+export interface ProofingChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface CorrectionPair {
+  original: string;
+  corrected: string;
+}
+
+export interface ProofingRequest {
+  input: string;
+  history: ProofingChatMessage[];
+  systemContext?: {
+    meetingId?: string;
+    hotwords?: string[];
+    speakerNames?: string[];
+  };
+  corrections?: CorrectionPair[];
+}
+
+export interface ProofingResponse {
+  output: string;
+  alternatives?: Record<string, string[]>;
+}
+
+export interface AlternativeWord {
+  text: string;
+  options: string[];
+  startIndex: number;
+  endIndex: number;
+}

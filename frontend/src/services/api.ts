@@ -1,6 +1,9 @@
 import type {
   Meeting,
   MeetingWithRecordings,
+  Note,
+  NoteCreate,
+  NoteUpdate,
   Recording,
   SegmentationModelInfo,
   SegmentationRequest,
@@ -9,6 +12,8 @@ import type {
   AppCustomization,
   DisputedIssue,
   Todo,
+  ProofingRequest,
+  ProofingResponse,
 } from '@/types';
 import { toast } from 'sonner';
 
@@ -590,6 +595,97 @@ class ApiService {
 
   async removeRecordingFromMeeting(meetingId: string, recordingId: string): Promise<Meeting> {
     return this.delete<Meeting>(`/api/meetings/${meetingId}/recordings/${recordingId}`);
+  }
+
+  // Shorthand Notes
+  async getNotes(options: { all?: boolean } = {}): Promise<Note[]> {
+    const endpoint = options.all ? '/api/notes?all=true' : '/api/notes';
+    const data = await this.get<unknown>(endpoint);
+    if (Array.isArray(data)) {
+      return data as Note[];
+    }
+    if (isRecord(data) && Array.isArray((data as any).items)) {
+      return (data as { items: Note[] }).items;
+    }
+    return [];
+  }
+
+  async getNotesResponse(options: { all?: boolean } = {}): Promise<{ items: Note[]; fetchedAll?: boolean }> {
+    const endpoint = options.all ? '/api/notes?all=true' : '/api/notes';
+    const data = await this.get<unknown>(endpoint);
+    if (Array.isArray(data)) {
+      return { items: data as Note[] };
+    }
+    if (isRecord(data) && Array.isArray((data as any).items)) {
+      const fetchedAll = typeof (data as any).fetchedAll === 'boolean' ? (data as any).fetchedAll : undefined;
+      return { items: (data as any).items as Note[], fetchedAll };
+    }
+    return { items: [] };
+  }
+
+  async getNote(id: string): Promise<Note> {
+    return this.get(`/api/notes/${id}`);
+  }
+
+  async createNote(data: NoteCreate): Promise<Note> {
+    return this.post('/api/notes', data);
+  }
+
+  async updateNote(id: string, data: NoteUpdate): Promise<Note> {
+    return this.put(`/api/notes/${id}`, data);
+  }
+
+  async deleteNote(id: string) {
+    return this.delete(`/api/notes/${id}`);
+  }
+
+  async associateNoteWithMeeting(noteId: string, meetingId: string): Promise<Note> {
+    return this.post(`/api/notes/${noteId}/associate`, { meetingId });
+  }
+
+  async disassociateNoteFromMeeting(noteId: string): Promise<Note> {
+    return this.post(`/api/notes/${noteId}/disassociate`, {});
+  }
+
+  async exportNote(id: string): Promise<void> {
+    const base = resolveBaseUrl();
+    const url = `${base}/api/notes/${id}/export`;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      const response = await fetch(url, { headers });
+      if (!response.ok) {
+        throw new Error('导出失败');
+      }
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'note.txt';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']*)['"]?;?/i);
+        if (match && match[1]) {
+          filename = decodeURIComponent(match[1]);
+        }
+      }
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(blobUrl);
+      document.body.removeChild(a);
+    } catch (error) {
+      toast.error('导出失败');
+      throw error;
+    }
+  }
+
+  // Proofing/AutoCorrect
+  async proofCorrect(request: ProofingRequest): Promise<ProofingResponse> {
+    return this.post('/api/proofing/correct', request);
   }
 }
 

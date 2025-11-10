@@ -1,5 +1,5 @@
-import OpenAI from 'openai';
 import { internal } from '../utils/errors';
+import { chatCompletions } from '../utils/openai';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -7,7 +7,6 @@ interface ChatMessage {
 }
 
 class TranscriptChatService {
-  private client: OpenAI | null = null;
   private isInitialized = false;
 
   async initialize() {
@@ -17,16 +16,8 @@ class TranscriptChatService {
     const baseURL = process.env.SUMMIT_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
 
     if (!apiKey) {
-      throw internal(
-        '需要设置 SUMMIT_OPENAI_API_KEY 或 OPENAI_API_KEY 环境变量',
-        'chat.api_key_missing'
-      );
+      throw internal('需要设置 SUMMIT_OPENAI_API_KEY 或 OPENAI_API_KEY 环境变量', 'chat.api_key_missing');
     }
-
-    this.client = new OpenAI({
-      apiKey,
-      baseURL,
-    });
 
     this.isInitialized = true;
   }
@@ -34,10 +25,6 @@ class TranscriptChatService {
   async generateSuggestedQuestions(transcript: string, meetingTitle?: string): Promise<string[]> {
     if (!this.isInitialized) {
       await this.initialize();
-    }
-
-    if (!this.client) {
-      throw internal('聊天服务未初始化', 'chat.not_initialized');
     }
 
     const prompt = `根据以下会议记录，生成 3-5 个最相关和有价值的问题，帮助用户快速了解会议内容。
@@ -54,11 +41,8 @@ ${transcript.slice(0, 8000)}${transcript.length > 8000 ? '...' : ''}
 4. 直接返回JSON数组格式：["问题1", "问题2", ...]
 5. 不要包含任何其他文字说明`;
 
-    const model = process.env.SUMMIT_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
-
     try {
-      const completion = await this.client.chat.completions.create({
-        model,
+      const completion = await chatCompletions({
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.8,
         max_tokens: 500,
@@ -71,14 +55,14 @@ ${transcript.slice(0, 8000)}${transcript.length > 8000 ? '...' : ''}
       }
 
       const parsed = JSON.parse(content);
-      const questions = Array.isArray(parsed.questions) 
-        ? parsed.questions 
-        : Array.isArray(parsed) 
-        ? parsed 
+      const questions = Array.isArray(parsed.questions)
+        ? parsed.questions
+        : Array.isArray(parsed)
+        ? parsed
         : Object.values(parsed).find(Array.isArray);
 
       if (Array.isArray(questions) && questions.length > 0) {
-        return questions.slice(0, 5).map(q => String(q));
+        return questions.slice(0, 5).map((q) => String(q));
       }
 
       return this.getFallbackQuestions();
@@ -95,17 +79,13 @@ ${transcript.slice(0, 8000)}${transcript.length > 8000 ? '...' : ''}
       '会议中讨论的关键争议是什么？',
       '谁是主要的发言人？',
       '总结一下会议的主要内容',
-      '有哪些重要的决策？'
+      '有哪些重要的决策？',
     ];
   }
 
   async chatStream(transcript: string, userMessage: string, history: ChatMessage[] = []) {
     if (!this.isInitialized) {
       await this.initialize();
-    }
-
-    if (!this.client) {
-      throw internal('聊天服务未初始化', 'chat.not_initialized');
     }
 
     const systemPrompt = `你是一个专业的会议记录分析助手。你的任务是帮助用户理解和分析会议内容。
@@ -120,16 +100,9 @@ ${transcript}
 3. 如果会议记录中没有相关信息，请明确说明
 4. 使用中文回答`;
 
-    const messages: ChatMessage[] = [
-      { role: 'system', content: systemPrompt },
-      ...history,
-      { role: 'user', content: userMessage },
-    ];
+    const messages: ChatMessage[] = [{ role: 'system', content: systemPrompt }, ...history, { role: 'user', content: userMessage }];
 
-    const model = process.env.SUMMIT_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
-
-    const stream = await this.client.chat.completions.create({
-      model,
+    const stream = await chatCompletions({
       messages,
       stream: true,
       temperature: 0.7,

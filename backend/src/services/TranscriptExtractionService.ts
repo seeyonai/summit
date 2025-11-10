@@ -1,31 +1,7 @@
-import { createIntext, SchemaField, ExtractResult } from 'intext';
+import { createIntext, SchemaField, ExtractResult, OpenAICompatibleClient } from 'intext';
 import recordingService from './RecordingService';
 import { badRequest, internal } from '../utils/errors';
-
-// Create OpenAI-compatible client
-function createOpenAIClient(apiKey: string, baseURL = 'https://api.openai.com/v1') {
-  return {
-    chat: {
-      completions: {
-        create: async (args: Record<string, any>) => {
-          const res = await fetch(`${baseURL}/chat/completions`, {
-            method: 'POST',
-            headers: { 
-              Authorization: `Bearer ${apiKey}`, 
-              'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify(args),
-          });
-          if (!res.ok) {
-            const errorText = await res.text();
-            throw internal(`LLM 错误 ${res.status}: ${errorText}`, 'analysis.llm_error');
-          }
-          return res.json();
-        },
-      },
-    },
-  };
-}
+import { defaultClient, model } from '../utils/openai';
 
 // Schema for extracting disputed issues and todos from meeting transcripts
 const transcriptAnalysisSchema: SchemaField = {
@@ -39,11 +15,11 @@ const transcriptAnalysisSchema: SchemaField = {
         properties: {
           text: {
             type: 'string',
-            description: 'Brief description of the disputed issue or conflict'
+            description: 'Brief description of the disputed issue or conflict',
           },
           severity: {
             type: 'string',
-            description: 'Severity level, e.g. low, medium, high'
+            description: 'Severity level, e.g. low, medium, high',
           },
           parties: {
             type: 'array',
@@ -53,13 +29,13 @@ const transcriptAnalysisSchema: SchemaField = {
               properties: {
                 name: {
                   type: 'string',
-                  description: 'Name of the party involved in the dispute'
-                }
-              }
-            }
-          }
-        }
-      }
+                  description: 'Name of the party involved in the dispute',
+                },
+              },
+            },
+          },
+        },
+      },
     },
     todos: {
       type: 'array',
@@ -69,24 +45,24 @@ const transcriptAnalysisSchema: SchemaField = {
         properties: {
           text: {
             type: 'string',
-            description: 'Description of the action item or task'
+            description: 'Description of the action item or task',
           },
           assignee: {
             type: 'string',
-            description: 'Person assigned to complete the task (if mentioned)'
+            description: 'Person assigned to complete the task (if mentioned)',
           },
           dueDate: {
             type: 'string',
-            description: 'Due date or timeframe mentioned (if any)'
+            description: 'Due date or timeframe mentioned (if any)',
           },
           priority: {
             type: 'string',
-            description: 'Priority level, e.g. low, medium, high'
-          }
-        }
-      }
-    }
-  }
+            description: 'Priority level, e.g. low, medium, high',
+          },
+        },
+      },
+    },
+  },
 };
 
 type ExtractionResult = ExtractResult;
@@ -98,24 +74,14 @@ class TranscriptExtractionService {
   async initialize() {
     if (this.isInitialized) return;
 
-    const apiKey = process.env.SUMMIT_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-    const baseURL = process.env.SUMMIT_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-    if (!apiKey) {
-      throw internal('需要设置 SUMMIT_OPENAI_API_KEY 或 OPENAI_API_KEY 环境变量', 'analysis.api_key_missing');
-    }
-
-    const openai = createOpenAIClient(apiKey, baseURL);
-    
     const clientParams = {
-      model: process.env.SUMMIT_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini', 
-      temperature: 0.1
+      model: model!,
+      temperature: 0.1,
     };
 
-    console.log('clientParams:', clientParams);
-
     this.intext = createIntext({
-      openai,
-      clientParams
+      openai: defaultClient as any,
+      clientParams,
     });
 
     this.isInitialized = true;
@@ -155,7 +121,7 @@ class TranscriptExtractionService {
     try {
       // Get all recordings for this meeting
       const recordings = await recordingService.getRecordingsByMeetingId(meetingId, false);
-      
+
       if (!recordings || recordings.length === 0) {
         throw badRequest('未找到该会议的录音', 'analysis.no_recordings');
       }
@@ -170,7 +136,7 @@ class TranscriptExtractionService {
       }> = [];
 
       // Add speeches from individual recordings
-      recordings.forEach(recording => {
+      recordings.forEach((recording) => {
         if (recording.organizedSpeeches && recording.organizedSpeeches.length > 0) {
           allSpeeches.push(...recording.organizedSpeeches);
         }
@@ -188,17 +154,17 @@ class TranscriptExtractionService {
 
       // Build formatted transcript
       const transcriptLines: string[] = [];
-      
+
       // Add header
       transcriptLines.push('# 会议记录');
       transcriptLines.push('');
-      
+
       // Format each speech segment
       allSpeeches.forEach((speech) => {
         const startTime = this.formatTime(speech.startTime);
         const endTime = this.formatTime(speech.endTime);
         const speakerLabel = `发言人 ${speech.speakerIndex + 1}`;
-        
+
         transcriptLines.push(`## ${speakerLabel} (${startTime} - ${endTime})`);
         transcriptLines.push('');
         transcriptLines.push(speech.polishedText || speech.rawText);
@@ -227,52 +193,54 @@ class TranscriptExtractionService {
     const { json, metadata } = extractionResult;
 
     // Convert extracted data to meeting-compatible format
-    const disputedIssues = json.disputedIssues?.map((issue: any, index: number) => {
-      const parties = Array.isArray(issue.parties)
-        ? issue.parties
-            .map((party: any) => {
-              if (typeof party === 'string') {
-                return party.trim();
-              }
-              if (party && typeof party === 'object') {
-                if (typeof party.name === 'string') {
-                  return party.name.trim();
+    const disputedIssues =
+      json.disputedIssues?.map((issue: any, index: number) => {
+        const parties = Array.isArray(issue.parties)
+          ? issue.parties
+              .map((party: any) => {
+                if (typeof party === 'string') {
+                  return party.trim();
                 }
-                if (typeof party.toString === 'function') {
-                  return party.toString();
+                if (party && typeof party === 'object') {
+                  if (typeof party.name === 'string') {
+                    return party.name.trim();
+                  }
+                  if (typeof party.toString === 'function') {
+                    return party.toString();
+                  }
                 }
-              }
-              return undefined;
-            })
-            .filter((value: string | undefined): value is string => typeof value === 'string' && value.length > 0)
-        : [];
+                return undefined;
+              })
+              .filter((value: string | undefined): value is string => typeof value === 'string' && value.length > 0)
+          : [];
 
-      const severity = typeof issue.severity === 'string' ? issue.severity : 'medium';
+        const severity = typeof issue.severity === 'string' ? issue.severity : 'medium';
 
-      return {
-        id: `issue_${Date.now()}_${index}`,
-        text: issue.text,
-        severity,
-        parties,
-      };
-    }) || [];
+        return {
+          id: `issue_${Date.now()}_${index}`,
+          text: issue.text,
+          severity,
+          parties,
+        };
+      }) || [];
 
-    const todos = json.todos?.map((todo: any, index: number) => ({
-      id: `todo_${Date.now()}_${index}`,
-      text: todo.text,
-      completed: false,
-      assignee: typeof todo.assignee === 'string' ? todo.assignee : undefined,
-      dueDate: typeof todo.dueDate === 'string' ? todo.dueDate : undefined,
-      priority: typeof todo.priority === 'string' ? todo.priority : 'medium',
-    })) || [];
+    const todos =
+      json.todos?.map((todo: any, index: number) => ({
+        id: `todo_${Date.now()}_${index}`,
+        text: todo.text,
+        completed: false,
+        assignee: typeof todo.assignee === 'string' ? todo.assignee : undefined,
+        dueDate: typeof todo.dueDate === 'string' ? todo.dueDate : undefined,
+        priority: typeof todo.priority === 'string' ? todo.priority : 'medium',
+      })) || [];
 
     return {
       disputedIssues,
       todos,
       metadata: {
         totalChunks: metadata.chunkCount,
-        processingTime: new Date().toISOString()
-      }
+        processingTime: new Date().toISOString(),
+      },
     };
   }
 }

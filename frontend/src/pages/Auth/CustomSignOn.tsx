@@ -4,6 +4,7 @@ import { Alert, AlertTitle } from '@/components/ui/alert';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '../../components/ui/button';
+import BackgroundPattern from '@/components/BackgroundPattern';
 
 function CustomSignOn() {
   const navigate = useNavigate();
@@ -45,31 +46,34 @@ function CustomSignOn() {
   }, [location.search, navigate, customSignOn]);
 
   return (
-    <div className="flex items-center justify-center bg-background">
-      <div className="text-center w-full max-w-md p-6">
-        {isLoading ? (
-          <>
-            <LoadingSpinner className="mb-4 mx-auto" />
-            <h1 className="text-2xl font-semibold mb-2">Processing Sign On</h1>
-            <p className="text-muted-foreground">
-              Please wait while we verify your credentials...
-            </p>
-          </>
-        ) : error ? (
-          <>
-            <h1 className="text-2xl font-semibold mb-4">Authentication Error</h1>
-            <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Error</AlertTitle>
-              {error}
-            </Alert>
-            <Button
-              onClick={() => navigate('/login')}
-              className="w-full"
-            >
-              Go to Login
-            </Button>
-          </>
-        ) : null}
+    <div className="min-h-screen w-full bg-[#fafafa] relative text-gray-900">
+      <BackgroundPattern />
+      <div className="min-h-screen flex items-center justify-center px-4 py-6 sm:px-6 sm:py-8 relative z-10">
+        <div className="text-center w-full max-w-md">
+          {isLoading ? (
+            <>
+              <LoadingSpinner className="mb-4 mx-auto" />
+              <h1 className="text-xl sm:text-2xl font-semibold mb-2">Processing Sign On</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Please wait while we verify your credentials...
+              </p>
+            </>
+          ) : error ? (
+            <>
+              <h1 className="text-xl sm:text-2xl font-semibold mb-4">Authentication Error</h1>
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Error</AlertTitle>
+                {error}
+              </Alert>
+              <Button
+                onClick={() => navigate('/login')}
+                className="w-full"
+              >
+                Go to Login
+              </Button>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );

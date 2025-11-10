@@ -4,6 +4,7 @@ import { getCollection } from '../config/database';
 import { COLLECTIONS, MeetingDocument } from '../types/documents';
 import { meetingDocumentToMeeting } from '../utils/mongoMappers';
 import { getRecordingsByMeetingId } from './RecordingService';
+import { getNotesByMeetingId } from './NoteService';
 import { internal } from '../utils/errors';
 import { normalizeHotwords } from '../utils/hotwordUtils';
 import { mergeHotwordsIntoMeeting } from './meetingHotwordHelpers';
@@ -114,6 +115,14 @@ export const getMeetingsForUser = async (
       }
     },
     {
+      $lookup: {
+        from: COLLECTIONS.NOTES,
+        localField: '_id',
+        foreignField: 'meetingId',
+        as: 'notes'
+      }
+    },
+    {
       $addFields: {
         recordings: {
           $map: {
@@ -159,6 +168,14 @@ export const getAllMeetings = async (limit?: number | 'all'): Promise<Meeting[]>
       }
     },
     {
+      $lookup: {
+        from: COLLECTIONS.NOTES,
+        localField: '_id',
+        foreignField: 'meetingId',
+        as: 'notes'
+      }
+    },
+    {
       $addFields: {
         recordings: {
           $map: {
@@ -196,11 +213,13 @@ export const getMeetingById = async (id: string, options: { includeRecordings?: 
   }
   const { includeRecordings = true } = options;
   if (!includeRecordings) {
-    return meetingDocumentToMeeting(meeting);
+    const notes = await getNotesByMeetingId(id);
+    return meetingDocumentToMeeting({ ...meeting, notes });
   }
   const recordings = await getRecordingsByMeetingId(id);
   const recordingDocs = recordings.map(recordingResponseToRecording);
-  return meetingDocumentToMeeting({ ...meeting, recordings: recordingDocs });
+  const notes = await getNotesByMeetingId(id);
+  return meetingDocumentToMeeting({ ...meeting, recordings: recordingDocs, notes });
 };
 
 export const createMeeting = async (request: MeetingCreate, ownerId?: string): Promise<Meeting> => {

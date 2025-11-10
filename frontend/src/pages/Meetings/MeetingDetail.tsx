@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useMeetingDetail } from "@/hooks/useMeetingDetail";
 import { useTodoAdvice } from "@/hooks/useTodoAdvice";
 import useMeetingMembers from "@/hooks/useMeetingMembers";
+import { useConfig } from "@/contexts/ConfigContext";
 import { formatDate, isSameDay } from "@/utils/date";
 import BackButton from "@/components/BackButton";
 import MeetingMemberAvatars from "@/components/meetings/MeetingMemberAvatars";
@@ -17,6 +18,7 @@ import MeetingRecordings from "./components/MeetingRecordings";
 import DisputedIssues from "./components/DisputedIssues";
 import MeetingTodos from "./components/MeetingTodos";
 import MeetingAnaylysis from "./components/MeetingAnalysis";
+import MeetingNotes from "./components/MeetingNotes";
 import TranscriptDialog from "@/components/meetings/TranscriptDialog";
 import AdviceDialog from "@/components/meetings/AdviceDialog";
 import {
@@ -36,6 +38,7 @@ import {
   ListIcon,
   RadarIcon,
   ChevronDownIcon,
+  FileEditIcon,
 } from "lucide-react";
 
 function MeetingDetail() {
@@ -85,6 +88,18 @@ function MeetingDetail() {
     ownerId: meeting?.ownerId,
     members: meeting?.members || [],
   });
+
+  const { config } = useConfig();
+  const showNotesTab = config.features?.shorthandNotes === true;
+
+  // Redirect if notes tab is selected but feature is disabled
+  useEffect(() => {
+    if (activeTab === "notes" && !showNotesTab) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("tab", "recordings");
+      setSearchParams(nextParams);
+    }
+  }, [activeTab, showNotesTab, searchParams, setSearchParams]);
 
   // Event handlers
 
@@ -460,7 +475,7 @@ function MeetingDetail() {
         onValueChange={handleTabChange}
         className="space-y-6 w-full"
       >
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className={`grid w-full ${showNotesTab ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="recordings" className="flex items-center gap-2">
             <HeadphonesIcon className="w-4 h-4" />
             录音
@@ -469,6 +484,12 @@ function MeetingDetail() {
             <FileTextIcon className="w-4 h-4" />
             记录
           </TabsTrigger>
+          {showNotesTab && (
+            <TabsTrigger value="notes" className="flex items-center gap-2">
+              <FileEditIcon className="w-4 h-4" />
+              速记
+            </TabsTrigger>
+          )}
           <TabsTrigger value="analysis" className="flex items-center gap-2">
             <RadarIcon className="w-4 h-4" />
             AI 分析
@@ -488,6 +509,12 @@ function MeetingDetail() {
             }}
           />
         </TabsContent>
+
+        {showNotesTab && (
+          <TabsContent value="notes">
+            <MeetingNotes meeting={meeting} onRefresh={refresh} />
+          </TabsContent>
+        )}
 
         <TabsContent value="analysis">
           <MeetingAnaylysis meeting={meeting}>

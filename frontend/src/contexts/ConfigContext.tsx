@@ -15,6 +15,9 @@ const defaultConfig: AppCustomization = {
   logoUrl: '/logo-rectangle.png',
   logoDarkUrl: '/logo-rectangle.png',
   faviconUrl: undefined,
+  features: {
+    shorthandNotes: false,
+  },
 };
 
 const defaultState: ConfigState = { config: defaultConfig, loading: false };
@@ -26,8 +29,9 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    apiService.getConfig()
-      .then(cfg => {
+    apiService
+      .getConfig()
+      .then((cfg) => {
         if (!mounted) return;
         const merged: AppCustomization = {
           ...defaultConfig,
@@ -35,11 +39,13 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
         };
         setState({ config: merged, loading: false });
       })
-      .catch(err => {
+      .catch((err) => {
         if (!mounted) return;
         setState({ config: defaultConfig, loading: false, error: err?.message || 'Failed to load config' });
       });
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Side-effects: document title and favicon
@@ -67,11 +73,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(() => state, [state]);
 
-  return (
-    <ConfigContext.Provider value={value}>
-      {children}
-    </ConfigContext.Provider>
-  );
+  return <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>;
 }
 
 export function useConfig() {

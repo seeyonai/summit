@@ -154,3 +154,13 @@ export interface Hotword {
   isPublic?: boolean;
   ownerId?: string;
 }
+
+// Shorthand notes types
+export type NoteStatus = 'draft' | 'final';
+
+export interface Note {
+  title: string;
+  content: string;
+  status: NoteStatus;
+  tags?: string[];
+}

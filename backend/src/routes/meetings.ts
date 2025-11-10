@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import meetingService from '../services/MeetingService';
 import transcriptExtractionService from '../services/TranscriptExtractionService';
-import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse, Recording, MeetingStatus } from '../types';
+import { MeetingCreate, MeetingUpdate, Meeting, RecordingResponse, Recording, MeetingStatus, Note } from '../types';
 import recordingService from '../services/RecordingService';
 
 const router = Router();
@@ -21,7 +21,16 @@ const serializeRecording = (recording: Recording) => ({
   updatedAt: 'updatedAt' in recording ? toIsoString(recording.updatedAt) : undefined,
 });
 
-type MeetingWithRecordings = Meeting & { recordings?: Recording[] };
+const serializeNote = (note: Note) => ({
+  ...note,
+  _id: note._id.toString(),
+  meetingId: note.meetingId ? note.meetingId.toString() : undefined,
+  ownerId: note.ownerId ? note.ownerId.toString() : undefined,
+  createdAt: toIsoString(note.createdAt),
+  updatedAt: toIsoString(note.updatedAt),
+});
+
+type MeetingWithRecordings = Meeting & { recordings?: Recording[]; notes?: Note[] };
 
 const serializeMeeting = (meeting: MeetingWithRecordings) => ({
   ...meeting,
@@ -31,6 +40,7 @@ const serializeMeeting = (meeting: MeetingWithRecordings) => ({
   scheduledStart: toIsoString(meeting.scheduledStart),
   recordings: meeting.recordings?.map(serializeRecording) || [],
   concatenatedRecording: meeting.concatenatedRecording ? serializeRecording(meeting.concatenatedRecording) : undefined,
+  notes: meeting.notes?.map(serializeNote) || [],
   recordingOrder: Array.isArray(meeting.recordingOrder)
     ? meeting.recordingOrder
         .map((entry) => ({

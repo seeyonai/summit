@@ -1,5 +1,5 @@
-import { Meeting, Hotword, Recording, RecordingResponse, MeetingStatus } from '../types';
-import { MeetingDocument, HotwordDocument, RecordingDocument } from '../types/documents';
+import { Meeting, Hotword, Note, Recording, RecordingResponse, MeetingStatus } from '../types';
+import { MeetingDocument, HotwordDocument, NoteDocument, RecordingDocument } from '../types/documents';
 import { ObjectId } from 'mongodb';
 import { normalizeAgendaItems } from './agendaUtils';
 
@@ -25,6 +25,13 @@ const normalizeRecordings = (recordings?: Recording[] | null): Recording[] | und
   return recordings.map((recording) => normalizeRecording(recording)).filter((value): value is Recording => value !== undefined && value !== null);
 };
 
+const normalizeNotes = (notes?: Note[] | null): Note[] | undefined => {
+  if (!notes || !Array.isArray(notes)) {
+    return undefined;
+  }
+  return notes.map((note) => noteDocumentToNote(note as any));
+};
+
 export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
   return {
     _id: meetingDoc._id,
@@ -43,6 +50,7 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     members: meetingDoc.members,
     recordings: normalizeRecordings(meetingDoc.recordings),
     concatenatedRecording: normalizeRecording(meetingDoc.concatenatedRecording),
+    notes: normalizeNotes(meetingDoc.notes),
     recordingOrder: Array.isArray(meetingDoc.recordingOrder)
       ? meetingDoc.recordingOrder
           .map((entry, idx) => {
@@ -117,5 +125,19 @@ export function recordingDocumentToResponse(recordingDoc: RecordingDocument): Re
     speakerNames: recordingDoc.speakerNames,
     hotwords: recordingDoc.hotwords,
     organizedSpeeches: recordingDoc.organizedSpeeches,
+  };
+}
+
+export function noteDocumentToNote(noteDoc: NoteDocument): Note {
+  return {
+    _id: noteDoc._id,
+    title: noteDoc.title,
+    content: noteDoc.content,
+    status: noteDoc.status,
+    tags: noteDoc.tags,
+    meetingId: noteDoc.meetingId,
+    ownerId: noteDoc.ownerId,
+    createdAt: noteDoc.createdAt,
+    updatedAt: noteDoc.updatedAt,
   };
 }

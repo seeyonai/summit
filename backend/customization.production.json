@@ -3,5 +3,8 @@
   "shortName": "Summit",
   "logoUrl": null,
   "logoDarkUrl": null,
-  "faviconUrl": null
+  "faviconUrl": null,
+  "features": {
+    "shorthandNotes": true
+  }
 }

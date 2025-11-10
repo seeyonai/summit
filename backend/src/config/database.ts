@@ -1,9 +1,5 @@
 import { MongoClient, Db, Collection, Document } from 'mongodb';
-import dotenv from 'dotenv';
 import { debug, debugWarn } from '../utils/logger';
-
-// Load environment variables from .env file
-dotenv.config({ quiet: true });
 
 let db: Db;
 let client: MongoClient;

@@ -92,6 +92,7 @@ export type Meeting = MeetingBase &
     members?: ObjectId[];
     concatenatedRecording?: Recording | null;
     recordings?: Recording[];
+    notes?: Note[];
   };
 
 export type MeetingCreate = Omit<baseTypes.Meeting, 'recordingOrder'> & {
@@ -151,3 +152,44 @@ export type HotwordUpdate = Pick<Hotword, '_id' | 'word' | 'isActive'> & {
 };
 
 export type AgendaItemStatus = baseTypes.AgendaItemStatus;
+
+// Shorthand notes types
+export type Note = baseTypes.Note &
+  Timestamp &
+  Id & {
+    meetingId?: ObjectId;
+    ownerId?: ObjectId;
+  };
+
+export type NoteCreate = baseTypes.Note & {
+  meetingId?: ObjectId;
+};
+
+export type NoteUpdate = Partial<
+  Pick<Note, 'title' | 'content' | 'status' | 'tags' | 'meetingId'>
+>;
+
+// Proofing/AutoCorrect types
+export interface ProofingChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface ProofingRequest {
+  input: string;
+  history: ProofingChatMessage[];
+  systemContext?: {
+    meetingId?: string;
+    hotwords?: string[];
+    speakerNames?: string[];
+  };
+  corrections?: Array<{
+    original: string;
+    corrected: string;
+  }>;
+}
+
+export interface ProofingResponse {
+  output: string;
+  alternatives?: Record<string, string[]>;
+}

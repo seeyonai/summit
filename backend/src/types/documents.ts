@@ -3,6 +3,7 @@ import {
   AgendaItem,
   Meeting,
   MeetingStatus,
+  Note,
   Recording,
   Todo,
 } from '../types';
@@ -23,6 +24,7 @@ export interface MeetingDocument extends Document {
   recordings?: Recording[];
   concatenatedRecording?: Recording | null;
   recordingOrder?: Meeting['recordingOrder'];
+  notes?: Note[];
   ownerId?: ObjectId;
   members?: ObjectId[];
 }
@@ -42,10 +44,19 @@ export interface RecordingDocument extends Document, Omit<Recording, '_id'> {
   ownerId?: ObjectId;
 }
 
+export interface NoteDocument extends Document, Omit<Note, '_id'> {
+  _id: ObjectId;
+  meetingId?: ObjectId;
+  ownerId?: ObjectId;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
 export const COLLECTIONS = {
   MEETINGS: 'meetings',
   HOTWORDS: 'hotwords',
   RECORDINGS: 'recordings',
+  NOTES: 'notes',
   USERS: 'users',
 } as const;
 

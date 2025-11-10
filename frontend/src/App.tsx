@@ -15,6 +15,8 @@ import MeetingEdit from './pages/Meetings/MeetingEdit';
 import OngoingMeetingPage from './pages/Meetings/OngoingMeetingPage';
 import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
+import NoteList from './pages/NoteList';
+import NoteDetail from './pages/NoteDetail';
 import FloatingRecordingPanel from './components/Audio/FloatingRecordingPanel';
 import DebugInfo from './components/DebugInfo';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -33,12 +35,7 @@ import { DebugProvider } from '@/contexts/DebugContext';
 
 function AppContent() {
   const { isRecording } = useAudioRecording();
-  const {
-    showFloatingPanel,
-    isFullscreen,
-    toggleFloatingPanel,
-    closePanel
-  } = useRecordingPanel();
+  const { showFloatingPanel, isFullscreen, toggleFloatingPanel, closePanel } = useRecordingPanel();
 
   useEffect(() => {
     if (isRecording) {
@@ -69,38 +66,167 @@ function AppContent() {
           <Router>
             <Routes>
               {/* Fullscreen routes without Header/Layout */}
-              <Route path="/meetings/:id/display" element={<ProtectedRoute><OngoingMeetingPage /></ProtectedRoute>} />
+              <Route
+                path="/meetings/:id/display"
+                element={
+                  <ProtectedRoute>
+                    <OngoingMeetingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Auth routes without Header/Layout */}
+              <Route
+                path="/login"
+                element={
+                  <>
+                    <Toaster />
+                    <Login />
+                  </>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <>
+                    <Toaster />
+                    <Register />
+                  </>
+                }
+              />
+              <Route
+                path="/custom-sign-on"
+                element={
+                  <>
+                    <Toaster />
+                    <CustomSignOn />
+                  </>
+                }
+              />
 
               {/* Standard routes with Header/Layout */}
-              <Route path="*" element={
-                <div className="min-h-screen bg-background">
-                  <Toaster />
-                  <DebugInfo />
+              <Route
+                path="*"
+                element={
+                  <div className="min-h-screen bg-background">
+                    <Toaster />
+                    <DebugInfo />
 
-                  <Header isRecording={isRecording} />
+                    <Header isRecording={isRecording} />
 
-                  <main className="container mx-auto px-4 py-8 animate-fade-in">
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route path="/custom-sign-on" element={<CustomSignOn />} />
-                      <Route path="/recordings" element={<ProtectedRoute><RecordingManagement /></ProtectedRoute>} />
-                      <Route path="/recordings/:id" element={<ProtectedRoute><RecordingDetail /></ProtectedRoute>} />
-                      <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
-                      <Route path="/meetings/:id" element={<ProtectedRoute><MeetingDetail /></ProtectedRoute>} />
-                      <Route path="/meetings/:id/edit" element={<ProtectedRoute><MeetingEdit /></ProtectedRoute>} />
-                      <Route path="/hotwords" element={<ProtectedRoute><HotwordListPage /></ProtectedRoute>} />
-                      <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-                      <Route path="/admin/aduit" element={<AdminRoute><AdminAudit /></AdminRoute>} />
-                      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </main>
-                </div>
-              } />
+                    <main className="container mx-auto px-4 py-8 animate-fade-in">
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <ProtectedRoute>
+                              <Dashboard />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/recordings"
+                          element={
+                            <ProtectedRoute>
+                              <RecordingManagement />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/recordings/:id"
+                          element={
+                            <ProtectedRoute>
+                              <RecordingDetail />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/meetings"
+                          element={
+                            <ProtectedRoute>
+                              <Meetings />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/meetings/:id"
+                          element={
+                            <ProtectedRoute>
+                              <MeetingDetail />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/meetings/:id/edit"
+                          element={
+                            <ProtectedRoute>
+                              <MeetingEdit />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/notes"
+                          element={
+                            <ProtectedRoute>
+                              <NoteList />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/notes/:id"
+                          element={
+                            <ProtectedRoute>
+                              <NoteDetail />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/hotwords"
+                          element={
+                            <ProtectedRoute>
+                              <HotwordListPage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/users"
+                          element={
+                            <AdminRoute>
+                              <AdminUsers />
+                            </AdminRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/audit"
+                          element={
+                            <AdminRoute>
+                              <AdminAudit />
+                            </AdminRoute>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <ProtectedRoute>
+                              <Profile />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/settings"
+                          element={
+                            <ProtectedRoute>
+                              <Settings />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </main>
+                  </div>
+                }
+              />
             </Routes>
 
             {/* Global Floating Recording Panel - rendered for all routes */}
