@@ -1,3 +1,4 @@
+import '../config/env';
 import OpenAI from 'openai';
 
 export const model = process.env.SUMMIT_OPENAI_MODEL || process.env.OPENAI_MODEL;
@@ -10,13 +11,17 @@ export const defaultClient = new OpenAI({
 });
 
 // Fast Model
-export const fastModel = process.env.SUMMIT_FAST_OPENAI_MODEL || process.env.FAST_MODEL;
-const fastApiKey = process.env.SUMMIT_FAST_OPENAI_API_KEY || process.env.FAST_API_KEY;
+export const fastModel = process.env.SUMMIT_FAST_OPENAI_MODEL || process.env.FAST_MODEL || model;
+const fastApiKey = process.env.SUMMIT_FAST_OPENAI_API_KEY || process.env.FAST_API_KEY || process.env.OPENAI_API_KEY;
 const fastBaseUrl = process.env.SUMMIT_FAST_OPENAI_BASE_URL || process.env.FAST_BASE_URL;
-export const fastClient = new OpenAI({
-  apiKey: fastApiKey,
-  baseURL: fastBaseUrl,
-});
+
+export const fastClient =
+  fastApiKey && fastBaseUrl
+    ? new OpenAI({
+        apiKey: fastApiKey,
+        baseURL: fastBaseUrl,
+      })
+    : defaultClient;
 
 /**
  * Unified helper to call chat.completions.create across different clients/models.
