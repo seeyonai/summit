@@ -1,6 +1,6 @@
 import { internal } from '../utils/errors';
 import { ProofingRequest, ProofingResponse, ProofingChatMessage } from '../types';
-import { chatCompletions } from '../utils/openai';
+import { createChatCompletion } from '../utils/openai';
 
 class ProofingService {
   private isInitialized = false;
@@ -56,7 +56,7 @@ class ProofingService {
       } as const;
 
       console.log('* Sending request to OpenAI:', openaiRequest);
-      const completion = await chatCompletions(openaiRequest, 'fast');
+      const completion = await createChatCompletion(openaiRequest, 'fast');
 
       const content = completion.choices[0]?.message?.content;
       if (!content) {

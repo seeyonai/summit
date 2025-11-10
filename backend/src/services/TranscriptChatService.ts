@@ -1,5 +1,5 @@
 import { internal } from '../utils/errors';
-import { chatCompletions } from '../utils/openai';
+import { createChatCompletion } from '../utils/openai';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -42,7 +42,7 @@ ${transcript.slice(0, 8000)}${transcript.length > 8000 ? '...' : ''}
 5. 不要包含任何其他文字说明`;
 
     try {
-      const completion = await chatCompletions({
+      const completion = await createChatCompletion({
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.8,
         max_tokens: 500,
@@ -102,7 +102,7 @@ ${transcript}
 
     const messages: ChatMessage[] = [{ role: 'system', content: systemPrompt }, ...history, { role: 'user', content: userMessage }];
 
-    const stream = await chatCompletions({
+    const stream = await createChatCompletion({
       messages,
       stream: true,
       temperature: 0.7,

@@ -27,7 +27,7 @@ export const fastClient = new OpenAI({
  *   `max_completion_tokens` for GPT-5 style models, or `max_tokens` for others
  * - Leaves all other request fields intact, including streaming and tools
  */
-export async function chatCompletions(request: any, clientOrTarget: 'default' | 'fast' = 'default'): Promise<any> {
+export async function createChatCompletion(request: any, clientOrTarget: 'default' | 'fast' = 'default'): Promise<any> {
   const selectedClient: OpenAI = clientOrTarget === 'fast' ? fastClient : defaultClient;
 
   // Load extra request parameters from environment (JSON), per target

@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import recordingService from '../../services/RecordingService';
 import { alignerService } from '../../services/AlignerService';
-import { RecordingUpdate } from '../../types';
 import { sanitizeTranscript } from '../../utils/textUtils';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { requireRecordingWriteAccess } from '../../middleware/auth';
@@ -9,7 +8,7 @@ import { badRequest } from '../../utils/errors';
 import { getPreferredLang } from '../../utils/lang';
 import { getFilesBaseDir, makeRelativeToBase } from '../../utils/filePaths';
 import { findRecordingFilePath, findRecordingWorkingFilePath } from '../../utils/recordingHelpers';
-import { chatCompletions } from '../../utils/openai';
+import { createChatCompletion } from '../../utils/openai';
 
 const router = Router({ mergeParams: true });
 
@@ -100,7 +99,7 @@ router.post(
             'Polish each text: fix punctuation, casing, remove fillers, keep language and meaning. Return JSON with items: [{id, polishedText}] only.',
           items,
         };
-        const completion = await chatCompletions({
+        const completion = await createChatCompletion({
           temperature: 0.2,
           response_format: { type: 'json_object' },
           messages: [
