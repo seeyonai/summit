@@ -19,6 +19,7 @@ import {
   RadioIcon,
   MergeIcon,
   HelpCircleIcon,
+  EyeIcon,
 } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -44,14 +45,16 @@ interface RecordingListItemProps {
   showSource?: boolean;
   actions?: {
     onAssociate?: (recording: Recording, e?: React.MouseEvent) => void;
+    onView?: (recording: Recording, e?: React.MouseEvent) => void;
     onDownload?: (recording: Recording, e?: React.MouseEvent) => void;
     onDelete?: (recording: Recording, e?: React.MouseEvent) => void;
   };
   onClick?: (recording: Recording) => void;
   className?: string;
+  showViewButton?: boolean;
 }
 
-function RecordingListItem({ recording, showSource = false, actions = {}, onClick, className = '' }: RecordingListItemProps) {
+function RecordingListItem({ recording, showSource = false, actions = {}, onClick, className = '', showViewButton = false }: RecordingListItemProps) {
   const { playingAudio, toggleAudioPlayback, stopAllAudio } = useAudioPlayback();
 
   useEffect(() => {
@@ -213,6 +216,12 @@ function RecordingListItem({ recording, showSource = false, actions = {}, onClic
         {defaultActions.onAssociate && (
           <Button size="sm" variant="ghost" onClick={handleAction(defaultActions.onAssociate)}>
             <LinkIcon className="w-4 h-4" />
+          </Button>
+        )}
+
+        {showViewButton && defaultActions.onView && (
+          <Button size="sm" variant="ghost" onClick={handleAction(defaultActions.onView)}>
+            <EyeIcon className="w-4 h-4" />
           </Button>
         )}
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -9,7 +10,9 @@ import StatisticsCard from '@/components/StatisticsCard';
 import { formatDuration } from '@/utils/formatHelpers';
 import { apiService } from '@/services/api';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { FileAudioIcon, ClockIcon, MicIcon, EyeIcon, Disc3Icon, GripVerticalIcon, Loader2Icon } from 'lucide-react';
+import RecordingDetailContent from '@/pages/Recordings/components/RecordingDetailContent';
 
 type RecordingOrderEntry = {
   recordingId: string;
@@ -128,11 +131,17 @@ const reorderOrderEntries = (
 interface MeetingRecordingsProps {
   meeting: Meeting;
   onViewTranscript: () => void;
+  onMeetingRefresh?: () => void | Promise<void>;
 }
 
-function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps) {
+function MeetingRecordings({ meeting, onViewTranscript, onMeetingRefresh }: MeetingRecordingsProps) {
+  const navigate = useNavigate();
   const [recordingsState, setRecordingsState] = useState<Recording[]>(() => meeting.recordings || []);
   const [concatenatedRecordingState, setConcatenatedRecordingState] = useState<Recording | null | undefined>(() => meeting.concatenatedRecording);
+  const [isLargeScreen, setIsLargeScreen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth >= 1024; // lg breakpoint
+  });
 
   const [orderEntries, setOrderEntries] = useState<RecordingOrderEntry[]>(() =>
     normalizeRecordingOrder(
@@ -147,6 +156,8 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
   const [recordingPendingRemoval, setRecordingPendingRemoval] = useState<Recording | null>(null);
   const [shouldDeleteRecordingFile, setShouldDeleteRecordingFile] = useState(false);
   const [isRemovingRecording, setIsRemovingRecording] = useState(false);
+  const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
+  const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const pendingRequestIdRef = useRef(0);
   const isMountedRef = useRef(true);
 
@@ -169,6 +180,15 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
     return () => {
       isMountedRef.current = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const recordingMap = useMemo(() => new Map(originalRecordings.map((recording) => [recording._id, recording])), [originalRecordings]);
@@ -374,6 +394,67 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
     setRemoveDialogOpen(true);
   }, []);
 
+  const handleRecordingClick = useCallback(
+    (recording: Recording) => {
+      if (isLargeScreen) {
+        // Open drawer on large screens
+        setSelectedRecording(recording);
+        setIsDetailSheetOpen(true);
+      } else {
+        // Navigate to recording detail page on smaller screens
+        navigate(`/recordings/${recording._id}`);
+      }
+    },
+    [isLargeScreen, navigate]
+  );
+
+  const handleRecordingView = useCallback(
+    (recording: Recording) => {
+      navigate(`/recordings/${recording._id}`);
+    },
+    [navigate]
+  );
+
+  const handleDetailSheetClose = useCallback(() => {
+    setIsDetailSheetOpen(false);
+    setSelectedRecording(null);
+  }, []);
+
+  const handleRecordingRefresh = useCallback(async () => {
+    if (!meeting._id) return;
+    try {
+      const updatedMeeting = await apiService.getMeeting(meeting._id);
+      if (updatedMeeting) {
+        setRecordingsState(updatedMeeting.recordings || []);
+        setConcatenatedRecordingState(updatedMeeting.concatenatedRecording);
+        const nextOriginals = (updatedMeeting.recordings || []).filter((recording) => recording.source !== 'concatenated');
+        setOrderEntries(normalizeRecordingOrder(nextOriginals, updatedMeeting.recordingOrder));
+        if (selectedRecording) {
+          const updated = updatedMeeting.recordings?.find((r) => r._id === selectedRecording._id);
+          if (updated) {
+            setSelectedRecording(updated);
+          } else {
+            // Recording was deleted, close the drawer
+            setIsDetailSheetOpen(false);
+            setSelectedRecording(null);
+          }
+        }
+      }
+      // Also refresh the parent meeting to keep everything in sync
+      if (onMeetingRefresh) {
+        await onMeetingRefresh();
+      }
+    } catch (error) {
+      console.error('Failed to refresh meeting', error);
+    }
+  }, [meeting._id, selectedRecording, onMeetingRefresh]);
+
+  const handleRecordingDelete = useCallback(() => {
+    setIsDetailSheetOpen(false);
+    setSelectedRecording(null);
+    handleRecordingRefresh();
+  }, [handleRecordingRefresh]);
+
   const handleConfirmRemoveRecording = useCallback(async () => {
     if (!meeting._id || !recordingPendingRemoval || isRemovingRecording) {
       return;
@@ -494,9 +575,13 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
               </div>
               <RecordingListItem
                 recording={concatenatedRecordingState}
+                className="cursor-pointer"
+                showViewButton={isLargeScreen}
                 actions={{
+                  onView: handleRecordingView,
                   onDelete: () => handleRequestRemoveRecording(concatenatedRecordingState),
                 }}
+                onClick={handleRecordingClick}
               />
             </div>
           )}
@@ -528,7 +613,7 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
                     onDragOver={handleDragOver}
                     onDrop={(event) => handleDropOnItem(event, recording._id)}
                     className={`flex flex-col gap-2 rounded-xl border border-border bg-card/60 p-3 shadow-sm transition ${
-                      draggingId === recording._id ? 'border-primary bg-primary/10' : 'hover:border-primary/40'
+                      draggingId === recording._id ? 'border-primary bg-primary/10' : 'hover:border-primary/40 hover:bg-card/80 cursor-pointer'
                     }`}
                   >
                     <div className="flex items-center gap-3 text-muted-foreground">
@@ -540,10 +625,13 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
                     <div className={`flex-1 ${entry.enabled ? '' : 'opacity-60'}`}>
                       <RecordingListItem
                         recording={recording}
-                        className="shadow-none border-none bg-transparent hover:shadow-none p-0"
+                        className="shadow-none border-none bg-transparent hover:shadow-none p-0 cursor-pointer"
+                        showViewButton={isLargeScreen}
                         actions={{
+                          onView: handleRecordingView,
                           onDelete: () => handleRequestRemoveRecording(recording),
                         }}
+                        onClick={handleRecordingClick}
                       />
                     </div>
                   </li>
@@ -616,6 +704,21 @@ function MeetingRecordings({ meeting, onViewTranscript }: MeetingRecordingsProps
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Recording Detail Sheet */}
+      <Sheet open={isDetailSheetOpen} onOpenChange={handleDetailSheetClose}>
+        <SheetContent side="right" className="!w-[80vw] !max-w-6xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>录音详情</SheetTitle>
+            <SheetDescription>查看和管理录音信息</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            {selectedRecording && (
+              <RecordingDetailContent recording={selectedRecording} onRefresh={handleRecordingRefresh} onDelete={handleRecordingDelete} />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

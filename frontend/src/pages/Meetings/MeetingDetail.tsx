@@ -1,26 +1,35 @@
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useMeetingDetail } from "@/hooks/useMeetingDetail";
-import { useTodoAdvice } from "@/hooks/useTodoAdvice";
-import useMeetingMembers from "@/hooks/useMeetingMembers";
-import { useConfig } from "@/contexts/ConfigContext";
-import { formatDate, isSameDay } from "@/utils/date";
-import BackButton from "@/components/BackButton";
-import MeetingMemberAvatars from "@/components/meetings/MeetingMemberAvatars";
-import MeetingTranscript from "./components/MeetingTranscript";
-import MeetingRecordings from "./components/MeetingRecordings";
-import DisputedIssues from "./components/DisputedIssues";
-import MeetingTodos from "./components/MeetingTodos";
-import MeetingAnaylysis from "./components/MeetingAnalysis";
-import MeetingNotes from "./components/MeetingNotes";
-import TranscriptDialog from "@/components/meetings/TranscriptDialog";
-import AdviceDialog from "@/components/meetings/AdviceDialog";
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useMeetingDetail } from '@/hooks/useMeetingDetail';
+import { useTodoAdvice } from '@/hooks/useTodoAdvice';
+import useMeetingMembers from '@/hooks/useMeetingMembers';
+import { useConfig } from '@/contexts/ConfigContext';
+import { formatDate, isSameDay } from '@/utils/date';
+import BackButton from '@/components/BackButton';
+import MeetingMemberAvatars from '@/components/meetings/MeetingMemberAvatars';
+import MeetingTranscript from './components/MeetingTranscript';
+import MeetingRecordings from './components/MeetingRecordings';
+import DisputedIssues from './components/DisputedIssues';
+import MeetingTodos from './components/MeetingTodos';
+import MeetingAnaylysis from './components/MeetingAnalysis';
+import MeetingNotes from './components/MeetingNotes';
+import TranscriptDialog from '@/components/meetings/TranscriptDialog';
+import AdviceDialog from '@/components/meetings/AdviceDialog';
 import {
   EditIcon,
   TrashIcon,
@@ -39,7 +48,7 @@ import {
   RadarIcon,
   ChevronDownIcon,
   FileEditIcon,
-} from "lucide-react";
+} from 'lucide-react';
 
 function MeetingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -48,8 +57,8 @@ function MeetingDetail() {
   const [showAnalysisSuccess, setShowAnalysisSuccess] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "recordings";
-  const activeSubtab = searchParams.get("subtab") || "disputedIssues";
+  const activeTab = searchParams.get('tab') || 'recordings';
+  const activeSubtab = searchParams.get('subtab') || 'disputedIssues';
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -71,13 +80,7 @@ function MeetingDetail() {
     updateMeetingStatus,
   } = useMeetingDetail(id);
 
-  const {
-    adviceById,
-    loadingById,
-    selectedTodoId,
-    generateAdvice,
-    setSelectedTodoId,
-  } = useTodoAdvice();
+  const { adviceById, loadingById, selectedTodoId, generateAdvice, setSelectedTodoId } = useTodoAdvice();
 
   const {
     memberUsers,
@@ -94,9 +97,9 @@ function MeetingDetail() {
 
   // Redirect if notes tab is selected but feature is disabled
   useEffect(() => {
-    if (activeTab === "notes" && !showNotesTab) {
+    if (activeTab === 'notes' && !showNotesTab) {
       const nextParams = new URLSearchParams(searchParams);
-      nextParams.set("tab", "recordings");
+      nextParams.set('tab', 'recordings');
       setSearchParams(nextParams);
     }
   }, [activeTab, showNotesTab, searchParams, setSearchParams]);
@@ -110,8 +113,8 @@ function MeetingDetail() {
       description: '确定要删除这个会议吗？此操作不可撤销。',
       onConfirm: async () => {
         await deleteMeeting();
-        navigate("/meetings");
-        setConfirmDialog(prev => ({ ...prev, open: false }));
+        navigate('/meetings');
+        setConfirmDialog((prev) => ({ ...prev, open: false }));
       },
     });
   };
@@ -130,17 +133,23 @@ function MeetingDetail() {
     }
   }, [id, navigate]);
 
-  const handleTabChange = useCallback((value: string) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("tab", value);
-    setSearchParams(nextParams);
-  }, [searchParams, setSearchParams]);
+  const handleTabChange = useCallback(
+    (value: string) => {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('tab', value);
+      setSearchParams(nextParams);
+    },
+    [searchParams, setSearchParams]
+  );
 
-  const handleSubtabChange = useCallback((value: string) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("subtab", value);
-    setSearchParams(nextParams);
-  }, [searchParams, setSearchParams]);
+  const handleSubtabChange = useCallback(
+    (value: string) => {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('subtab', value);
+      setSearchParams(nextParams);
+    },
+    [searchParams, setSearchParams]
+  );
 
   const handleStartMeeting = useCallback(async () => {
     if (!meeting || updatingStatus) {
@@ -149,11 +158,11 @@ function MeetingDetail() {
 
     try {
       setUpdatingStatus(true);
-      await updateMeetingStatus("in_progress");
-      setSuccess("会议已开始");
+      await updateMeetingStatus('in_progress');
+      setSuccess('会议已开始');
     } catch (error) {
-      console.error("Failed to start meeting", error);
-      setSuccess("开始会议失败，请稍后重试。");
+      console.error('Failed to start meeting', error);
+      setSuccess('开始会议失败，请稍后重试。');
     } finally {
       setUpdatingStatus(false);
     }
@@ -171,81 +180,87 @@ function MeetingDetail() {
       onConfirm: async () => {
         try {
           setUpdatingStatus(true);
-          await updateMeetingStatus("completed");
-          setSuccess("会议已结束");
+          await updateMeetingStatus('completed');
+          setSuccess('会议已结束');
         } catch (error) {
-          console.error("Failed to end meeting", error);
-          setSuccess("结束会议失败，请稍后重试。");
+          console.error('Failed to end meeting', error);
+          setSuccess('结束会议失败，请稍后重试。');
         } finally {
           setUpdatingStatus(false);
-          setConfirmDialog(prev => ({ ...prev, open: false }));
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
         }
       },
     });
   }, [meeting, updateMeetingStatus, updatingStatus]);
 
-  const handleMeetingUpdate = useCallback((updatedMeeting: any) => {
-    // Update local state immediately for responsive UI
-    if (refresh) {
-      refresh();
-    }
-    setSuccess("转录内容已更新");
-  }, [refresh]);
-
-  const handleQuickStatusChange = useCallback((newStatus: string) => {
-    if (!meeting || updatingStatus) {
-      return;
-    }
-
-    const performStatusChange = async () => {
-      try {
-        setUpdatingStatus(true);
-        await updateMeetingStatus(newStatus as any);
-        const statusText = getStatusText(newStatus);
-        setSuccess(`会议状态已更新为: ${statusText}`);
-      } catch (error) {
-        console.error("Failed to update meeting status", error);
-        setSuccess("更新会议状态失败，请稍后重试。");
-      } finally {
-        setUpdatingStatus(false);
-        setConfirmDialog(prev => ({ ...prev, open: false }));
+  const handleMeetingUpdate = useCallback(
+    (updatedMeeting: any) => {
+      // Update local state immediately for responsive UI
+      if (refresh) {
+        refresh();
       }
-    };
+      setSuccess('转录内容已更新');
+    },
+    [refresh]
+  );
 
-    // Confirm certain status changes
-    if (newStatus === "in_progress" && meeting.status !== "in_progress") {
-      setConfirmDialog({
-        open: true,
-        title: '确认开始会议',
-        description: '确定要开始这个会议吗？',
-        onConfirm: performStatusChange,
-      });
-      return;
-    }
+  const handleQuickStatusChange = useCallback(
+    (newStatus: string) => {
+      if (!meeting || updatingStatus) {
+        return;
+      }
 
-    if (newStatus === "completed" && meeting.status !== "completed") {
-      setConfirmDialog({
-        open: true,
-        title: '确认完成会议',
-        description: '确定要将会议标记为已完成吗？',
-        onConfirm: performStatusChange,
-      });
-      return;
-    }
+      const performStatusChange = async () => {
+        try {
+          setUpdatingStatus(true);
+          await updateMeetingStatus(newStatus as any);
+          const statusText = getStatusText(newStatus);
+          setSuccess(`会议状态已更新为: ${statusText}`);
+        } catch (error) {
+          console.error('Failed to update meeting status', error);
+          setSuccess('更新会议状态失败，请稍后重试。');
+        } finally {
+          setUpdatingStatus(false);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+        }
+      };
 
-    if (newStatus === "cancelled" && meeting.status !== "cancelled") {
-      setConfirmDialog({
-        open: true,
-        title: '确认取消会议',
-        description: '确定要将会议标记为已取消吗？',
-        onConfirm: performStatusChange,
-      });
-      return;
-    }
+      // Confirm certain status changes
+      if (newStatus === 'in_progress' && meeting.status !== 'in_progress') {
+        setConfirmDialog({
+          open: true,
+          title: '确认开始会议',
+          description: '确定要开始这个会议吗？',
+          onConfirm: performStatusChange,
+        });
+        return;
+      }
 
-    // For other status changes, no confirmation needed
-    performStatusChange();
-  }, [meeting, updateMeetingStatus, updatingStatus]);
+      if (newStatus === 'completed' && meeting.status !== 'completed') {
+        setConfirmDialog({
+          open: true,
+          title: '确认完成会议',
+          description: '确定要将会议标记为已完成吗？',
+          onConfirm: performStatusChange,
+        });
+        return;
+      }
+
+      if (newStatus === 'cancelled' && meeting.status !== 'cancelled') {
+        setConfirmDialog({
+          open: true,
+          title: '确认取消会议',
+          description: '确定要将会议标记为已取消吗？',
+          onConfirm: performStatusChange,
+        });
+        return;
+      }
+
+      // For other status changes, no confirmation needed
+      performStatusChange();
+    },
+    [meeting, updateMeetingStatus, updatingStatus]
+  );
 
   useEffect(() => {
     if (success) {
@@ -258,41 +273,41 @@ function MeetingDetail() {
 
   const getStatusColor = (status?: string) => {
     switch (status) {
-      case "scheduled":
-        return "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary/80";
-      case "in_progress":
-        return "bg-success/10 dark:bg-success/20 text-success dark:text-success/80";
-      case "completed":
-        return "bg-muted text-muted-foreground";
-      case "cancelled":
-        return "bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive/80";
+      case 'scheduled':
+        return 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary/80';
+      case 'in_progress':
+        return 'bg-success/10 dark:bg-success/20 text-success dark:text-success/80';
+      case 'completed':
+        return 'bg-muted text-muted-foreground';
+      case 'cancelled':
+        return 'bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive/80';
       default:
-        return "bg-muted text-muted-foreground";
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   const getStatusText = (status?: string) => {
     switch (status) {
-      case "scheduled":
-        return "已排期";
-      case "in_progress":
-        return "进行中";
-      case "completed":
-        return "已完成";
-      case "cancelled":
-        return "已取消";
+      case 'scheduled':
+        return '已排期';
+      case 'in_progress':
+        return '进行中';
+      case 'completed':
+        return '已完成';
+      case 'cancelled':
+        return '已取消';
       default:
-        return status || "未知";
+        return status || '未知';
     }
   };
 
   const getStatusIcon = (status?: string) => {
     switch (status) {
-      case "scheduled":
+      case 'scheduled':
         return CalendarIcon;
-      case "in_progress":
+      case 'in_progress':
         return PlayIcon;
-      case "completed":
+      case 'completed':
         return PauseIcon;
       default:
         return ClockIcon;
@@ -301,13 +316,13 @@ function MeetingDetail() {
 
   const getAvailableStatusOptions = (currentStatus?: string) => {
     const allStatuses = [
-      { value: "scheduled", label: "已排期", icon: CalendarIcon },
-      { value: "in_progress", label: "进行中", icon: PlayIcon },
-      { value: "completed", label: "已完成", icon: PauseIcon },
-      { value: "cancelled", label: "已取消", icon: AlertCircleIcon },
+      { value: 'scheduled', label: '已排期', icon: CalendarIcon },
+      { value: 'in_progress', label: '进行中', icon: PlayIcon },
+      { value: 'completed', label: '已完成', icon: PauseIcon },
+      { value: 'cancelled', label: '已取消', icon: AlertCircleIcon },
     ];
 
-    return allStatuses.filter(status => status.value !== currentStatus);
+    return allStatuses.filter((status) => status.value !== currentStatus);
   };
 
   if (loading) {
@@ -324,9 +339,11 @@ function MeetingDetail() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Alert variant="destructive">
             <AlertCircleIcon className="h-4 w-4" />
-            <AlertDescription>{error || "会议不存在"}</AlertDescription>
+            <AlertDescription>{error || '会议不存在'}</AlertDescription>
           </Alert>
-          <BackButton url="/meetings" className="mt-4">返回会议列表</BackButton>
+          <BackButton url="/meetings" className="mt-4">
+            返回会议列表
+          </BackButton>
         </div>
       </div>
     );
@@ -337,26 +354,25 @@ function MeetingDetail() {
     showConcatenatedRecording && meeting.concatenatedRecording
       ? [meeting.concatenatedRecording]
       : (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated');
-  const scheduledStartDate = meeting.scheduledStart
-    ? new Date(meeting.scheduledStart)
-    : null;
-  const canStartMeeting = meeting.status === "scheduled"
-    && scheduledStartDate !== null
-    && !Number.isNaN(scheduledStartDate.getTime())
-    && isSameDay(scheduledStartDate, new Date());
+  const scheduledStartDate = meeting.scheduledStart ? new Date(meeting.scheduledStart) : null;
+  const canStartMeeting =
+    meeting.status === 'scheduled' &&
+    scheduledStartDate !== null &&
+    !Number.isNaN(scheduledStartDate.getTime()) &&
+    isSameDay(scheduledStartDate, new Date());
 
   return (
     <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <BackButton url="/meetings" variant="ghost" className="mb-4">返回</BackButton>
+        <BackButton url="/meetings" variant="ghost" className="mb-4">
+          返回
+        </BackButton>
 
         <div className="flex justify-between items-start mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-foreground dark:text-foreground">
-                {meeting.title}
-              </h1>
+              <h1 className="text-3xl font-bold text-foreground dark:text-foreground">{meeting.title}</h1>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -388,7 +404,7 @@ function MeetingDetail() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <p className="text-muted-foreground dark:text-muted-foreground mb-3">{meeting.summary || "暂无概要"}</p>
+            <p className="text-muted-foreground dark:text-muted-foreground mb-3">{meeting.summary || '暂无概要'}</p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-muted-foreground">
               <span className="flex items-center gap-1">
                 <CalendarIcon className="w-4 h-4" />
@@ -418,21 +434,14 @@ function MeetingDetail() {
 
           <div className="flex gap-2">
             {canStartMeeting && (
-              <Button
-                onClick={handleStartMeeting}
-                disabled={updatingStatus}
-                variant="secondary"
-              >
+              <Button onClick={handleStartMeeting} disabled={updatingStatus} variant="secondary">
                 <PlayIcon className="w-4 h-4 mr-2" />
                 开始会议
               </Button>
             )}
-            {meeting.status === "in_progress" && (
+            {meeting.status === 'in_progress' && (
               <>
-                <Button
-                  onClick={handleToggleMeetingDisplay}
-                  variant="fancy"
-                >
+                <Button onClick={handleToggleMeetingDisplay} variant="fancy">
                   <MaximizeIcon className="w-4 h-4 mr-2" />
                   会议大屏
                 </Button>
@@ -447,14 +456,11 @@ function MeetingDetail() {
                 </Button>
               </>
             )}
-            <Button
-              onClick={() => navigate(`/meetings/${meeting._id}/edit`)}
-              variant="outline"
-            >
+            <Button onClick={() => navigate(`/meetings/${meeting._id}/edit`)} variant="outline">
               <EditIcon className="w-4 h-4 mr-2" />
               编辑
             </Button>
-            {meeting.status !== "in_progress" && (
+            {meeting.status !== 'in_progress' && (
               <Button
                 onClick={handleDeleteMeeting}
                 variant="outline"
@@ -466,15 +472,10 @@ function MeetingDetail() {
             )}
           </div>
         </div>
-
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="space-y-6 w-full"
-      >
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6 w-full">
         <TabsList className={`grid w-full ${showNotesTab ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="recordings" className="flex items-center gap-2">
             <HeadphonesIcon className="w-4 h-4" />
@@ -507,6 +508,7 @@ function MeetingDetail() {
               setShowConcatenatedRecording(true);
               setShowTranscript(true);
             }}
+            onMeetingRefresh={refresh}
           />
         </TabsContent>
 
@@ -518,7 +520,7 @@ function MeetingDetail() {
 
         <TabsContent value="analysis">
           <MeetingAnaylysis meeting={meeting}>
-            {({disputedIssues, todos}) => (
+            {({ disputedIssues, todos }) => (
               <Tabs value={activeSubtab} onValueChange={handleSubtabChange}>
                 <TabsList>
                   <TabsTrigger value="disputedIssues">争论焦点</TabsTrigger>
@@ -534,7 +536,6 @@ function MeetingDetail() {
             )}
           </MeetingAnaylysis>
         </TabsContent>
-
       </Tabs>
 
       {/* Transcript Dialog */}
@@ -552,7 +553,6 @@ function MeetingDetail() {
         concatenatedRecording={meeting.concatenatedRecording ?? undefined}
       />
 
-
       {/* Success Message */}
       {success && (
         <div className="fixed bottom-4 right-4 z-50">
@@ -567,15 +567,13 @@ function MeetingDetail() {
         <div className="fixed bottom-4 right-4 z-50">
           <Alert className="bg-primary/10 dark:bg-primary/20 border-primary/30 dark:border-primary/70 text-primary dark:text-primary/80">
             <BrainIcon className="h-4 w-4" />
-            <AlertDescription>
-              AI 分析完成！任务和争议问题已提取并保存。
-            </AlertDescription>
+            <AlertDescription>AI 分析完成！任务和争议问题已提取并保存。</AlertDescription>
           </Alert>
         </div>
       )}
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog(prev => ({ ...prev, open: false }))}>
+      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog((prev) => ({ ...prev, open: false }))}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
