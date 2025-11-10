@@ -1,21 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import BackgroundPattern from '@/components/BackgroundPattern';
+import { ArrowRightIcon } from 'lucide-react';
 
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, user } = useAuth();
+  const { config } = useConfig();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const loginFormLocked = config.localLoginForm?.locked ?? false;
+  const loginMessage = config.localLoginForm?.message;
+  const redirectUrl = config.localLoginForm?.redirectUrl;
+
+  // Detect browser language (simplified: just check if starts with 'zh')
+  const browserLang = navigator.language.toLowerCase();
+  const isZhCN = browserLang.startsWith('zh');
+  const displayMessage = loginMessage ? (isZhCN ? loginMessage['zh-CN'] : loginMessage.en) || loginMessage.en || loginMessage['zh-CN'] : undefined;
 
   // Get the intended destination from location state or default to meetings
   const from = (location.state as any)?.from?.pathname || '/dashboard';
@@ -55,15 +67,47 @@ function Login() {
               <CardDescription className="text-sm sm:text-base">欢迎回到 Summit AI</CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pb-6">
+              {displayMessage && (
+                <Alert className="mb-4">
+                  <AlertDescription>
+                    {displayMessage}
+                    {redirectUrl && (
+                      <div className="flex items-center">
+                        {' '}
+                        <a href={redirectUrl} className="font-bold text-primary hover:underline font-medium">
+                          {isZhCN ? '点击这里进行身份认证' : 'Click here to authenticate'}
+                        </a>
+                        <ArrowRightIcon className="ml-2 h-4 w-4" />
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
               <form onSubmit={onSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">邮箱</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full"
+                    disabled={loginFormLocked}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="password">密码</Label>
-                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full"
+                    disabled={loginFormLocked}
+                  />
                 </div>
 
                 {error && (
@@ -72,7 +116,7 @@ function Login() {
                   </Alert>
                 )}
 
-                <Button type="submit" disabled={loading} className="w-full">
+                <Button type="submit" disabled={loading || loginFormLocked} className="w-full">
                   {loading ? '登录中...' : '登录'}
                 </Button>
               </form>

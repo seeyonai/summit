@@ -186,6 +186,14 @@ export interface AppCustomization {
     shorthandNotes?: boolean;
     enableLocalAccounts?: boolean;
   };
+  localLoginForm?: {
+    locked?: boolean;
+    message?: {
+      en?: string;
+      'zh-CN'?: string;
+    };
+    redirectUrl?: string;
+  };
 }
 
 export type SpeakerName = baseTypes.SpeakerName;

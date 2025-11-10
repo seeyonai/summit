@@ -36,6 +36,22 @@ async function isLocalAccountsEnabled(): Promise<boolean> {
   return true;
 }
 
+async function isLocalLoginFormLocked(): Promise<boolean> {
+  const paths = candidatePaths();
+  for (const filePath of paths) {
+    try {
+      const data = await fs.readFile(filePath, 'utf-8');
+      const json = JSON.parse(data);
+      // Default to false if not specified
+      return json.localLoginForm?.locked ?? false;
+    } catch (_) {
+      // try next candidate
+    }
+  }
+  // If config file not found, default to false (not locked)
+  return false;
+}
+
 interface CustomSignOnResponse {
   valid: boolean;
   error?: string;
@@ -99,6 +115,12 @@ router.post('/register', asyncHandler(async (req, res) => {
 }));
 
 router.post('/login', asyncHandler(async (req, res) => {
+  // Check if local login form is locked
+  const loginFormLocked = await isLocalLoginFormLocked();
+  if (loginFormLocked) {
+    throw badRequest('本地登录功能已被锁定', 'auth.login_locked');
+  }
+
   const body = req.body as Partial<LoginDto>;
   if (!body?.email || !body?.password) {
     throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
