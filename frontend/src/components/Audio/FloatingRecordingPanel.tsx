@@ -65,7 +65,7 @@ function FloatingRecordingPanel({ isVisible, onClose }: FloatingRecordingPanelPr
     if (!isVisible || isRecording) return;
 
     const pathname = location.pathname;
-    const isMeetingDetailRoute = pathname.startsWith('/meetings/') && !pathname.includes('/display');
+    const isMeetingDetailRoute = pathname.startsWith('/meetings/');
 
     if (isMeetingDetailRoute) {
       // Extract meeting ID from pathname (e.g., /meetings/68e665a5329ae67dd1e2dd7a or /meetings/68e665a5329ae67dd1e2dd7a/edit)
