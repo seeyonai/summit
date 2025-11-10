@@ -79,7 +79,7 @@ if [ ! -d "$BACKEND_DIR/dist" ]; then
   echo "Run the build step before syncing.";
 else
   if confirm "📤 Sync backend code to $REMOTE_HOST:$REMOTE_PATH?"; then
-    rsync -avz --delete --exclude '/node_modules' --exclude '/files' --exclude '/logs' --exclude '/customization.json' --exclude '/src' --exclude '.env' --exclude '.env.production' --exclude '.git' \
+    rsync -avz --delete --exclude '/node_modules' --exclude '/files' --exclude '/logs' --exclude '/customization.json' --exclude '/src' --exclude '.env' --exclude '.env.local' --exclude '.env.production' --exclude '.env.production.local' --exclude '.git' \
       "$BACKEND_DIR/" "$REMOTE_HOST:$REMOTE_PATH/";
     if confirm "📦 Install backend dependencies on $REMOTE_HOST?"; then
       ssh "$REMOTE_HOST" "cd '$REMOTE_PATH' && npm install --omit=dev";
@@ -95,7 +95,7 @@ ssh "$REMOTE_HOST" "sudo mkdir -p '$REMOTE_PATH/logs' && sudo chmod 777 '$REMOTE
 
 header "�🔐 Sync production environment file";
 if [ -f "$BACKEND_DIR/.env.production" ]; then
-  if confirm "📝 Sync .env.production to $REMOTE_HOST:$REMOTE_PATH/.env?"; then
+  if confirm "📝 Sync .env.production to $REMOTE_HOST?"; then
     rsync -avz "$BACKEND_DIR/.env.production" "$REMOTE_HOST:$REMOTE_PATH/";
   fi;
 else
@@ -103,7 +103,7 @@ else
 fi;
 
 if [ -f "$BACKEND_DIR/.env.production.local" ]; then
-  if confirm "📝 Sync .env.production.local to $REMOTE_HOST:$REMOTE_PATH/.env.local?"; then
+  if confirm "📝 Sync .env.production.local to $REMOTE_HOST?"; then
     rsync -avz "$BACKEND_DIR/.env.production.local" "$REMOTE_HOST:$REMOTE_PATH";
   fi;
 else

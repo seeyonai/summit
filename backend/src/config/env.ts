@@ -8,8 +8,8 @@
 import dotenv from 'dotenv';
 
 const nodeEnv = process.env.NODE_ENV || 'development';
+console.log('nodeEnv:', nodeEnv);
 dotenv.config({ quiet: true, path: '.env' });
 dotenv.config({ quiet: true, path: `.env.${nodeEnv}` });
 dotenv.config({ quiet: true, path: `.env.${nodeEnv}.local` });
 dotenv.config({ quiet: true, path: '.env.local' });
-
