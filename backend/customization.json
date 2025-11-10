@@ -6,6 +6,6 @@
   "faviconUrl": null,
   "features": {
     "shorthandNotes": false,
-    "enableLocalAccounts": false
+    "enableLocalAccounts": true
   }
 }
