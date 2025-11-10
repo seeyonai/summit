@@ -92,6 +92,88 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
     }
   };
 
+  const exportComprehensiveDocx = async () => {
+    if (!meeting.finalTranscript || allOrganizedSpeeches.length === 0) return;
+
+    try {
+      // Build comprehensive markdown document
+      let markdown = `# ${meeting.title}\n\n`;
+
+      // Add meeting metadata
+      if (meeting.scheduledStart) {
+        const date = new Date(meeting.scheduledStart);
+        markdown += `**会议时间：** ${date.toLocaleString('zh-CN')}\n\n`;
+      }
+
+      // Calculate total duration from recordings
+      const totalDuration = sourceRecordings.reduce((sum, recording) => sum + (recording.duration || 0), 0);
+      if (totalDuration > 0) {
+        const hours = Math.floor(totalDuration / 3600);
+        const minutes = Math.floor((totalDuration % 3600) / 60);
+        const seconds = Math.floor(totalDuration % 60);
+        const durationStr = hours > 0 ? `${hours}小时${minutes}分${seconds}秒` : `${minutes}分${seconds}秒`;
+        markdown += `**会议时长：** ${durationStr}\n\n`;
+      }
+
+      if (meeting.members && meeting.members.length > 0) {
+        markdown += `**参与人数：** ${meeting.members.length}人\n\n`;
+      }
+
+      markdown += '---\n\n';
+
+      // Add organized speeches
+      markdown += '## 发言整理\n\n';
+
+      const sortedSpeeches = allOrganizedSpeeches.sort((a, b) => a.startTime - b.startTime);
+
+      sortedSpeeches.forEach((speech, index) => {
+        const minutes = Math.floor(speech.startTime / 60);
+        const seconds = Math.floor(speech.startTime % 60);
+        const endMinutes = Math.floor(speech.endTime / 60);
+        const endSeconds = Math.floor(speech.endTime % 60);
+
+        markdown += `### 发言人 ${speech.speakerIndex + 1} (${minutes}:${seconds.toString().padStart(2, '0')} - ${endMinutes}:${endSeconds.toString().padStart(2, '0')})\n\n`;
+
+        if (speech.polishedText) {
+          markdown += `**整理内容：**\n\n${speech.polishedText}\n\n`;
+        }
+
+        if (speech.rawText) {
+          markdown += `**原始内容：**\n\n${speech.rawText}\n\n`;
+        }
+
+        if (index < sortedSpeeches.length - 1) {
+          markdown += '---\n\n';
+        }
+      });
+
+      markdown += '\n---\n\n';
+
+      // Add full transcript
+      markdown += '## 完整会议记录\n\n';
+      markdown += meeting.finalTranscript;
+
+      // Add AI warning
+      const aiWarning =
+        '\n\n---\n\n⚠️ **AI生成内容警告：** 此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。';
+      markdown += aiWarning;
+
+      // Convert to DOCX
+      const doc = await markdownDocx(markdown);
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${meeting.title}_完整会议记录.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Comprehensive export failed:', err);
+    }
+  };
+
   const handleGenerateTranscriptFromRecordings = async () => {
     if (!meeting.recordings || meeting.recordings.length === 0) {
       return;
@@ -275,11 +357,30 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
       {allOrganizedSpeeches.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UsersIcon className="w-5 h-5" />
-              发言整理
-            </CardTitle>
-            <CardDescription>按发言人整理的会议发言内容</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <UsersIcon className="w-5 h-5" />
+                  发言整理
+                </CardTitle>
+                <CardDescription>按发言人整理的会议发言内容</CardDescription>
+              </div>
+              {meeting.finalTranscript && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={exportComprehensiveDocx} variant="outline" size="sm">
+                        <DownloadIcon className="w-4 h-4 mr-2" />
+                        导出完整记录
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>导出包含会议信息、发言整理和完整记录的文档</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
