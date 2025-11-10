@@ -40,7 +40,7 @@ function SpeakerNameEditor({ speakerIndices, currentSpeakerNames = [], onSave, d
       });
       setEditedNames(updatedNames);
     }
-  }, [currentSpeakerNames]);
+  }, [currentSpeakerNames, isEditing, saving]);
 
   const handleEdit = () => {
     setIsEditing(true);
