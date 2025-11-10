@@ -5,6 +5,6 @@
   "logoDarkUrl": null,
   "faviconUrl": null,
   "features": {
-    "shorthandNotes": false
+    "shorthandNotes": true
   }
 }
