@@ -59,11 +59,12 @@ function NoteZenEditor() {
   });
 
   // Mention context for the mention dropdown
-  const mentionContext: MentionContext | undefined = systemContext ? {
-    users: systemContext.users,
-    speakers: systemContext.speakerNames,
-    hotwords: systemContext.hotwords,
-  } : undefined;
+  const mentionContext: MentionContext = {
+    users: systemContext?.users,
+    speakers: systemContext?.speakerNames,
+    hotwords: systemContext?.hotwords,
+    tags: ['#todo', '#decision'],  // Always available, even without meeting context
+  };
 
   console.log('[NoteZenEditor] Mention context:', mentionContext);
   console.log('[NoteZenEditor] Meeting ID:', meetingId);
@@ -81,7 +82,7 @@ function NoteZenEditor() {
     value: formData.content,
     onChange: (value) => handleFieldChange('content', value),
     context: mentionContext,
-    enabled: !!meetingId,
+    enabled: true,  // Always enabled (hashtags work without meeting context)
   });
 
   console.log('[NoteZenEditor] Mention state:', mentionState);

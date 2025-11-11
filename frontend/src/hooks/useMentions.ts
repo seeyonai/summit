@@ -11,13 +11,14 @@ export interface MentionSuggestion {
   id: string;
   display: string;
   secondary?: string;
-  type: 'user' | 'speaker' | 'hotword';
+  type: 'user' | 'speaker' | 'hotword' | 'tag';
 }
 
 export interface MentionContext {
   users?: MentionUser[];
   speakers?: string[];
   hotwords?: string[];
+  tags?: string[];
 }
 
 interface UseMentionsOptions {
@@ -31,6 +32,7 @@ interface MentionState {
   isOpen: boolean;
   query: string;
   triggerIndex: number;
+  triggerChar: '@' | '#';
   cursorCoords: { top: number; left: number } | null;
 }
 
@@ -40,6 +42,7 @@ export function useMentions({ value, onChange, context, enabled = true }: UseMen
     isOpen: false,
     query: '',
     triggerIndex: -1,
+    triggerChar: '@',
     cursorCoords: null,
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -96,52 +99,68 @@ export function useMentions({ value, onChange, context, enabled = true }: UseMen
     const suggestions: MentionSuggestion[] = [];
     const query = mentionState.query.toLowerCase();
 
-    // Add users
-    if (context.users) {
-      context.users.forEach(user => {
-        const nameMatch = user.name.toLowerCase().includes(query);
-        const aliasMatch = user.aliases?.some(a => a.toLowerCase().includes(query));
+    // Only show suggestions matching the trigger type
+    if (mentionState.triggerChar === '@') {
+      // Add users
+      if (context.users) {
+        context.users.forEach(user => {
+          const nameMatch = user.name.toLowerCase().includes(query);
+          const aliasMatch = user.aliases?.some(a => a.toLowerCase().includes(query));
 
-        if (nameMatch || aliasMatch || !query) {
-          const matchedAlias = user.aliases?.find(a => a.toLowerCase().includes(query));
-          suggestions.push({
-            id: `user-${user._id}`,
-            display: user.name,
-            secondary: user.aliases && user.aliases.length > 0 ? `(${user.aliases[0]})` : undefined,
-            type: 'user',
-          });
-        }
-      });
-    }
+          if (nameMatch || aliasMatch || !query) {
+            const matchedAlias = user.aliases?.find(a => a.toLowerCase().includes(query));
+            suggestions.push({
+              id: `user-${user._id}`,
+              display: user.name,
+              secondary: user.aliases && user.aliases.length > 0 ? `(${user.aliases[0]})` : undefined,
+              type: 'user',
+            });
+          }
+        });
+      }
 
-    // Add speakers
-    if (context.speakers) {
-      context.speakers.forEach((speaker, idx) => {
-        if (speaker.toLowerCase().includes(query) || !query) {
-          suggestions.push({
-            id: `speaker-${idx}`,
-            display: speaker,
-            type: 'speaker',
-          });
-        }
-      });
-    }
+      // Add speakers
+      if (context.speakers) {
+        context.speakers.forEach((speaker, idx) => {
+          if (speaker.toLowerCase().includes(query) || !query) {
+            suggestions.push({
+              id: `speaker-${idx}`,
+              display: speaker,
+              type: 'speaker',
+            });
+          }
+        });
+      }
 
-    // Add hotwords
-    if (context.hotwords) {
-      context.hotwords.forEach((hotword, idx) => {
-        if (hotword.toLowerCase().includes(query) || !query) {
-          suggestions.push({
-            id: `hotword-${idx}`,
-            display: hotword,
-            type: 'hotword',
-          });
-        }
-      });
+      // Add hotwords
+      if (context.hotwords) {
+        context.hotwords.forEach((hotword, idx) => {
+          if (hotword.toLowerCase().includes(query) || !query) {
+            suggestions.push({
+              id: `hotword-${idx}`,
+              display: hotword,
+              type: 'hotword',
+            });
+          }
+        });
+      }
+    } else if (mentionState.triggerChar === '#') {
+      // Add tags only
+      if (context.tags) {
+        context.tags.forEach((tag, idx) => {
+          if (tag.toLowerCase().includes(query) || !query) {
+            suggestions.push({
+              id: `tag-${idx}`,
+              display: tag,
+              type: 'tag',
+            });
+          }
+        });
+      }
     }
 
     return suggestions;
-  }, [context, mentionState.query]);
+  }, [context, mentionState.query, mentionState.triggerChar]);
 
   const suggestions = getSuggestions();
 
@@ -159,46 +178,62 @@ export function useMentions({ value, onChange, context, enabled = true }: UseMen
       return;
     }
 
-    // Check if we're typing after an @ symbol
+    // Check if we're typing after @ or # symbol
     const textBeforeCursor = newValue.substring(0, cursorPos);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    const lastHashIndex = textBeforeCursor.lastIndexOf('#');
 
     console.log('[useMentions] Text before cursor:', textBeforeCursor);
-    console.log('[useMentions] Last @ index:', lastAtIndex);
+    console.log('[useMentions] Last @ index:', lastAtIndex, 'Last # index:', lastHashIndex);
 
-    if (lastAtIndex !== -1) {
-      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+    // Determine which trigger is more recent
+    let triggerChar: '@' | '#' | null = null;
+    let triggerIndex = -1;
 
-      console.log('[useMentions] Text after @:', textAfterAt);
+    if (lastAtIndex > lastHashIndex) {
+      triggerChar = '@';
+      triggerIndex = lastAtIndex;
+    } else if (lastHashIndex !== -1) {
+      triggerChar = '#';
+      triggerIndex = lastHashIndex;
+    }
 
-      // Check if there's a space after @ (which means mention should close)
-      if (textAfterAt.includes(' ') || textAfterAt.includes('\n')) {
+    if (triggerChar && triggerIndex !== -1) {
+      const textAfterTrigger = textBeforeCursor.substring(triggerIndex + 1);
+
+      console.log(`[useMentions] Text after ${triggerChar}:`, textAfterTrigger);
+
+      // Check if there's a space after trigger (which means mention should close)
+      if (textAfterTrigger.includes(' ') || textAfterTrigger.includes('\n')) {
         console.log('[useMentions] Space/newline found, closing mention');
         setMentionState({
           isOpen: false,
           query: '',
           triggerIndex: -1,
+          triggerChar: '@',
           cursorCoords: null,
         });
         return;
       }
 
       // Open mention dropdown
-      const coords = getCursorCoordinates(e.target, lastAtIndex);
-      console.log('[useMentions] Opening mention dropdown', { coords, query: textAfterAt });
+      const coords = getCursorCoordinates(e.target, triggerIndex);
+      console.log(`[useMentions] Opening ${triggerChar} dropdown`, { coords, query: textAfterTrigger });
       setMentionState({
         isOpen: true,
-        query: textAfterAt,
-        triggerIndex: lastAtIndex,
+        query: textAfterTrigger,
+        triggerIndex,
+        triggerChar,
         cursorCoords: coords,
       });
       setSelectedIndex(0);
     } else {
-      console.log('[useMentions] No @ found, closing mention');
+      console.log('[useMentions] No trigger found, closing mention');
       setMentionState({
         isOpen: false,
         query: '',
         triggerIndex: -1,
+        triggerChar: '@',
         cursorCoords: null,
       });
     }
@@ -216,9 +251,14 @@ export function useMentions({ value, onChange, context, enabled = true }: UseMen
     const beforeMention = value.substring(0, triggerIndex);
     const afterMention = value.substring(textarea.selectionStart);
 
-    const mentionText = `@${suggestion.display}`;
-    const newValue = beforeMention + mentionText + afterMention;
-    const newCursorPos = beforeMention.length + mentionText.length;
+    // For tags, display already includes #, so just use it directly
+    // For others, prepend @
+    const insertText = suggestion.type === 'tag'
+      ? suggestion.display  // '#todo' already includes #
+      : `@${suggestion.display}`;  // '@UserName'
+
+    const newValue = beforeMention + insertText + afterMention;
+    const newCursorPos = beforeMention.length + insertText.length;
 
     onChange(newValue);
 
@@ -227,6 +267,7 @@ export function useMentions({ value, onChange, context, enabled = true }: UseMen
       isOpen: false,
       query: '',
       triggerIndex: -1,
+      triggerChar: '@',
       cursorCoords: null,
     });
 
@@ -289,6 +330,7 @@ export function useMentions({ value, onChange, context, enabled = true }: UseMen
         isOpen: false,
         query: '',
         triggerIndex: -1,
+        triggerChar: '@',
         cursorCoords: null,
       });
       return;
