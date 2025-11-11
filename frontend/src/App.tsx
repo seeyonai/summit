@@ -17,6 +17,7 @@ import RecordingManagement from './pages/Recordings';
 import RecordingDetail from './pages/Recordings/components/RecordingDetail';
 import NoteList from './pages/NoteList';
 import NoteDetail from './pages/NoteDetail';
+import NoteZenEditor from './pages/NoteZenEditor';
 import FloatingRecordingPanel from './components/Audio/FloatingRecordingPanel';
 import DebugInfo from './components/DebugInfo';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -71,6 +72,22 @@ function AppContent() {
                 element={
                   <ProtectedRoute>
                     <OngoingMeetingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notes/:id/zen"
+                element={
+                  <ProtectedRoute>
+                    <NoteZenEditor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notes/new/zen"
+                element={
+                  <ProtectedRoute>
+                    <NoteZenEditor />
                   </ProtectedRoute>
                 }
               />

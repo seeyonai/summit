@@ -7,7 +7,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import NoteCard from '@/components/Note/NoteCard';
 import NoteForm from '@/components/Note/NoteForm';
-import NoteFormZenMode from '@/components/Note/NoteFormZenMode';
 import { apiService } from '@/services/api';
 import type { Meeting, NoteCreate } from '@/types';
 import { PlusIcon, FileTextIcon, ZapIcon } from 'lucide-react';
@@ -20,7 +19,6 @@ interface MeetingNotesProps {
 function MeetingNotes({ meeting, onRefresh }: MeetingNotesProps) {
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showZenMode, setShowZenMode] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
@@ -89,25 +87,6 @@ function MeetingNotes({ meeting, onRefresh }: MeetingNotesProps) {
     }
   };
 
-  const handleZenModeSave = async (noteData: NoteCreate) => {
-    try {
-      const createdNote = await apiService.createNote(noteData);
-
-      // Associate the note with this meeting
-      if (createdNote._id) {
-        await apiService.associateNoteWithMeeting(createdNote._id, meeting._id);
-      }
-
-      if (onRefresh) {
-        onRefresh();
-      }
-      // Don't close zen mode - let user continue writing
-    } catch (err) {
-      console.error('Error creating note in zen mode:', err);
-      throw err;
-    }
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -122,7 +101,7 @@ function MeetingNotes({ meeting, onRefresh }: MeetingNotesProps) {
                 <PlusIcon className="w-4 h-4 mr-2" />
                 新建速记
               </Button>
-              <Button onClick={() => setShowZenMode(true)} variant="outline">
+              <Button onClick={() => navigate(`/notes/new/zen?meetingId=${meeting._id}`)} variant="outline">
                 <ZapIcon className="w-4 h-4 mr-2" />
                 专注模式
               </Button>
@@ -147,7 +126,7 @@ function MeetingNotes({ meeting, onRefresh }: MeetingNotesProps) {
                     <PlusIcon className="w-4 h-4 mr-2" />
                     新建速记
                   </Button>
-                  <Button onClick={() => setShowZenMode(true)} variant="outline">
+                  <Button onClick={() => navigate(`/notes/new/zen?meetingId=${meeting._id}`)} variant="outline">
                     <ZapIcon className="w-4 h-4 mr-2" />
                     专注模式
                   </Button>
@@ -204,15 +183,6 @@ function MeetingNotes({ meeting, onRefresh }: MeetingNotesProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Zen Mode */}
-      <NoteFormZenMode
-        isOpen={showZenMode}
-        onClose={() => setShowZenMode(false)}
-        mode="create"
-        onSave={handleZenModeSave}
-        meetingId={meeting._id}
-      />
     </div>
   );
 }

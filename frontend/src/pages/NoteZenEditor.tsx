@@ -1,32 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { XIcon, SettingsIcon, SaveIcon, ZapIcon } from 'lucide-react';
-import type { Note, NoteCreate, NoteUpdate, NoteStatus } from '@/types';
-import ProofingEditor from './ProofingEditor';
+import type { NoteStatus } from '@/types';
+import ProofingEditor from '@/components/Note/ProofingEditor';
 import { apiService } from '@/services/api';
 import { useMentions, type MentionContext, type MentionUser } from '@/hooks/useMentions';
-import MentionDropdown from './MentionDropdown';
+import MentionDropdown from '@/components/Note/MentionDropdown';
 import useMeetingMembers from '@/hooks/useMeetingMembers';
-
-interface NoteFormZenModeProps {
-  isOpen: boolean;
-  onClose: () => void;
-  mode: 'create' | 'edit';
-  initialData?: Partial<Note>;
-  onSave: (data: NoteCreate | NoteUpdate) => Promise<void>;
-  meetingId?: string;
-}
+import { useNoteDetail } from '@/hooks/useNoteDetail';
 
 type AutoSaveStatus = 'saved' | 'saving' | 'unsaved' | 'idle';
 
-function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId }: NoteFormZenModeProps) {
+function NoteZenEditor() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const meetingId = searchParams.get('meetingId') || undefined;
+  const mode = id ? 'edit' : 'create';
+
+  const { note, loading: loadingNote } = useNoteDetail(id);
+
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -64,6 +65,10 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
     hotwords: systemContext.hotwords,
   } : undefined;
 
+  console.log('[NoteZenEditor] Mention context:', mentionContext);
+  console.log('[NoteZenEditor] Meeting ID:', meetingId);
+  console.log('[NoteZenEditor] Enabled:', !!meetingId);
+
   // Mention feature hook
   const {
     textareaRef,
@@ -76,43 +81,42 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
     value: formData.content,
     onChange: (value) => handleFieldChange('content', value),
     context: mentionContext,
-    enabled: !!meetingId, // Only enable when meetingId exists
+    enabled: !!meetingId,
   });
 
-  // Initialize form data
+  console.log('[NoteZenEditor] Mention state:', mentionState);
+  console.log('[NoteZenEditor] Suggestions:', suggestions);
+
+  // Initialize form data from existing note
   useEffect(() => {
-    if (isOpen) {
-      if (mode === 'edit' && initialData) {
-        setFormData({
-          title: initialData.title || '',
-          content: initialData.content || '',
-          status: initialData.status || 'draft',
-          tags: initialData.tags || [],
-        });
-        setAutoSaveStatus('saved');
-      } else {
-        setFormData({
-          title: '',
-          content: '',
-          status: 'draft',
-          tags: [],
-        });
-        setAutoSaveStatus('idle');
-      }
-      setError(null);
+    if (mode === 'edit' && note) {
+      setFormData({
+        title: note.title || '',
+        content: note.content || '',
+        status: note.status || 'draft',
+        tags: note.tags || [],
+      });
+      setAutoSaveStatus('saved');
+    } else {
+      setFormData({
+        title: '',
+        content: '',
+        status: 'draft',
+        tags: [],
+      });
+      setAutoSaveStatus('idle');
     }
-  }, [isOpen, mode, initialData]);
+  }, [mode, note]);
 
   // Fetch meeting context if meetingId is provided
   useEffect(() => {
-    if (isOpen && meetingId) {
+    if (meetingId) {
       apiService.getMeeting(meetingId)
         .then((meeting) => {
           const speakerNames = meeting.recordings
             ?.flatMap((r) => r.speakerNames?.map((s) => s.name) || [])
             .filter(Boolean) || [];
 
-          // Set meeting data for useMeetingMembers hook
           setMeetingData({
             ownerId: meeting.ownerId,
             members: meeting.members || [],
@@ -120,8 +124,8 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
 
           setSystemContext({
             hotwords: meeting.hotwords || [],
-            speakerNames: Array.from(new Set(speakerNames)), // Remove duplicates
-            users: [], // Will be populated by the effect below
+            speakerNames: Array.from(new Set(speakerNames)),
+            users: [],
           });
         })
         .catch((err) => {
@@ -132,7 +136,7 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
       setSystemContext(null);
       setMeetingData({ ownerId: undefined, members: [] });
     }
-  }, [isOpen, meetingId]);
+  }, [meetingId]);
 
   // Update systemContext with user data when memberUsers/ownerUser change
   useEffect(() => {
@@ -172,43 +176,34 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
       setAutoSaveStatus('saving');
       setError(null);
 
-      const payload = mode === 'create'
-        ? { ...formData, meetingId } as NoteCreate
-        : { ...formData, _id: initialData?._id } as NoteUpdate;
+      if (mode === 'create') {
+        const response = await apiService.createNote({ ...formData, meetingId });
+        // Redirect to edit mode after first save
+        navigate(`/notes/${response._id}/zen${meetingId ? `?meetingId=${meetingId}` : ''}`, { replace: true });
+      } else {
+        await apiService.updateNote(id!, { ...formData, _id: id });
+      }
 
-      await onSave(payload);
       setAutoSaveStatus('saved');
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存失败');
       setAutoSaveStatus('unsaved');
     }
-  }, [formData, autoSaveStatus, mode, initialData, onSave, meetingId]);
+  }, [formData, autoSaveStatus, mode, id, meetingId, navigate]);
 
   // Auto-save effect with debounce (only for edit mode)
   useEffect(() => {
-    if (!isOpen) return;
+    if (mode === 'create') return;
+    if (!formData.title.trim()) return;
 
-    // Only auto-save in edit mode to avoid creating duplicate notes
-    if (mode === 'create') {
-      return;
-    }
-
-    // Don't auto-save if title is empty
-    if (!formData.title.trim()) {
-      return;
-    }
-
-    // Mark as unsaved when content changes
     if (autoSaveStatus !== 'idle' && autoSaveStatus !== 'saving') {
       setAutoSaveStatus('unsaved');
     }
 
-    // Clear existing timer
     if (autoSaveTimer.current) {
       window.clearTimeout(autoSaveTimer.current);
     }
 
-    // Set new timer for auto-save (2 seconds)
     autoSaveTimer.current = window.setTimeout(() => {
       handleAutoSave();
     }, 2000);
@@ -218,17 +213,15 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
         window.clearTimeout(autoSaveTimer.current);
       }
     };
-  }, [formData.title, formData.content, formData.status, formData.tags, isOpen, mode, handleAutoSave, autoSaveStatus]);
+  }, [formData.title, formData.content, formData.status, formData.tags, mode, handleAutoSave, autoSaveStatus]);
 
   // Keyboard shortcuts
   useEffect(() => {
-    if (!isOpen) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       // ESC to close
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        handleClose();
       }
 
       // Cmd/Ctrl + S for manual save
@@ -240,7 +233,7 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, handleAutoSave]);
+  }, [handleAutoSave]);
 
   const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -261,14 +254,23 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
   const handleClose = () => {
     // Auto-save before closing if there are unsaved changes
     if (autoSaveStatus === 'unsaved' && formData.title.trim()) {
-      handleAutoSave().then(() => onClose());
+      handleAutoSave().then(() => {
+        if (id) {
+          navigate(`/notes/${id}`);
+        } else {
+          navigate('/notes');
+        }
+      });
     } else {
-      onClose();
+      if (id) {
+        navigate(`/notes/${id}`);
+      } else {
+        navigate('/notes');
+      }
     }
   };
 
   const getStatusBadge = () => {
-    // In create mode, auto-save is disabled
     if (mode === 'create') {
       return <Badge variant="secondary" className="text-xs">手动保存</Badge>;
     }
@@ -288,7 +290,13 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
   const wordCount = formData.content.length;
   const charCount = formData.content.replace(/\s/g, '').length;
 
-  if (!isOpen) return null;
+  if (loadingNote && mode === 'edit') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background animate-fade-in">
@@ -473,4 +481,4 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
   );
 }
 
-export default NoteFormZenMode;
+export default NoteZenEditor;

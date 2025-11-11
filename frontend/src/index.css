@@ -369,4 +369,9 @@
   .border-gradient {
     border-image: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent))) 1;
   }
+
+  /* Mention highlighting for @mentions in notes */
+  .mention-highlight {
+    @apply text-primary font-medium;
+  }
 }

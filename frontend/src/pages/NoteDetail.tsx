@@ -10,7 +10,6 @@ import { apiService } from '@/services/api';
 import { formatDate } from '@/utils/date';
 import BackButton from '@/components/BackButton';
 import NoteForm from '@/components/Note/NoteForm';
-import NoteFormZenMode from '@/components/Note/NoteFormZenMode';
 import NoteStatusBadge from '@/components/Note/NoteStatusBadge';
 import AssociateNoteWithMeetingDialog from '@/components/Note/AssociateNoteWithMeetingDialog';
 import { EditIcon, TrashIcon, DownloadIcon, LinkIcon, Link2OffIcon, CalendarIcon, TagIcon, AlertCircleIcon, ZapIcon } from 'lucide-react';
@@ -21,7 +20,6 @@ function NoteDetail() {
   const navigate = useNavigate();
   const { note, loading, error, refresh, deleteNote } = useNoteDetail(id);
   const [isEditing, setIsEditing] = useState(false);
-  const [showZenMode, setShowZenMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -90,18 +88,6 @@ function NoteDetail() {
       setSuccess('已解除会议关联');
     } catch (err) {
       console.error('Error disassociating note:', err);
-    }
-  }, [id, refresh]);
-
-  const handleZenModeSave = useCallback(async (data: NoteUpdate) => {
-    try {
-      await apiService.updateNote(id!, data);
-      await refresh({ background: true });
-      // Don't close zen mode - let user continue editing
-      setSuccess('速记已更新');
-    } catch (err) {
-      console.error('Error saving note in zen mode:', err);
-      throw err;
     }
   }, [id, refresh]);
 
@@ -190,7 +176,7 @@ function NoteDetail() {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={() => setShowZenMode(true)} variant="outline" size="sm">
+            <Button onClick={() => navigate(`/notes/${id}/zen${note.meetingId ? `?meetingId=${note.meetingId}` : ''}`)} variant="outline" size="sm">
               <ZapIcon className="w-4 h-4 mr-2" />
               专注编辑
             </Button>
@@ -340,16 +326,6 @@ function NoteDetail() {
         />
       )}
 
-      {/* Zen Mode */}
-      {note && (
-        <NoteFormZenMode
-          isOpen={showZenMode}
-          onClose={() => setShowZenMode(false)}
-          mode="edit"
-          initialData={note}
-          onSave={handleZenModeSave}
-        />
-      )}
     </div>
   );
 }

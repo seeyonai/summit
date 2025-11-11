@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
+import JSON5 from 'json5';
 
 const router = Router();
 
@@ -18,7 +19,7 @@ router.get('/', async (req: Request, res: Response) => {
   for (const filePath of paths) {
     try {
       const data = await fs.readFile(filePath, 'utf-8');
-      const json = JSON.parse(data);
+      const json = JSON5.parse(data);
       // Apply defaults for features
       if (!json.features) {
         json.features = {};

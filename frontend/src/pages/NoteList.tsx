@@ -14,7 +14,6 @@ import { apiService } from '@/services/api';
 import type { NoteCreate } from '@/types';
 import { useNotes } from '@/hooks/useNotes';
 import NoteForm from '@/components/Note/NoteForm';
-import NoteFormZenMode from '@/components/Note/NoteFormZenMode';
 import NoteCard from '@/components/Note/NoteCard';
 import NoteListItem from '@/components/Note/NoteListItem';
 import { ItemGroup, ItemSeparator } from '@/components/ui/item';
@@ -25,7 +24,6 @@ function NoteList() {
   const navigate = useNavigate();
   const { notes, loading, error, refetch, fetchedAll, loadAll } = useNotes();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showZenMode, setShowZenMode] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,17 +83,6 @@ function NoteList() {
     }
   };
 
-  const handleZenModeSave = async (noteData: NoteCreate) => {
-    try {
-      await apiService.createNote(noteData);
-      refetch();
-      // Don't close zen mode - let user continue writing
-    } catch (err) {
-      console.error('Error creating note in zen mode:', err);
-      throw err;
-    }
-  };
-
   // Filtered notes based on search and filter
   const filteredNotes = useMemo(() => {
     return (notes || [])
@@ -144,7 +131,7 @@ function NoteList() {
               <PlusIcon className="w-5 h-5 mr-2" />
               新建速记
             </Button>
-            <Button onClick={() => setShowZenMode(true)} size="lg" variant="outline">
+            <Button onClick={() => navigate('/notes/new/zen')} size="lg" variant="outline">
               <ZapIcon className="w-5 h-5 mr-2" />
               专注模式
             </Button>
@@ -381,13 +368,6 @@ function NoteList() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Zen Mode */}
-      <NoteFormZenMode
-        isOpen={showZenMode}
-        onClose={() => setShowZenMode(false)}
-        mode="create"
-        onSave={handleZenModeSave}
-      />
     </div>
   );
 }
