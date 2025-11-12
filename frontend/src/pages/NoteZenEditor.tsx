@@ -43,13 +43,19 @@ function NoteZenEditor() {
     lineHeight: 1.6,
     maxWidth: 800,
   });
-  const [proofingEnabled, setProofingEnabled] = useState(false);
+  const [proofingEnabled, setProofingEnabled] = useState(true);
   const [systemContext, setSystemContext] = useState<{
     hotwords?: string[];
     speakerNames?: string[];
     users?: MentionUser[];
   } | null>(null);
   const [meetingData, setMeetingData] = useState<{ ownerId?: string; members?: string[] }>({ ownerId: undefined, members: [] });
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
+    const saved = localStorage.getItem('noteAutoSave');
+    return saved === 'true';
+  });
+  const initialContentRef = useRef<string>('');
+  const hasContentChangedRef = useRef<boolean>(false);
 
   // Fetch meeting members
   const { memberUsers, ownerUser } = useMeetingMembers({
@@ -63,7 +69,7 @@ function NoteZenEditor() {
     users: systemContext?.users,
     speakers: systemContext?.speakerNames,
     hotwords: systemContext?.hotwords,
-    tags: ['#todo', '#decision'],  // Always available, even without meeting context
+    tags: ['#todo', '#decision'], // Always available, even without meeting context
   };
 
   console.log('[NoteZenEditor] Mention context:', mentionContext);
@@ -71,18 +77,11 @@ function NoteZenEditor() {
   console.log('[NoteZenEditor] Enabled:', !!meetingId);
 
   // Mention feature hook
-  const {
-    textareaRef,
-    mentionState,
-    suggestions,
-    selectedIndex,
-    handleSelect,
-    textareaProps,
-  } = useMentions({
+  const { textareaRef, mentionState, suggestions, selectedIndex, handleSelect, textareaProps } = useMentions({
     value: formData.content,
     onChange: (value) => handleFieldChange('content', value),
     context: mentionContext,
-    enabled: true,  // Always enabled (hashtags work without meeting context)
+    enabled: true, // Always enabled (hashtags work without meeting context)
   });
 
   console.log('[NoteZenEditor] Mention state:', mentionState);
@@ -91,12 +90,15 @@ function NoteZenEditor() {
   // Initialize form data from existing note
   useEffect(() => {
     if (mode === 'edit' && note) {
+      const initialContent = note.content || '';
       setFormData({
         title: note.title || '',
-        content: note.content || '',
+        content: initialContent,
         status: note.status || 'draft',
         tags: note.tags || [],
       });
+      initialContentRef.current = initialContent;
+      hasContentChangedRef.current = false;
       setAutoSaveStatus('saved');
     } else {
       setFormData({
@@ -105,6 +107,8 @@ function NoteZenEditor() {
         status: 'draft',
         tags: [],
       });
+      initialContentRef.current = '';
+      hasContentChangedRef.current = false;
       setAutoSaveStatus('idle');
     }
   }, [mode, note]);
@@ -112,11 +116,10 @@ function NoteZenEditor() {
   // Fetch meeting context if meetingId is provided
   useEffect(() => {
     if (meetingId) {
-      apiService.getMeeting(meetingId)
+      apiService
+        .getMeeting(meetingId)
         .then((meeting) => {
-          const speakerNames = meeting.recordings
-            ?.flatMap((r) => r.speakerNames?.map((s) => s.name) || [])
-            .filter(Boolean) || [];
+          const speakerNames = meeting.recordings?.flatMap((r) => r.speakerNames?.map((s) => s.name) || []).filter(Boolean) || [];
 
           setMeetingData({
             ownerId: meeting.ownerId,
@@ -148,21 +151,31 @@ function NoteZenEditor() {
         allUsers.push({
           _id: ownerUser._id,
           name: ownerUser.name || ownerUser.email,
-          aliases: ownerUser.aliases ? ownerUser.aliases.split(',').map(a => a.trim()).filter(Boolean) : [],
+          aliases: ownerUser.aliases
+            ? ownerUser.aliases
+                .split(',')
+                .map((a) => a.trim())
+                .filter(Boolean)
+            : [],
           email: ownerUser.email,
         });
       }
 
-      memberUsers.forEach(user => {
+      memberUsers.forEach((user) => {
         allUsers.push({
           _id: user._id,
           name: user.name || user.email,
-          aliases: user.aliases ? user.aliases.split(',').map(a => a.trim()).filter(Boolean) : [],
+          aliases: user.aliases
+            ? user.aliases
+                .split(',')
+                .map((a) => a.trim())
+                .filter(Boolean)
+            : [],
           email: user.email,
         });
       });
 
-      setSystemContext(prev => ({
+      setSystemContext((prev) => ({
         ...prev!,
         users: allUsers,
       }));
@@ -185,6 +198,9 @@ function NoteZenEditor() {
         await apiService.updateNote(id!, { ...formData, _id: id });
       }
 
+      // Update initial content after successful save
+      initialContentRef.current = formData.content;
+      hasContentChangedRef.current = false;
       setAutoSaveStatus('saved');
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存失败');
@@ -192,12 +208,17 @@ function NoteZenEditor() {
     }
   }, [formData, autoSaveStatus, mode, id, meetingId, navigate]);
 
-  // Auto-save effect with debounce (only for edit mode)
+  // Auto-save effect with debounce (only for edit mode and when auto-save is enabled)
   useEffect(() => {
     if (mode === 'create') return;
+    if (!autoSaveEnabled) return;
     if (!formData.title.trim()) return;
 
-    if (autoSaveStatus !== 'idle' && autoSaveStatus !== 'saving') {
+    // Check if content has actually changed
+    const contentChanged = formData.content !== initialContentRef.current;
+    hasContentChangedRef.current = contentChanged;
+
+    if (contentChanged && autoSaveStatus !== 'idle' && autoSaveStatus !== 'saving') {
       setAutoSaveStatus('unsaved');
     }
 
@@ -205,16 +226,18 @@ function NoteZenEditor() {
       window.clearTimeout(autoSaveTimer.current);
     }
 
-    autoSaveTimer.current = window.setTimeout(() => {
-      handleAutoSave();
-    }, 2000);
+    if (contentChanged) {
+      autoSaveTimer.current = window.setTimeout(() => {
+        handleAutoSave();
+      }, 2000);
+    }
 
     return () => {
       if (autoSaveTimer.current) {
         window.clearTimeout(autoSaveTimer.current);
       }
     };
-  }, [formData.title, formData.content, formData.status, formData.tags, mode, handleAutoSave, autoSaveStatus]);
+  }, [formData.title, formData.content, formData.status, formData.tags, mode, autoSaveEnabled, handleAutoSave, autoSaveStatus]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -237,14 +260,14 @@ function NoteZenEditor() {
   }, [handleAutoSave]);
 
   const handleFieldChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleTagsChange = (value: string) => {
     const tags = value
       .split(/[,，]/)
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
     handleFieldChange('tags', tags);
   };
 
@@ -253,8 +276,8 @@ function NoteZenEditor() {
   };
 
   const handleClose = () => {
-    // Auto-save before closing if there are unsaved changes
-    if (autoSaveStatus === 'unsaved' && formData.title.trim()) {
+    // Auto-save before closing if auto-save is enabled and there are unsaved changes
+    if (autoSaveEnabled && autoSaveStatus === 'unsaved' && hasContentChangedRef.current && formData.title.trim()) {
       handleAutoSave().then(() => {
         if (id) {
           navigate(`/notes/${id}`);
@@ -273,16 +296,45 @@ function NoteZenEditor() {
 
   const getStatusBadge = () => {
     if (mode === 'create') {
-      return <Badge variant="secondary" className="text-xs">手动保存</Badge>;
+      return (
+        <Badge variant="secondary" className="text-xs">
+          手动保存
+        </Badge>
+      );
+    }
+
+    if (!autoSaveEnabled) {
+      return (
+        <Badge variant="secondary" className="text-xs">
+          手动保存
+        </Badge>
+      );
+    }
+
+    // Only show unsaved if content has actually changed
+    if (autoSaveStatus === 'unsaved' && !hasContentChangedRef.current) {
+      return (
+        <Badge variant="default" className="bg-success/10 text-success border-success/20">
+          已保存
+        </Badge>
+      );
     }
 
     switch (autoSaveStatus) {
       case 'saved':
-        return <Badge variant="default" className="bg-success/10 text-success border-success/20">已保存</Badge>;
+        return (
+          <Badge variant="default" className="bg-success/10 text-success border-success/20">
+            已保存
+          </Badge>
+        );
       case 'saving':
         return <Badge variant="secondary">保存中...</Badge>;
       case 'unsaved':
-        return <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">未保存</Badge>;
+        return (
+          <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
+            未保存
+          </Badge>
+        );
       default:
         return null;
     }
@@ -304,15 +356,10 @@ function NoteZenEditor() {
       {/* Minimal Toolbar */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-background">
         <div className="flex items-center gap-3">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            {mode === 'create' ? '新建速记' : '编辑速记'} - 专注模式
-          </h2>
+          <h2 className="text-sm font-medium text-muted-foreground">{mode === 'create' ? '新建速记' : '编辑速记'} - 专注模式</h2>
           {getStatusBadge()}
-          {mode === 'create' && (
-            <span className="text-xs text-muted-foreground">
-              按 Cmd/Ctrl+S 或点击"创建"保存
-            </span>
-          )}
+          {mode === 'create' && <span className="text-xs text-muted-foreground">按 Cmd/Ctrl+S 或点击"创建"保存</span>}
+          {mode === 'edit' && !autoSaveEnabled && <span className="text-xs text-muted-foreground">自动保存已关闭，请手动保存</span>}
         </div>
 
         <div className="flex items-center gap-2">
@@ -333,26 +380,75 @@ function NoteZenEditor() {
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">字体大小</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <Button variant="outline" size="sm" onClick={() => setCustomization(prev => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 2) }))}>-</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomization((prev) => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 2) }))}
+                    >
+                      -
+                    </Button>
                     <span className="text-sm flex-1 text-center">{customization.fontSize}px</span>
-                    <Button variant="outline" size="sm" onClick={() => setCustomization(prev => ({ ...prev, fontSize: Math.min(24, prev.fontSize + 2) }))}>+</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomization((prev) => ({ ...prev, fontSize: Math.min(24, prev.fontSize + 2) }))}
+                    >
+                      +
+                    </Button>
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">行高</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <Button variant="outline" size="sm" onClick={() => setCustomization(prev => ({ ...prev, lineHeight: Math.max(1.2, prev.lineHeight - 0.2) }))}>-</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomization((prev) => ({ ...prev, lineHeight: Math.max(1.2, prev.lineHeight - 0.2) }))}
+                    >
+                      -
+                    </Button>
                     <span className="text-sm flex-1 text-center">{customization.lineHeight.toFixed(1)}</span>
-                    <Button variant="outline" size="sm" onClick={() => setCustomization(prev => ({ ...prev, lineHeight: Math.min(2.4, prev.lineHeight + 0.2) }))}>+</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomization((prev) => ({ ...prev, lineHeight: Math.min(2.4, prev.lineHeight + 0.2) }))}
+                    >
+                      +
+                    </Button>
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">宽度</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <Button variant="outline" size="sm" onClick={() => setCustomization(prev => ({ ...prev, maxWidth: Math.max(600, prev.maxWidth - 100) }))}>-</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomization((prev) => ({ ...prev, maxWidth: Math.max(600, prev.maxWidth - 100) }))}
+                    >
+                      -
+                    </Button>
                     <span className="text-sm flex-1 text-center">{customization.maxWidth}px</span>
-                    <Button variant="outline" size="sm" onClick={() => setCustomization(prev => ({ ...prev, maxWidth: Math.min(1200, prev.maxWidth + 100) }))}>+</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomization((prev) => ({ ...prev, maxWidth: Math.min(1200, prev.maxWidth + 100) }))}
+                    >
+                      +
+                    </Button>
                   </div>
+                </div>
+                <div className="border-t border-border pt-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-muted-foreground">自动保存</label>
+                    <Switch
+                      checked={autoSaveEnabled}
+                      onCheckedChange={(checked) => {
+                        setAutoSaveEnabled(checked);
+                        localStorage.setItem('noteAutoSave', String(checked));
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">编辑时自动保存（2秒延迟）</p>
                 </div>
               </div>
             </DropdownMenuContent>
@@ -362,19 +458,11 @@ function NoteZenEditor() {
           <div className="flex items-center gap-2 px-3 py-1 border rounded-md">
             <ZapIcon className="w-4 h-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">AI校对</span>
-            <Switch
-              checked={proofingEnabled}
-              onCheckedChange={setProofingEnabled}
-            />
+            <Switch checked={proofingEnabled} onCheckedChange={setProofingEnabled} />
           </div>
 
           {/* Manual Save Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleManualSave}
-            disabled={autoSaveStatus === 'saving' || !formData.title.trim()}
-          >
+          <Button variant="ghost" size="sm" onClick={handleManualSave} disabled={autoSaveStatus === 'saving' || !formData.title.trim()}>
             <SaveIcon className="w-4 h-4 mr-2" />
             {mode === 'create' ? '创建' : '保存'}
           </Button>
@@ -388,18 +476,11 @@ function NoteZenEditor() {
       </div>
 
       {/* Error Alert */}
-      {error && (
-        <div className="px-6 py-3 bg-destructive/10 border-b border-destructive/20 text-destructive text-sm">
-          {error}
-        </div>
-      )}
+      {error && <div className="px-6 py-3 bg-destructive/10 border-b border-destructive/20 text-destructive text-sm">{error}</div>}
 
       {/* Main Editor Area */}
       <div className="flex-1 overflow-y-auto">
-        <div
-          className="mx-auto py-12 px-8 space-y-6 transition-all duration-200"
-          style={{ maxWidth: `${customization.maxWidth}px` }}
-        >
+        <div className="mx-auto py-12 px-8 space-y-6 transition-all duration-200" style={{ maxWidth: `${customization.maxWidth}px` }}>
           {/* Title Input */}
           <Input
             type="text"
@@ -407,8 +488,8 @@ function NoteZenEditor() {
             value={formData.title}
             onChange={(e) => handleFieldChange('title', e.target.value)}
             className={cn(
-              "border-none bg-transparent px-0 text-4xl font-bold placeholder:text-muted-foreground/40",
-              "focus-visible:ring-0 focus-visible:ring-offset-0"
+              'border-none bg-transparent px-0 text-4xl font-bold placeholder:text-muted-foreground/40',
+              'focus-visible:ring-0 focus-visible:ring-offset-0'
             )}
             style={{ fontSize: `${customization.fontSize * 1.5}px` }}
           />
@@ -444,9 +525,9 @@ function NoteZenEditor() {
                 enabled={proofingEnabled}
                 systemContext={systemContext || undefined}
                 className={cn(
-                  "min-h-[60vh] border-none bg-transparent px-0 resize-none",
-                  "focus-visible:ring-0 focus-visible:ring-offset-0",
-                  "placeholder:text-muted-foreground/40"
+                  'min-h-[60vh] border-none bg-transparent px-0 resize-none',
+                  'focus-visible:ring-0 focus-visible:ring-offset-0',
+                  'placeholder:text-muted-foreground/40'
                 )}
               />
             ) : (
@@ -455,9 +536,9 @@ function NoteZenEditor() {
                 placeholder="开始书写..."
                 value={formData.content}
                 className={cn(
-                  "min-h-[60vh] border-none bg-transparent px-0 resize-none",
-                  "focus-visible:ring-0 focus-visible:ring-offset-0",
-                  "placeholder:text-muted-foreground/40"
+                  'min-h-[60vh] border-none bg-transparent px-0 resize-none',
+                  'focus-visible:ring-0 focus-visible:ring-offset-0',
+                  'placeholder:text-muted-foreground/40'
                 )}
                 style={{
                   fontSize: `${customization.fontSize}px`,

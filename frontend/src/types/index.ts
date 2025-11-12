@@ -247,12 +247,4 @@ export interface ProofingRequest {
 
 export interface ProofingResponse {
   output: string;
-  alternatives?: Record<string, string[]>;
-}
-
-export interface AlternativeWord {
-  text: string;
-  options: string[];
-  startIndex: number;
-  endIndex: number;
 }

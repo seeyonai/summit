@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useDebug } from '@/contexts/DebugContext';
 import { useTheme } from '@/layout/useTheme';
 import { Switch } from '@/components/ui/switch';
@@ -27,8 +27,16 @@ function Settings() {
   const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState(true);
-  const [autoSave, setAutoSave] = useState(true);
+  const [autoSave, setAutoSave] = useState(() => {
+    const saved = localStorage.getItem('noteAutoSave');
+    return saved === 'true';
+  });
   const [dataCollection, setDataCollection] = useState(false);
+
+  // Persist auto-save setting to localStorage
+  useEffect(() => {
+    localStorage.setItem('noteAutoSave', String(autoSave));
+  }, [autoSave]);
 
   // Mock statistics for the header
   const stats = useMemo(() => {
@@ -275,7 +283,7 @@ function Settings() {
         )}
 
         {/* System Settings */}
-        {debugMode && showSystemSettings && (
+        {showSystemSettings && (
           <Card className="hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -293,9 +301,9 @@ function Settings() {
                 <div className="flex items-center gap-3">
                   <Zap className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <div className="font-medium">自动保存</div>
+                    <div className="font-medium">自动保存速记</div>
                     <div className="text-sm text-muted-foreground">
-                      自动保存编辑内容
+                      在专注模式下自动保存编辑内容（2秒延迟）
                     </div>
                   </div>
                 </div>

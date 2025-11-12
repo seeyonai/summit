@@ -49,6 +49,12 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
     users?: MentionUser[];
   } | null>(null);
   const [meetingData, setMeetingData] = useState<{ ownerId?: string; members?: string[] }>({ ownerId: undefined, members: [] });
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
+    const saved = localStorage.getItem('noteAutoSave');
+    return saved === 'true';
+  });
+  const initialContentRef = useRef<string>('');
+  const hasContentChangedRef = useRef<boolean>(false);
 
   // Fetch meeting members
   const { memberUsers, ownerUser } = useMeetingMembers({
@@ -83,12 +89,15 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
   useEffect(() => {
     if (isOpen) {
       if (mode === 'edit' && initialData) {
+        const initialContent = initialData.content || '';
         setFormData({
           title: initialData.title || '',
-          content: initialData.content || '',
+          content: initialContent,
           status: initialData.status || 'draft',
           tags: initialData.tags || [],
         });
+        initialContentRef.current = initialContent;
+        hasContentChangedRef.current = false;
         setAutoSaveStatus('saved');
       } else {
         setFormData({
@@ -97,6 +106,8 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
           status: 'draft',
           tags: [],
         });
+        initialContentRef.current = '';
+        hasContentChangedRef.current = false;
         setAutoSaveStatus('idle');
       }
       setError(null);
@@ -177,6 +188,8 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
         : { ...formData, _id: initialData?._id } as NoteUpdate;
 
       await onSave(payload);
+      initialContentRef.current = formData.content;
+      hasContentChangedRef.current = false;
       setAutoSaveStatus('saved');
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存失败');
@@ -184,41 +197,37 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
     }
   }, [formData, autoSaveStatus, mode, initialData, onSave, meetingId]);
 
-  // Auto-save effect with debounce (only for edit mode)
+  // Auto-save effect with debounce (only for edit mode and when auto-save is enabled)
   useEffect(() => {
     if (!isOpen) return;
+    if (mode === 'create') return;
+    if (!autoSaveEnabled) return;
+    if (!formData.title.trim()) return;
 
-    // Only auto-save in edit mode to avoid creating duplicate notes
-    if (mode === 'create') {
-      return;
-    }
+    // Check if content has actually changed
+    const contentChanged = formData.content !== initialContentRef.current;
+    hasContentChangedRef.current = contentChanged;
 
-    // Don't auto-save if title is empty
-    if (!formData.title.trim()) {
-      return;
-    }
-
-    // Mark as unsaved when content changes
-    if (autoSaveStatus !== 'idle' && autoSaveStatus !== 'saving') {
+    if (contentChanged && autoSaveStatus !== 'idle' && autoSaveStatus !== 'saving') {
       setAutoSaveStatus('unsaved');
     }
 
-    // Clear existing timer
     if (autoSaveTimer.current) {
       window.clearTimeout(autoSaveTimer.current);
     }
 
-    // Set new timer for auto-save (2 seconds)
-    autoSaveTimer.current = window.setTimeout(() => {
-      handleAutoSave();
-    }, 2000);
+    if (contentChanged) {
+      autoSaveTimer.current = window.setTimeout(() => {
+        handleAutoSave();
+      }, 2000);
+    }
 
     return () => {
       if (autoSaveTimer.current) {
         window.clearTimeout(autoSaveTimer.current);
       }
     };
-  }, [formData.title, formData.content, formData.status, formData.tags, isOpen, mode, handleAutoSave, autoSaveStatus]);
+  }, [formData.title, formData.content, formData.status, formData.tags, isOpen, mode, autoSaveEnabled, handleAutoSave, autoSaveStatus]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -259,8 +268,8 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
   };
 
   const handleClose = () => {
-    // Auto-save before closing if there are unsaved changes
-    if (autoSaveStatus === 'unsaved' && formData.title.trim()) {
+    // Auto-save before closing if auto-save is enabled and there are unsaved changes
+    if (autoSaveEnabled && autoSaveStatus === 'unsaved' && hasContentChangedRef.current && formData.title.trim()) {
       handleAutoSave().then(() => onClose());
     } else {
       onClose();
@@ -268,9 +277,17 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
   };
 
   const getStatusBadge = () => {
-    // In create mode, auto-save is disabled
     if (mode === 'create') {
       return <Badge variant="secondary" className="text-xs">手动保存</Badge>;
+    }
+
+    if (!autoSaveEnabled) {
+      return <Badge variant="secondary" className="text-xs">手动保存</Badge>;
+    }
+
+    // Only show unsaved if content has actually changed
+    if (autoSaveStatus === 'unsaved' && !hasContentChangedRef.current) {
+      return <Badge variant="default" className="bg-success/10 text-success border-success/20">已保存</Badge>;
     }
 
     switch (autoSaveStatus) {
@@ -302,6 +319,11 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
           {mode === 'create' && (
             <span className="text-xs text-muted-foreground">
               按 Cmd/Ctrl+S 或点击"创建"保存
+            </span>
+          )}
+          {mode === 'edit' && !autoSaveEnabled && (
+            <span className="text-xs text-muted-foreground">
+              自动保存已关闭，请手动保存
             </span>
           )}
         </div>
@@ -344,6 +366,19 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
                     <span className="text-sm flex-1 text-center">{customization.maxWidth}px</span>
                     <Button variant="outline" size="sm" onClick={() => setCustomization(prev => ({ ...prev, maxWidth: Math.min(1200, prev.maxWidth + 100) }))}>+</Button>
                   </div>
+                </div>
+                <div className="border-t border-border pt-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-muted-foreground">自动保存</label>
+                    <Switch
+                      checked={autoSaveEnabled}
+                      onCheckedChange={(checked) => {
+                        setAutoSaveEnabled(checked);
+                        localStorage.setItem('noteAutoSave', String(checked));
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">编辑时自动保存（2秒延迟）</p>
                 </div>
               </div>
             </DropdownMenuContent>
