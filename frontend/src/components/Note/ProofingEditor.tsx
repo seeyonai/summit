@@ -24,6 +24,7 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
   const [correctionPairs, setCorrectionPairs] = useState<CorrectionPair[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastOriginalInputRef = useRef<string>('');
+  const pendingCorrectionsRef = useRef<number>(0);
 
   // Sync textarea value from parent (only when parent changes)
   useEffect(() => {
@@ -65,7 +66,7 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
   // Submit current line or selection for correction
   const submitForCorrection = useCallback(
     async (currentContent: string) => {
-      if (!enabled || isProofing || !textareaRef.current) return;
+      if (!enabled || !textareaRef.current) return;
 
       const textarea = textareaRef.current;
       const selectionStart = textarea.selectionStart;
@@ -100,7 +101,8 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
       // Store original input for potential staging
       lastOriginalInputRef.current = textToCorrect;
 
-      // Send the request in the background
+      // Track pending correction
+      pendingCorrectionsRef.current += 1;
       setIsProofing(true);
 
       try {
@@ -128,43 +130,56 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
           return options[0] || match;
         });
 
-        // Save to undo stack
-        setUndoStack((prev) => [...prev, currentContent]);
-
-        // Replace the original line with corrected text directly in DOM
-        const before = currentContent.substring(0, replaceStart);
-        const after = currentContent.substring(replaceEnd);
-        const finalContent = before + cleanOutput + after;
-
-        // Update textarea value directly without React re-render
-        if (textareaRef.current) {
-          const currentPos = textareaRef.current.selectionStart;
-          textareaRef.current.value = finalContent;
-          
-          // Adjust cursor position based on length difference
-          const lengthDiff = cleanOutput.length - textToCorrect.length;
-          if (lengthDiff !== 0 && currentPos > replaceStart) {
-            const adjustedPos = currentPos + lengthDiff;
-            textareaRef.current.selectionStart = textareaRef.current.selectionEnd = adjustedPos;
-          }
-        }
-
-        // Notify parent of change
-        onChange(finalContent);
-
         // Update chat history (immutable append)
         setChatHistory((prev) => [
           ...prev,
           { role: 'user', content: JSON.stringify({ input: textToCorrect }) },
           { role: 'assistant', content: JSON.stringify({ output: response.output }) },
         ]);
+
+        // Apply correction based on CURRENT textarea content, not stale content
+        if (textareaRef.current) {
+          const currentTextareaContent = textareaRef.current.value;
+          
+          // Find the original text in current content
+          const originalIndex = currentTextareaContent.indexOf(textToCorrect);
+          
+          if (originalIndex !== -1) {
+            // Save to undo stack before modifying
+            setUndoStack((prev) => [...prev, currentTextareaContent]);
+            
+            // Replace the original text with corrected text
+            const before = currentTextareaContent.substring(0, originalIndex);
+            const after = currentTextareaContent.substring(originalIndex + textToCorrect.length);
+            const finalContent = before + cleanOutput + after;
+            
+            // Store current cursor position
+            const currentPos = textareaRef.current.selectionStart;
+            
+            // Update textarea value directly
+            textareaRef.current.value = finalContent;
+            
+            // Adjust cursor position if it's after the corrected text
+            const lengthDiff = cleanOutput.length - textToCorrect.length;
+            if (lengthDiff !== 0 && currentPos > originalIndex) {
+              const adjustedPos = currentPos + lengthDiff;
+              textareaRef.current.selectionStart = textareaRef.current.selectionEnd = adjustedPos;
+            }
+            
+            // Notify parent of change
+            onChange(finalContent);
+          }
+        }
       } catch (error) {
         console.error('Proofing error:', error);
       } finally {
-        setIsProofing(false);
+        pendingCorrectionsRef.current -= 1;
+        if (pendingCorrectionsRef.current === 0) {
+          setIsProofing(false);
+        }
       }
     },
-    [enabled, isProofing, chatHistory, meetingId, systemContext, onChange, correctionPairs]
+    [enabled, chatHistory, meetingId, systemContext, onChange, correctionPairs]
   );
 
   // Handle keyboard shortcuts
