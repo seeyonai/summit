@@ -225,6 +225,7 @@ export type NoteUpdate = Partial<Note> & Pick<Note, '_id'>;
 export interface ProofingChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  timestamp?: number;
 }
 
 export interface CorrectionPair {
@@ -239,6 +240,7 @@ export interface ProofingRequest {
     meetingId?: string;
     hotwords?: string[];
     speakerNames?: string[];
+    meetingMembers?: string[];
   };
   corrections?: CorrectionPair[];
 }

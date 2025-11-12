@@ -56,9 +56,12 @@ class ProofingService {
       } as const;
 
       console.log('* Sending request to OpenAI:', openaiRequest);
+      console.time('⏰ OpenAI response');
       const completion = await createChatCompletion(openaiRequest, 'fast');
+      console.timeEnd('⏰ OpenAI response');
 
       const content = completion.choices[0]?.message?.content;
+      console.log('* OpenAI response:', content);
       if (!content) {
         return { output: request.input };
       }
@@ -81,7 +84,11 @@ class ProofingService {
   }
 
   private buildSystemPrompt(context?: ProofingRequest['systemContext']): string {
-    const participantsList = context?.speakerNames?.length ? `参与者: ${context.speakerNames.join(', ')}` : '';
+    const participantsList = context?.meetingMembers?.length
+      ? `参与者: ${context.meetingMembers.join(', ')}`
+      : context?.speakerNames?.length
+      ? `参与者: ${context.speakerNames.join(', ')}`
+      : '';
 
     const hotwordsList = context?.hotwords?.length ? `热词: ${context.hotwords.join(', ')}` : '';
 

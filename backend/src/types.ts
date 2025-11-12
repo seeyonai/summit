@@ -182,6 +182,7 @@ export interface ProofingRequest {
     meetingId?: string;
     hotwords?: string[];
     speakerNames?: string[];
+    meetingMembers?: string[];
   };
   corrections?: Array<{
     original: string;
