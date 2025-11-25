@@ -354,7 +354,8 @@ router.post('/:meetingId/final-transcript', requireOwner(), asyncHandler(async (
     .filter(Boolean);
 
   if (transcripts.length === 0) {
-    throw badRequest('No transcriptions available for this meeting', 'meeting.no_transcriptions');
+    const lang = getPreferredLang(req);
+    throw badRequest(lang === 'en' ? 'No transcriptions available for this meeting' : '此会议没有可用的转录文本', 'meeting.no_transcriptions');
   }
 
   const allTranscripts = transcripts.join('\n\n');
