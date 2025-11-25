@@ -310,22 +310,17 @@ export const removeRecordingFromMeeting = async (
   meetingId: string,
   recordingId: string
 ): Promise<Meeting | null> => {
-  const collection = getMeetingsCollection();
-  const update = {
-    $pull: { recordings: { _id: new ObjectId(recordingId) } },
-    $set: { updatedAt: new Date() },
-  } as unknown as UpdateFilter<MeetingDocument>;
-  const result = await collection.findOneAndUpdate(
-    { _id: new ObjectId(meetingId) },
-    update,
-    { returnDocument: 'after' }
-  );
+  const meetingsCollection = getMeetingsCollection();
+  const recordingsCollection = getCollection<{ _id: ObjectId; meetingId?: ObjectId }>(COLLECTIONS.RECORDINGS);
 
-  if (!result) {
-    return null;
-  }
+  // Clear meetingId on the recording document (how the relationship is stored)
+  await recordingsCollection.updateOne({ _id: new ObjectId(recordingId), meetingId: new ObjectId(meetingId) }, { $unset: { meetingId: '' } });
 
-  return meetingDocumentToMeeting(result);
+  // Touch the meeting's updatedAt
+  await meetingsCollection.updateOne({ _id: new ObjectId(meetingId) }, { $set: { updatedAt: new Date() } });
+
+  // Return the updated meeting with recordings
+  return getMeetingById(meetingId);
 };
 
 export const updateConcatenatedRecording = async (meetingId: string, recording: Recording | null): Promise<Meeting | null> => {
