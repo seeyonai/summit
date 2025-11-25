@@ -15,16 +15,48 @@ interface ProofingEditorProps {
     hotwords?: string[];
     speakerNames?: string[];
   };
+  // Mention system integration
+  externalTextareaRef?: React.RefObject<HTMLTextAreaElement>;
+  onExternalChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onExternalKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
-function ProofingEditor({ value, onChange, meetingId, enabled, className, systemContext }: ProofingEditorProps) {
+// Demo sample text pool - mixed pinyin, pinyin initials, 双拼, English, Chinese
+const DEMO_LINES = [
+  'jt womenkd yg重要de wenti,jiushi产品lxtu de youxianji,xuyaozaibengzhou neiquedinghao才行',
+  'wm yxkl yh yhfk,尤其是qiyekehu de xuqiu,tamenduigongneng和stability yaoqiuhenggao',
+  'zhgy womenbx优化xingneng,tebieshi mobile设备shangde tiyan,jiazaisudubx kuaiyudian',
+  'xiajidu de目标shi tigao conversion rate 20%,xuyao jiaodianfangzai yinhuilc shang,yonghutiji bxgm',
+  'marketing团队tijiaole yg xincelue,zhuyaoshizhenduihaiwai市场de expansion,yujizai Q2 qidong',
+  'jishuzhaiw已经biancheng dage问题,womenbixu fenpei时间laizhonggoujiegou,fouzeweihuhc会越来越高',
+  'khzhichi tuanduibaogaole jige严重de bug,xuyaoliji处理,yingxianglehenduo用户de zhengchangshiyong',
+  'cfo tcdao预算xianzhi,suoyi womenbixu优先kaolv cost-effective de jiejuefangan,jianshao不必要de开支',
+  'design团队wancheng le xinde UI shejigao,kanqilai非常xiandai和professional,yonghuceshi反馈yehenhaao',
+  'womenyinggai安排yg all-hands会议laitaolun这些bianhua,quebao每个人dou理解gongsi de方向和mubiao',
+];
+
+function ProofingEditor({
+  value,
+  onChange,
+  meetingId,
+  enabled,
+  className,
+  systemContext,
+  externalTextareaRef,
+  onExternalChange,
+  onExternalKeyDown,
+}: ProofingEditorProps) {
   const [chatHistory, setChatHistory] = useState<ProofingChatMessage[]>([]);
   const [isProofing, setIsProofing] = useState(false);
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [correctionPairs, setCorrectionPairs] = useState<CorrectionPair[]>([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  // Use external ref if provided, otherwise use internal ref
+  const textareaRef = externalTextareaRef || internalTextareaRef;
   const lastOriginalInputRef = useRef<string>('');
   const pendingCorrectionsRef = useRef<number>(0);
+  const demoLineIndexRef = useRef<number>(0);
+  const typingTimerRef = useRef<number | null>(null);
 
   // Sync textarea value from parent (only when parent changes)
   useEffect(() => {
@@ -32,6 +64,15 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
       textareaRef.current.value = value;
     }
   }, [value]);
+
+  // Cleanup typing timer on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+      }
+    };
+  }, []);
 
   // Get current line text and position
   const getCurrentLine = useCallback(() => {
@@ -140,32 +181,32 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
         // Apply correction based on CURRENT textarea content, not stale content
         if (textareaRef.current) {
           const currentTextareaContent = textareaRef.current.value;
-          
+
           // Find the original text in current content
           const originalIndex = currentTextareaContent.indexOf(textToCorrect);
-          
+
           if (originalIndex !== -1) {
             // Save to undo stack before modifying
             setUndoStack((prev) => [...prev, currentTextareaContent]);
-            
+
             // Replace the original text with corrected text
             const before = currentTextareaContent.substring(0, originalIndex);
             const after = currentTextareaContent.substring(originalIndex + textToCorrect.length);
             const finalContent = before + cleanOutput + after;
-            
+
             // Store current cursor position
             const currentPos = textareaRef.current.selectionStart;
-            
+
             // Update textarea value directly
             textareaRef.current.value = finalContent;
-            
+
             // Adjust cursor position if it's after the corrected text
             const lengthDiff = cleanOutput.length - textToCorrect.length;
             if (lengthDiff !== 0 && currentPos > originalIndex) {
               const adjustedPos = currentPos + lengthDiff;
               textareaRef.current.selectionStart = textareaRef.current.selectionEnd = adjustedPos;
             }
-            
+
             // Notify parent of change
             onChange(finalContent);
           }
@@ -185,6 +226,13 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
   // Handle keyboard shortcuts
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Call external handler first (for mention system)
+      if (onExternalKeyDown) {
+        onExternalKeyDown(e);
+        // If event was handled by mention system, don't process further
+        if (e.defaultPrevented) return;
+      }
+
       if (!enabled) return;
 
       // Enter → Let default behavior add newline, then submit for correction
@@ -224,6 +272,64 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
 
       // Shift+Enter → New line (default behavior, no action needed)
 
+      // Cmd/Ctrl+D → Demo typing (simulate user input with typing animation)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+
+        // Clear any existing typing animation
+        if (typingTimerRef.current) {
+          clearTimeout(typingTimerRef.current);
+          typingTimerRef.current = null;
+        }
+
+        if (textareaRef.current) {
+          // Get next demo line from pool
+          const demoLine = DEMO_LINES[demoLineIndexRef.current % DEMO_LINES.length];
+          demoLineIndexRef.current += 1;
+
+          // Get current line info
+          const lineInfo = getCurrentLine();
+          if (lineInfo) {
+            const before = textareaRef.current.value.substring(0, lineInfo.start);
+            const after = textareaRef.current.value.substring(lineInfo.end);
+
+            // Typing animation: add characters one by one with random timing
+            let charIndex = 0;
+            const typeNextChar = () => {
+              if (!textareaRef.current || charIndex >= demoLine.length) {
+                typingTimerRef.current = null;
+                return;
+              }
+
+              const currentText = demoLine.substring(0, charIndex + 1);
+              const newContent = before + currentText + after;
+
+              textareaRef.current.value = newContent;
+
+              // Move cursor to end of typed text
+              const newCursorPos = lineInfo.start + currentText.length;
+              textareaRef.current.selectionStart = textareaRef.current.selectionEnd = newCursorPos;
+
+              onChange(newContent);
+
+              charIndex++;
+
+              // Schedule next character with random delay (50-100ms)
+              if (charIndex < demoLine.length) {
+                const randomDelay = 50 + Math.random() * 50;
+                typingTimerRef.current = window.setTimeout(typeNextChar, randomDelay);
+              } else {
+                typingTimerRef.current = null;
+              }
+            };
+
+            // Start typing
+            typeNextChar();
+          }
+        }
+        return;
+      }
+
       // Ctrl/Cmd+Z → Undo
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -236,15 +342,19 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
         return;
       }
     },
-    [enabled, submitForCorrection, undoStack, onChange, getCurrentLine, correctionPairs.length]
+    [enabled, submitForCorrection, undoStack, onChange, getCurrentLine, correctionPairs.length, onExternalKeyDown]
   );
 
   // Handle content change
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      // Call external handler first (for mention system)
+      if (onExternalChange) {
+        onExternalChange(e);
+      }
       onChange(e.target.value);
     },
-    [onChange]
+    [onChange, onExternalChange]
   );
 
   if (!enabled) {
@@ -259,7 +369,7 @@ function ProofingEditor({ value, onChange, meetingId, enabled, className, system
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         className={cn(className, isProofing && 'opacity-70 animate-pulse')}
-        placeholder="开始书写... (Enter提交AI校对，Cmd/Ctrl+Enter暂存手动纠正，Shift+Enter换行)"
+        placeholder="开始书写... (Enter提交AI校对，Cmd/Ctrl+D演示输入，Cmd/Ctrl+Enter暂存手动纠正，Shift+Enter换行)"
       />
       {isProofing && <div className="absolute top-2 right-2 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">校对中...</div>}
       {correctionPairs.length > 0 && !isProofing && (

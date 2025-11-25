@@ -103,7 +103,7 @@ ${contextInfo ? `会议背景：\n${contextInfo}\n\n` : ''}任务说明：
 4. 使用正确的标点符号
 5. 对于模糊的人名或词汇，提供备选项：{选项1|选项2|选项3}
 6. 保持术语的原样（如 API、SDK、CI/CD 等）
-7. 支持中英文混合输入，统一成中文或英文
+7. 支持中英文混杂输入，但是除了术语，必须统一翻译成中文输出，避免互联网黑话
 8. 用户可能用拼音、首字母、简写等方式输入，请智能推测其真实含义
 9. **重要**：如果用户提供了之前的纠正记录（previousUserCorrections），请学习这些纠正，避免重复相同的错误
    注意：previousUserCorrections是用户对之前输入的纠正，不是对当前input的纠正
@@ -125,7 +125,7 @@ ${contextInfo ? `会议背景：\n${contextInfo}\n\n` : ''}任务说明：
 输出：{"output": "付总请加油"}
 （从previousUserCorrections学习到"fu zong"应该是"付总"而不是"副总"或"傅总"，应用到当前input）
 
-输入：{"input": "xzkaishikaih,laowangnixianss深圳 proj 的jd"}
+输入：{"input": "xzkaishikaih,laowangnixianss深圳 project 的jd"}
 输出：{"output": "现在开始开会，老王你先说说深圳项目的进度"}`;
   }
 

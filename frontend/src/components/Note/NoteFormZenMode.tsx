@@ -469,6 +469,9 @@ function NoteFormZenMode({ isOpen, onClose, mode, initialData, onSave, meetingId
                 meetingId={meetingId}
                 enabled={proofingEnabled}
                 systemContext={systemContext || undefined}
+                externalTextareaRef={textareaRef}
+                onExternalChange={textareaProps.onChange}
+                onExternalKeyDown={textareaProps.onKeyDown}
                 className={cn(
                   "min-h-[60vh] border-none bg-transparent px-0 resize-none",
                   "focus-visible:ring-0 focus-visible:ring-offset-0",
