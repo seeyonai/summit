@@ -232,7 +232,7 @@ router.get('/oauth/callback', asyncHandler(async (req, res) => {
     throw badRequest('获取用户信息失败', 'auth.oauth_resource_failed');
   }
 
-  const resource = await resourceResponse.json();
+  const resource = (await resourceResponse.json()) as { name: string; email: string };
 
   if (!resource || !resource.name || !resource.email) {
     throw badRequest('无效的用户信息', 'auth.oauth_invalid_resource');
