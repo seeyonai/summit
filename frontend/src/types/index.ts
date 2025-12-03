@@ -175,6 +175,16 @@ export type MeetingCreate = Pick<baseTypes.Meeting, 'title' | 'summary' | 'sched
 
 export type MeetingUpdate = Partial<Meeting> & Pick<Meeting, '_id'>;
 
+// OAuth button config
+export interface OAuthButton {
+  provider: string;
+  displayName: {
+    en: string;
+    'zh-CN'?: string;
+  };
+  icon?: string;
+}
+
 // App customization config
 export interface AppCustomization {
   appName: string;
@@ -194,6 +204,7 @@ export interface AppCustomization {
     };
     redirectUrl?: string;
   };
+  oauthButtons?: OAuthButton[];
 }
 
 export type SpeakerName = baseTypes.SpeakerName;

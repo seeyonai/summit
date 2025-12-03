@@ -92,6 +92,54 @@ export async function createExternalUser(email: string, name: string, externalUs
   return inserted;
 }
 
+export async function createOAuthUser(email: string, name: string, oauthProvider: string, oauthCode: string) {
+  const emailNorm = email.trim().toLowerCase();
+  if (!emailNorm || !name || !oauthProvider) {
+    throw badRequest('邮箱、姓名和OAuth提供商为必填项', 'user.invalid_payload');
+  }
+  const col = usersCollection();
+  const existing = await col.findOne({ email: emailNorm });
+  if (existing) {
+    throw conflict('该邮箱已被注册', 'user.email_taken');
+  }
+  const role: 'admin' | 'user' = (await countUsers()) === 0 ? 'admin' : 'user';
+  const now = new Date();
+  const doc: OptionalUnlessRequiredId<UserDocument> = {
+    _id: new ObjectId(),
+    email: emailNorm,
+    name,
+    role,
+    authType: 'oauth',
+    oauthProvider,
+    oauthCode,
+    passwordHash: '',
+    salt: '',
+    createdAt: now,
+    updatedAt: now,
+  };
+  const result = await col.insertOne(doc);
+  const inserted = await col.findOne({ _id: result.insertedId });
+  if (!inserted) {
+    throw internal('创建用户失败', 'user.create_failed');
+  }
+  return inserted;
+}
+
+export async function findByOAuthCode(oauthCode: string): Promise<UserDocument | null> {
+  const col = usersCollection();
+  return col.findOne({ oauthCode });
+}
+
+export async function updateOAuthCode(userId: string, oauthCode: string): Promise<void> {
+  const col = usersCollection();
+  await col.updateOne({ _id: new ObjectId(userId) }, { $set: { oauthCode, updatedAt: new Date() } });
+}
+
+export async function clearOAuthCode(userId: string): Promise<void> {
+  const col = usersCollection();
+  await col.updateOne({ _id: new ObjectId(userId) }, { $unset: { oauthCode: '' }, $set: { updatedAt: new Date() } });
+}
+
 export async function findByEmail(email: string): Promise<UserDocument | null> {
   const col = usersCollection();
   return col.findOne({ email: email.trim().toLowerCase() });
@@ -188,8 +236,10 @@ export async function updatePassword(userId: string, currentPassword: string, ne
 export const userService = {
   createUser,
   createExternalUser,
+  createOAuthUser,
   findByEmail,
   findByExternalUserId,
+  findByOAuthCode,
   getById,
   verifyPassword,
   searchUsers,
@@ -197,6 +247,8 @@ export const userService = {
   updateRole,
   updateProfile,
   updatePassword,
+  updateOAuthCode,
+  clearOAuthCode,
   countUsers,
 };
 

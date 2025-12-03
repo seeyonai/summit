@@ -15,5 +15,12 @@
   //     "zh-CN": "这是管理员专用管理入口，本地登录功能暂不可用。"
   //   },
   //   "redirectUrl": "https://www.seeyon.com/oauth/example"
-  // }
+  // },
+  // "oauthButtons": [
+  //   {
+  //     "provider": "yk",
+  //     "displayName": { "en": "Login with YK", "zh-CN": "使用 YK 登录" },
+  //     "icon": "/path/to/icon.svg"
+  //   }
+  // ]
 }

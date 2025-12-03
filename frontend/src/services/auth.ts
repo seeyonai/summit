@@ -34,6 +34,11 @@ export const authService = {
       },
     });
   },
+  async exchangeOAuthCode(code: string): Promise<AuthResult> {
+    return api<AuthResult>(`/api/auth/oauth/exchange?code=${encodeURIComponent(code)}`, {
+      method: 'GET',
+    });
+  },
   async me(token: string): Promise<AuthUser> {
     const result = await api<{ user: AuthUser }>('/api/auth/me', {
       method: 'GET',

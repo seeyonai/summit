@@ -25,6 +25,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Auth/Login';
 import Register from '@/pages/Auth/Register';
 import CustomSignOn from '@/pages/Auth/CustomSignOn';
+import YKLanding from '@/pages/Auth/YKLanding';
+import OAuthCallback from '@/pages/Auth/OAuthCallback';
 import AdminRoute from '@/components/AdminRoute';
 import AdminUsers from '@/pages/Admin/Users';
 import AdminAudit from '@/pages/Admin/AdminAudit';
@@ -117,6 +119,24 @@ function AppContent() {
                   <>
                     <Toaster />
                     <CustomSignOn />
+                  </>
+                }
+              />
+              <Route
+                path="/yk/landing"
+                element={
+                  <>
+                    <Toaster />
+                    <YKLanding />
+                  </>
+                }
+              />
+              <Route
+                path="/oauth/callback"
+                element={
+                  <>
+                    <Toaster />
+                    <OAuthCallback />
                   </>
                 }
               />

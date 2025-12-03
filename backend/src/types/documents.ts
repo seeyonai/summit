@@ -69,7 +69,9 @@ export interface UserDocument extends Document {
   passwordHash: string;
   salt: string;
   externalUserId?: string;
-  authType?: 'local' | 'unsafe_auth';
+  authType?: 'local' | 'unsafe_auth' | 'oauth';
+  oauthCode?: string;
+  oauthProvider?: string;
   createdAt: Date;
   updatedAt?: Date;
 }

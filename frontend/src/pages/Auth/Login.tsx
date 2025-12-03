@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import BackgroundPattern from '@/components/BackgroundPattern';
+import OAuthButtons from '@/components/OAuthButtons';
 import { ArrowRightIcon } from 'lucide-react';
 
 function Login() {
@@ -23,6 +24,7 @@ function Login() {
   const loginFormLocked = config.localLoginForm?.locked ?? false;
   const loginMessage = config.localLoginForm?.message;
   const redirectUrl = config.localLoginForm?.redirectUrl;
+  const oauthButtons = config.oauthButtons;
 
   // Detect browser language (simplified: just check if starts with 'zh')
   const browserLang = navigator.language.toLowerCase();
@@ -120,6 +122,20 @@ function Login() {
                   {loading ? '登录中...' : '登录'}
                 </Button>
               </form>
+
+              {oauthButtons && oauthButtons.length > 0 && (
+                <>
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">{isZhCN ? '或' : 'OR'}</span>
+                    </div>
+                  </div>
+                  <OAuthButtons buttons={oauthButtons} />
+                </>
+              )}
 
               <div className="mt-6 text-center text-sm">
                 还没有账号？{' '}

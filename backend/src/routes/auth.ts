@@ -175,6 +175,143 @@ router.put('/password', authenticate, asyncHandler(async (req, res) => {
   res.json({ message: lang === 'en' ? 'Password updated' : '密码已更新' });
 }));
 
+// Generate random state for OAuth CSRF protection
+function generateOAuthState(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+// OAuth landing - initiates OAuth flow by redirecting to OAuth provider
+router.get('/oauth/landing', asyncHandler(async (req, res) => {
+  const unsafeAuthServiceBaseURL = process.env.UNSAFE_AUTH_SERVICE_BASE_URL;
+  const redirectURL = process.env.OAUTH_REDIRECT_URL;
+  const provider = req.query.provider as string;
+
+  if (!unsafeAuthServiceBaseURL || !redirectURL || !provider) {
+    throw badRequest('OAuth未配置', 'auth.oauth_not_configured');
+  }
+
+  // Generate and save state for CSRF protection
+  const state = generateOAuthState();
+  res.cookie('oauth_state_summit', state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 3600000, // 1 hour
+    sameSite: 'lax',
+  });
+
+  // Redirect to OAuth provider
+  const authUrl = `${unsafeAuthServiceBaseURL}/oauth/${provider}?state=${state}&callback=${encodeURIComponent(redirectURL)}`;
+  res.redirect(authUrl);
+}));
+
+// OAuth callback - handles callback from OAuth provider
+router.get('/oauth/callback', asyncHandler(async (req, res) => {
+  const { code, state, provider } = req.query;
+  const unsafeAuthServiceBaseURL = process.env.UNSAFE_AUTH_SERVICE_BASE_URL;
+  const unsafeAuthServiceHTTPBaseURL = process.env.UNSAFE_AUTH_SERVICE_HTTP_BASE_URL || unsafeAuthServiceBaseURL;
+  const frontendBaseURL = process.env.FRONTEND_BASE_URL || 'http://localhost:2590';
+
+  if (!code || !state || !provider) {
+    throw badRequest('缺少OAuth参数', 'auth.oauth_missing_params');
+  }
+
+  if (!unsafeAuthServiceBaseURL) {
+    throw badRequest('OAuth未配置', 'auth.oauth_not_configured');
+  }
+
+  // Verify state cookie for CSRF protection
+  const savedState = req.cookies?.oauth_state_summit;
+  if (savedState && savedState !== state) {
+    throw badRequest('无效的OAuth状态', 'auth.oauth_invalid_state');
+  }
+
+  // Fetch user resource from OAuth provider
+  const resourceResponse = await fetch(`${unsafeAuthServiceHTTPBaseURL}/oauth/${provider}/resource?code=${code}`);
+
+  if (!resourceResponse.ok) {
+    throw badRequest('获取用户信息失败', 'auth.oauth_resource_failed');
+  }
+
+  const resource = await resourceResponse.json();
+
+  if (!resource || !resource.name || !resource.email) {
+    throw badRequest('无效的用户信息', 'auth.oauth_invalid_resource');
+  }
+
+  // Generate internal OAuth code for frontend exchange
+  const oauthCode = generateOAuthState();
+
+  // Find or create user
+  let user = await userService.findByEmail(resource.email);
+
+  if (user) {
+    // Existing user - verify auth type
+    if (user.authType && user.authType !== 'oauth') {
+      // Redirect to frontend with error
+      const errorUrl = new URL(`${frontendBaseURL}/oauth/callback`);
+      errorUrl.searchParams.set('error', 'account_already_exists');
+      errorUrl.searchParams.set('message', 'An account with this email already exists but uses a different login method');
+      res.redirect(errorUrl.toString());
+      return;
+    }
+    // Update with new OAuth code
+    await userService.updateOAuthCode(user._id.toString(), oauthCode);
+  } else {
+    // Create new OAuth user
+    user = await userService.createOAuthUser(resource.email, resource.name, provider as string, oauthCode);
+  }
+
+  // Clear the state cookie
+  res.clearCookie('oauth_state_summit');
+
+  // Redirect to frontend callback page with internal code
+  const url = new URL(`${frontendBaseURL}/oauth/callback`);
+  url.searchParams.set('code', oauthCode);
+  setAuditContext(res, {
+    action: 'auth_oauth_callback',
+    resource: 'user',
+    resourceId: user._id.toString(),
+    status: 'success',
+  });
+  res.redirect(url.toString());
+}));
+
+// OAuth exchange - exchanges internal code for JWT token
+router.get('/oauth/exchange', asyncHandler(async (req, res) => {
+  const { code } = req.query;
+
+  if (!code || typeof code !== 'string') {
+    throw badRequest('无效的code参数', 'auth.oauth_invalid_code');
+  }
+
+  // Find user with the OAuth code
+  const user = await userService.findByOAuthCode(code);
+
+  if (!user) {
+    throw unauthorized('无效的OAuth code', 'auth.oauth_code_invalid');
+  }
+
+  // Generate JWT token
+  const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
+
+  setAuditContext(res, {
+    action: 'auth_oauth_exchange',
+    resource: 'user',
+    resourceId: user._id.toString(),
+    status: 'success',
+    force: true,
+  });
+
+  res.status(200).json({
+    token,
+    user: toAuthUser(user),
+    message: 'OAuth登录成功',
+  });
+
+  // Clear the OAuth code (one-time use)
+  await userService.clearOAuthCode(user._id.toString());
+}));
+
 // Custom sign-on endpoint for external authentication service
 router.post('/custom-sign-on', asyncHandler(async (req, res) => {
   const unsafeAuthServiceBaseURL = process.env.UNSAFE_AUTH_SERVICE_BASE_URL || 'http://localhost:4423';
