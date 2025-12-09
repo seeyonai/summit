@@ -9,6 +9,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useMeetings } from '@/hooks/useMeetings';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Meeting } from '@/types';
 
 interface MeetingPickerProps {
@@ -26,11 +27,25 @@ interface MeetingPickerContentProps {
 
 function MeetingPickerContent({ selectedMeeting, onMeetingSelect, onDisassociate }: MeetingPickerContentProps) {
   const { meetings, loading } = useMeetings();
+  const { user: currentUser } = useAuth();
 
-  // Filter and sort meetings: exclude completed, sort in_progress first, then scheduled (oldest first)
+  // Filter and sort meetings: exclude completed and viewer-only meetings, sort in_progress first, then scheduled (oldest first)
   const filteredMeetings = React.useMemo(() => {
     return meetings
-      .filter((m) => m.status !== 'completed')
+      .filter((m) => {
+        // Exclude completed meetings
+        if (m.status === 'completed') return false;
+        // Exclude meetings where user is only a viewer (not owner or member)
+        if (currentUser) {
+          const isOwner = m.ownerId === currentUser._id;
+          const isMember = (m.members || []).includes(currentUser._id);
+          const isViewer = (m.viewers || []).includes(currentUser._id);
+          const isAdmin = currentUser.role === 'admin';
+          // If user is only a viewer (not owner, member, or admin), exclude
+          if (isViewer && !isOwner && !isMember && !isAdmin) return false;
+        }
+        return true;
+      })
       .sort((a, b) => {
         // Sort by status priority
         const statusOrder = { in_progress: 0, scheduled: 1 };
@@ -46,7 +61,7 @@ function MeetingPickerContent({ selectedMeeting, onMeetingSelect, onDisassociate
         const dateB = b.scheduledStart ? new Date(b.scheduledStart).getTime() : 0;
         return dateA - dateB;
       });
-  }, [meetings]);
+  }, [meetings, currentUser]);
 
   return (
     <PopoverContent className="w-80 p-0" align="start">

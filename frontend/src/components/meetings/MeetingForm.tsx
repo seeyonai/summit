@@ -19,20 +19,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SaveIcon, AlertCircleIcon, InfoIcon, UsersIcon } from "lucide-react";
-import AgendaEditor from "./AgendaEditor";
-import MeetingMembers from "@/components/MeetingMembers";
-import type {
-  Meeting,
-  MeetingCreate,
-  MeetingUpdate,
-  MeetingStatus,
-  AgendaItem,
-} from "@/types";
+import { SaveIcon, AlertCircleIcon, InfoIcon, UsersIcon, EyeIcon } from 'lucide-react';
+import AgendaEditor from './AgendaEditor';
+import MeetingMembers from '@/components/MeetingMembers';
+import MeetingViewers from '@/components/MeetingViewers';
+import type { Meeting, MeetingCreate, MeetingUpdate, MeetingStatus, AgendaItem } from '@/types';
 
 interface MeetingFormProps {
-  mode: "create" | "edit";
-  variant?: "scheduled" | "quick"; // only for create mode
+  mode: 'create' | 'edit';
+  variant?: 'scheduled' | 'quick'; // only for create mode
   initialData?: Partial<Meeting>;
   meetingId?: string; // for edit mode to support members tab
   onSubmit: (data: MeetingCreate | MeetingUpdate) => Promise<void>;
@@ -53,16 +48,16 @@ function getTomorrow9AM() {
 function formatDateTimeLocal(date: Date | string) {
   const dateObj = date instanceof Date ? date : new Date(date);
   const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-  const day = String(dateObj.getDate()).padStart(2, "0");
-  const hours = String(dateObj.getHours()).padStart(2, "0");
-  const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  const hours = String(dateObj.getHours()).padStart(2, '0');
+  const minutes = String(dateObj.getMinutes()).padStart(2, '0');
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function MeetingForm({
   mode,
-  variant = "scheduled",
+  variant = 'scheduled',
   initialData,
   meetingId,
   onSubmit,
@@ -70,50 +65,46 @@ function MeetingForm({
   onMembersChanged,
   loading = false,
   error = null,
-  initialTab = "info",
+  initialTab = 'info',
 }: MeetingFormProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const [formData, setFormData] = useState({
-    title: "",
-    summary: "",
-    status: "scheduled" as MeetingStatus,
-    scheduledStart: "",
-    hotwords: "",
+    title: '',
+    summary: '',
+    status: 'scheduled' as MeetingStatus,
+    scheduledStart: '',
+    hotwords: '',
     agenda: [] as AgendaItem[],
   });
-  const showMembersTab = mode === "edit" && Boolean(meetingId);
+  const showMembersTab = mode === 'edit' && Boolean(meetingId);
+  const showViewersTab = mode === 'edit' && Boolean(meetingId);
 
   // Initialize form with initial data
   useEffect(() => {
-    if (mode === "create") {
+    if (mode === 'create') {
       setFormData({
-        title: "",
-        summary: "",
-        status: variant === "quick" ? "in_progress" : "scheduled",
-        scheduledStart:
-          variant === "scheduled"
-            ? formatDateTimeLocal(getTomorrow9AM())
-            : formatDateTimeLocal(new Date()),
-        hotwords: "",
+        title: '',
+        summary: '',
+        status: variant === 'quick' ? 'in_progress' : 'scheduled',
+        scheduledStart: variant === 'scheduled' ? formatDateTimeLocal(getTomorrow9AM()) : formatDateTimeLocal(new Date()),
+        hotwords: '',
         agenda: [],
       });
       return;
     }
 
     const scheduledStart = initialData?.scheduledStart;
-    const scheduledStartValue = scheduledStart
-      ? formatDateTimeLocal(scheduledStart)
-      : "";
+    const scheduledStartValue = scheduledStart ? formatDateTimeLocal(scheduledStart) : '';
     const hotwordsArray = initialData?.hotwords ?? [];
     const agendaItems = initialData?.agenda ?? [];
 
     setFormData({
-      title: initialData?.title || "",
-      summary: initialData?.summary || "",
-      status: initialData?.status || "scheduled",
+      title: initialData?.title || '',
+      summary: initialData?.summary || '',
+      status: initialData?.status || 'scheduled',
       scheduledStart: scheduledStartValue,
-      hotwords: hotwordsArray.join(", "),
+      hotwords: hotwordsArray.join(', '),
       agenda: agendaItems,
     });
   }, [mode, variant, initialData]);
@@ -134,14 +125,12 @@ function MeetingForm({
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
 
-    if (mode === "create") {
+    if (mode === 'create') {
       const submitData: MeetingCreate = {
         title: formData.title || undefined,
         summary: formData.summary || undefined,
         status: formData.status || undefined,
-        scheduledStart: formData.scheduledStart
-          ? new Date(formData.scheduledStart)
-          : undefined,
+        scheduledStart: formData.scheduledStart ? new Date(formData.scheduledStart) : undefined,
         hotwords: hotwordTokens,
         agenda: formData.agenda.length > 0 ? formData.agenda : undefined,
       };
@@ -151,7 +140,7 @@ function MeetingForm({
 
     const targetId = initialData?._id ?? meetingId;
     if (!targetId) {
-      console.error("Missing meeting identifier for update");
+      console.error('Missing meeting identifier for update');
       return;
     }
 
@@ -160,9 +149,7 @@ function MeetingForm({
       title: formData.title || undefined,
       summary: formData.summary || undefined,
       status: formData.status || undefined,
-      scheduledStart: formData.scheduledStart
-        ? new Date(formData.scheduledStart)
-        : undefined,
+      scheduledStart: formData.scheduledStart ? new Date(formData.scheduledStart) : undefined,
       hotwords: hotwordTokens,
       agenda: formData.agenda.length > 0 ? formData.agenda : undefined,
     };
@@ -173,10 +160,13 @@ function MeetingForm({
   const isFormValid = formData.title.trim().length > 0;
 
   useEffect(() => {
-    if (!showMembersTab && activeTab === "members") {
-      setActiveTab("info");
+    if (!showMembersTab && activeTab === 'members') {
+      setActiveTab('info');
     }
-  }, [showMembersTab, activeTab]);
+    if (!showViewersTab && activeTab === 'viewers') {
+      setActiveTab('info');
+    }
+  }, [showMembersTab, showViewersTab, activeTab]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -184,16 +174,14 @@ function MeetingForm({
       {error && (
         <Alert variant="destructive">
           <AlertCircleIcon className="h-4 w-4" />
-          <AlertTitle>{mode === "create" ? "创建失败" : "保存失败"}</AlertTitle>
+          <AlertTitle>{mode === 'create' ? '创建失败' : '保存失败'}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList
-          className={`grid w-full ${showMembersTab ? "grid-cols-3" : "grid-cols-2"}`}
-        >
+        <TabsList className={`grid w-full ${showMembersTab && showViewersTab ? 'grid-cols-4' : showMembersTab ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <TabsTrigger value="info" className="flex items-center gap-2">
             <InfoIcon className="w-4 h-4" />
             会议信息
@@ -204,12 +192,16 @@ function MeetingForm({
               成员
             </TabsTrigger>
           ) : null}
+          {showViewersTab ? (
+            <TabsTrigger value="viewers" className="flex items-center gap-2">
+              <EyeIcon className="w-4 h-4" />
+              查阅者
+            </TabsTrigger>
+          ) : null}
           <TabsTrigger value="agenda" className="flex items-center gap-2">
             议程
             {formData.agenda.length > 0 && (
-              <span className="ml-1 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
-                {formData.agenda.length}
-              </span>
+              <span className="ml-1 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{formData.agenda.length}</span>
             )}
           </TabsTrigger>
         </TabsList>
@@ -219,11 +211,7 @@ function MeetingForm({
           <Card>
             <CardHeader>
               <CardTitle>基本信息</CardTitle>
-              <CardDescription>
-                {mode === "create"
-                  ? "填写新会议的基本信息"
-                  : "编辑会议的基本信息"}
-              </CardDescription>
+              <CardDescription>{mode === 'create' ? '填写新会议的基本信息' : '编辑会议的基本信息'}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Title */}
@@ -232,7 +220,7 @@ function MeetingForm({
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="输入会议标题"
                   disabled={loading}
                   required
@@ -245,7 +233,7 @@ function MeetingForm({
                 <Textarea
                   id="summary"
                   value={formData.summary}
-                  onChange={(e) => handleInputChange("summary", e.target.value)}
+                  onChange={(e) => handleInputChange('summary', e.target.value)}
                   placeholder="输入会议摘要或描述"
                   rows={3}
                   disabled={loading}
@@ -253,16 +241,10 @@ function MeetingForm({
               </div>
 
               {/* Status - only show in edit mode */}
-              {mode === "edit" && (
+              {mode === 'edit' && (
                 <div className="space-y-2">
                   <Label htmlFor="status">会议状态</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) =>
-                      handleInputChange("status", value)
-                    }
-                    disabled={loading}
-                  >
+                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)} disabled={loading}>
                     <SelectTrigger>
                       <SelectValue placeholder="选择会议状态" />
                     </SelectTrigger>
@@ -277,17 +259,14 @@ function MeetingForm({
               )}
 
               {/* Scheduled Start */}
-              {(mode === "create" && variant === "scheduled") ||
-              mode === "edit" ? (
+              {(mode === 'create' && variant === 'scheduled') || mode === 'edit' ? (
                 <div className="space-y-2">
                   <Label htmlFor="scheduledStart">开始时间</Label>
                   <Input
                     id="scheduledStart"
                     type="datetime-local"
                     value={formData.scheduledStart}
-                    onChange={(e) =>
-                      handleInputChange("scheduledStart", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange('scheduledStart', e.target.value)}
                     disabled={loading}
                   />
                 </div>
@@ -299,15 +278,11 @@ function MeetingForm({
                 <Input
                   id="hotwords"
                   value={formData.hotwords}
-                  onChange={(e) =>
-                    handleInputChange("hotwords", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange('hotwords', e.target.value)}
                   placeholder="输入热词，使用逗号分隔"
                   disabled={loading}
                 />
-                <p className="text-sm text-muted-foreground">
-                  成员加入会议或录音关联后，系统会自动合并他们的姓名、别名和公开热词，无需重复填写。
-                </p>
+                <p className="text-sm text-muted-foreground">成员加入会议或录音关联后，系统会自动合并他们的姓名、别名和公开热词，无需重复填写。</p>
               </div>
             </CardContent>
           </Card>
@@ -316,21 +291,14 @@ function MeetingForm({
         {/* Members Tab */}
         {showMembersTab ? (
           <TabsContent value="members" className="mt-6">
-            {mode === "edit" && meetingId ? (
+            {mode === 'edit' && meetingId ? (
               <Card>
                 <CardHeader>
                   <CardTitle>成员管理</CardTitle>
-                  <CardDescription>
-                    管理会议的所有者和成员，控制访问权限
-                  </CardDescription>
+                  <CardDescription>管理会议的所有者和成员，控制访问权限</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <MeetingMembers
-                    meetingId={meetingId}
-                    ownerId={initialData?.ownerId}
-                    members={initialData?.members}
-                    onChanged={onMembersChanged}
-                  />
+                  <MeetingMembers meetingId={meetingId} ownerId={initialData?.ownerId} members={initialData?.members} onChanged={onMembersChanged} />
                 </CardContent>
               </Card>
             ) : (
@@ -343,21 +311,44 @@ function MeetingForm({
           </TabsContent>
         ) : null}
 
+        {/* Viewers Tab */}
+        {showViewersTab ? (
+          <TabsContent value="viewers" className="mt-6">
+            {mode === 'edit' && meetingId ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>查阅者管理</CardTitle>
+                  <CardDescription>管理会议的查阅者，查阅者仅可查看"记录"和"AI 分析"标签页</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <MeetingViewers
+                    meetingId={meetingId}
+                    ownerId={initialData?.ownerId}
+                    members={initialData?.members}
+                    viewers={initialData?.viewers}
+                    onChanged={onMembersChanged}
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <p>请先创建会议后再添加查阅者</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        ) : null}
+
         {/* Agenda Tab */}
         <TabsContent value="agenda" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>会议议程</CardTitle>
-              <CardDescription>
-                设置会议的讨论议程，可以跟踪每个议题的状态
-              </CardDescription>
+              <CardDescription>设置会议的讨论议程，可以跟踪每个议题的状态</CardDescription>
             </CardHeader>
             <CardContent>
-              <AgendaEditor
-                agenda={formData.agenda}
-                onChange={handleAgendaChange}
-                disabled={loading}
-              />
+              <AgendaEditor agenda={formData.agenda} onChange={handleAgendaChange} disabled={loading} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -365,24 +356,19 @@ function MeetingForm({
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-3 pt-6 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={loading}
-        >
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
           取消
         </Button>
         <Button type="submit" disabled={loading || !isFormValid}>
           {loading ? (
             <>
               <div className="animate-spin w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full"></div>
-              {mode === "create" ? "创建中..." : "保存中..."}
+              {mode === 'create' ? '创建中...' : '保存中...'}
             </>
           ) : (
             <>
               <SaveIcon className="w-4 h-4 mr-2" />
-              {mode === "create" ? "创建会议" : "保存更改"}
+              {mode === 'create' ? '创建会议' : '保存更改'}
             </>
           )}
         </Button>

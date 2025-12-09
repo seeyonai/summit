@@ -9,14 +9,15 @@ import { useState, useRef, useEffect } from 'react';
 
 interface MeetingAnaylysisProps {
   meeting: Meeting & { _id: string };
-  children: (data: {
-    disputedIssues: DisputedIssue[];
-    todos: Todo[];
-  }) => ReactNode;
+  children: (data: { disputedIssues: DisputedIssue[]; todos: Todo[] }) => ReactNode;
+  isViewerOnly?: boolean;
 }
 
-function MeetingAnalysis({ meeting, children }: MeetingAnaylysisProps) {
-  const { analysisResult, loading, error, extractAnalysis, clearAnalysis, clearDisputedIssues, clearTodos } = useAnalysisResult(meeting._id, {disputedIssues: meeting.disputedIssues, todos: meeting.todos});
+function MeetingAnalysis({ meeting, children, isViewerOnly = false }: MeetingAnaylysisProps) {
+  const { analysisResult, loading, error, extractAnalysis, clearAnalysis, clearDisputedIssues, clearTodos } = useAnalysisResult(meeting._id, {
+    disputedIssues: meeting.disputedIssues,
+    todos: meeting.todos,
+  });
   const [showClearMenu, setShowClearMenu] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -72,10 +73,8 @@ function MeetingAnalysis({ meeting, children }: MeetingAnaylysisProps) {
     );
   }
 
-  const empty = !analysisResult
-    || !analysisResult.data
-    || !Array.isArray(analysisResult.data.disputedIssues)
-    || !Array.isArray(analysisResult.data.todos);
+  const empty =
+    !analysisResult || !analysisResult.data || !Array.isArray(analysisResult.data.disputedIssues) || !Array.isArray(analysisResult.data.todos);
 
   if (empty) {
     return (
@@ -85,16 +84,16 @@ function MeetingAnalysis({ meeting, children }: MeetingAnaylysisProps) {
             <BrainIcon />
           </EmptyMedia>
           <EmptyTitle>暂无分析结果</EmptyTitle>
-          <EmptyDescription>
-            使用 AI 分析从会议记录中提取争议问题和待办事项。
-          </EmptyDescription>
+          <EmptyDescription>{isViewerOnly ? 'AI 分析尚未生成' : '使用 AI 分析从会议记录中提取争议问题和待办事项。'}</EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
-          <Button onClick={extractAnalysis}>
-            <BrainIcon className="mr-2 h-4 w-4" />
-            提取分析
-          </Button>
-        </EmptyContent>
+        {!isViewerOnly && (
+          <EmptyContent>
+            <Button onClick={extractAnalysis}>
+              <BrainIcon className="mr-2 h-4 w-4" />
+              提取分析
+            </Button>
+          </EmptyContent>
+        )}
       </Empty>
     );
   }
@@ -107,50 +106,48 @@ function MeetingAnalysis({ meeting, children }: MeetingAnaylysisProps) {
             {analysisResult!.data.disputedIssues?.length} 争议, {analysisResult!.data.todos?.length} 待办
           </span>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={extractAnalysis} disabled={loading}>
-            <RefreshCwIcon className="mr-2 h-4 w-4" />
-            重新分析
-          </Button>
-          <div className="relative" ref={dropdownRef}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowClearMenu(!showClearMenu)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              清除
-              <ChevronDown className="ml-2 h-4 w-4" />
+        {!isViewerOnly && (
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" onClick={extractAnalysis} disabled={loading}>
+              <RefreshCwIcon className="mr-2 h-4 w-4" />
+              重新分析
             </Button>
-            {showClearMenu && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-popover border border-border rounded-md shadow-lg z-50">
-                <div className="py-1">
-                  <button
-                    onClick={handleClearAll}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex items-center"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    清除全部
-                  </button>
-                  <button
-                    onClick={handleClearDisputedIssues}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex items-center"
-                  >
-                    <AlertCircleIcon className="mr-2 h-4 w-4" />
-                    清除争议问题
-                  </button>
-                  <button
-                    onClick={handleClearTodos}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex items-center"
-                  >
-                    <BrainIcon className="mr-2 h-4 w-4" />
-                    清除待办事项
-                  </button>
+            <div className="relative" ref={dropdownRef}>
+              <Button variant="outline" size="sm" onClick={() => setShowClearMenu(!showClearMenu)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                清除
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+              {showClearMenu && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-popover border border-border rounded-md shadow-lg z-50">
+                  <div className="py-1">
+                    <button
+                      onClick={handleClearAll}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex items-center"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      清除全部
+                    </button>
+                    <button
+                      onClick={handleClearDisputedIssues}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex items-center"
+                    >
+                      <AlertCircleIcon className="mr-2 h-4 w-4" />
+                      清除争议问题
+                    </button>
+                    <button
+                      onClick={handleClearTodos}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex items-center"
+                    >
+                      <BrainIcon className="mr-2 h-4 w-4" />
+                      清除待办事项
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
       {children({
         disputedIssues: analysisResult!.data.disputedIssues,

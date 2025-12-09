@@ -27,6 +27,7 @@ export interface MeetingDocument extends Document {
   notes?: Note[];
   ownerId?: ObjectId;
   members?: ObjectId[];
+  viewers?: ObjectId[];
 }
 
 export interface HotwordDocument extends Document {

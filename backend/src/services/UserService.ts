@@ -109,7 +109,16 @@ export async function getById(id: string): Promise<UserDocument | null> {
 
 export function verifyPassword(user: UserDocument, password: string): boolean {
   const hash = hashPassword(password, user.salt);
-  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
+  const storedHashBuffer = Buffer.from(user.passwordHash, 'hex');
+  const computedHashBuffer = Buffer.from(hash, 'hex');
+
+  // First check if lengths are equal - if not, passwords don't match
+  if (storedHashBuffer.length !== computedHashBuffer.length) {
+    return false;
+  }
+
+  // Use timingSafeEqual for constant-time comparison when lengths match
+  return crypto.timingSafeEqual(storedHashBuffer, computedHashBuffer);
 }
 
 export async function searchUsers(q: string, limit: number = 20): Promise<Array<Pick<UserDocument, '_id' | 'email' | 'name' | 'aliases' | 'role'>>> {

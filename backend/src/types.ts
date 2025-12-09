@@ -90,6 +90,7 @@ export type Meeting = MeetingBase &
   Id & {
     ownerId?: ObjectId;
     members?: ObjectId[];
+    viewers?: ObjectId[];
     concatenatedRecording?: Recording | null;
     recordings?: Recording[];
     notes?: Note[];

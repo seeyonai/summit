@@ -161,6 +161,63 @@ export function requireMemberOrOwner() {
   };
 }
 
+export function requireViewerOrMemberOrOwner() {
+  return async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    const meetingId = req.params.id || req.params.meetingId;
+    if (!req.user || !meetingId) {
+      debugWarn('requireViewerOrMemberOrOwner: unauthorized or missing meetingId');
+      setAuditContext(res, {
+        action: 'meeting_access_viewer',
+        status: 'access_denied',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: 'auth.unauthorized',
+        force: true,
+      });
+      next(unauthorized('Unauthorized', 'auth.unauthorized'));
+      return;
+    }
+    if (req.user.role === 'admin') {
+      debug('requireViewerOrMemberOrOwner: admin bypass', { userId: req.user.userId });
+      next();
+      return;
+    }
+    const collection = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
+    const meeting = await collection.findOne({ _id: new ObjectId(meetingId) });
+    if (!meeting) {
+      debugWarn('requireViewerOrMemberOrOwner: meeting not found', { meetingId });
+      setAuditContext(res, {
+        action: 'meeting_access_viewer',
+        status: 'failure',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: 'meeting.not_found',
+        force: true,
+      });
+      next(forbidden('Not allowed', 'auth.forbidden'));
+      return;
+    }
+    const isOwner = meeting.ownerId && meeting.ownerId.toString() === req.user.userId;
+    const isMember = (meeting.members || []).some((m) => m.toString() === req.user?.userId);
+    const isViewer = (meeting.viewers || []).some((v) => v.toString() === req.user?.userId);
+    if (!isOwner && !isMember && !isViewer) {
+      debugWarn('requireViewerOrMemberOrOwner: access denied', { meetingId, userId: req.user.userId });
+      setAuditContext(res, {
+        action: 'meeting_access_viewer',
+        status: 'access_denied',
+        resource: 'meeting',
+        resourceId: meetingId,
+        error: 'auth.forbidden',
+        force: true,
+      });
+      next(forbidden('Not allowed', 'auth.forbidden'));
+      return;
+    }
+    debug('requireViewerOrMemberOrOwner: access granted', { meetingId, userId: req.user.userId, isOwner, isMember, isViewer });
+    next();
+  };
+}
+
 export function requireAdmin(req: RequestWithUser, res: Response, next: NextFunction): void {
   if (!req.user) {
     debugWarn('requireAdmin: missing user');
@@ -201,7 +258,8 @@ async function hasMeetingReadAccess(meeting: MeetingDocument | null, userId: str
   if (!meeting) return false;
   const isOwner = meeting.ownerId && meeting.ownerId.toString() === userId;
   const isMember = (meeting.members || []).some((m) => m.toString() === userId);
-  return !!isOwner || !!isMember;
+  const isViewer = (meeting.viewers || []).some((v) => v.toString() === userId);
+  return !!isOwner || !!isMember || !!isViewer;
 }
 
 async function hasMeetingWriteAccess(meeting: MeetingDocument | null, userId: string): Promise<boolean> {

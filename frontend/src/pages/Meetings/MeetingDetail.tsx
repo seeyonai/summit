@@ -48,7 +48,10 @@ import {
   RadarIcon,
   ChevronDownIcon,
   FileEditIcon,
+  ShareIcon,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import ShareMeetingDialog from '@/components/ShareMeetingDialog';
 
 function MeetingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +68,9 @@ function MeetingDetail() {
     description: string;
     onConfirm: () => void | Promise<void>;
   }>({ open: false, title: '', description: '', onConfirm: () => {} });
+  const [showShareDialog, setShowShareDialog] = useState(false);
+
+  const { user: currentUser } = useAuth();
 
   // Use custom hooks
   const {
@@ -84,16 +90,35 @@ function MeetingDetail() {
 
   const {
     memberUsers,
+    viewerUsers,
     ownerUser,
     loading: membersLoading,
   } = useMeetingMembers({
     meetingId: id || '',
     ownerId: meeting?.ownerId,
     members: meeting?.members || [],
+    viewers: meeting?.viewers || [],
   });
 
   const { config } = useConfig();
   const showNotesTab = config.features?.shorthandNotes === true;
+
+  // Check user role for this meeting
+  const isOwner = !!currentUser && meeting?.ownerId === currentUser._id;
+  const isMember = !!currentUser && (meeting?.members || []).includes(currentUser._id);
+  const isViewer = !!currentUser && (meeting?.viewers || []).includes(currentUser._id);
+  const isAdmin = !!currentUser && currentUser.role === 'admin';
+  const isViewerOnly = isViewer && !isOwner && !isMember && !isAdmin;
+  const canEdit = isOwner || isAdmin;
+
+  // Redirect viewer to allowed tabs only
+  useEffect(() => {
+    if (isViewerOnly && activeTab !== 'transcript' && activeTab !== 'analysis') {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('tab', 'transcript');
+      setSearchParams(nextParams);
+    }
+  }, [isViewerOnly, activeTab, searchParams, setSearchParams]);
 
   // Redirect if notes tab is selected but feature is disabled
   useEffect(() => {
@@ -432,94 +457,119 @@ function MeetingDetail() {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            {canStartMeeting && (
-              <Button onClick={handleStartMeeting} disabled={updatingStatus} variant="secondary">
-                <PlayIcon className="w-4 h-4 mr-2" />
-                开始会议
-              </Button>
-            )}
-            {meeting.status === 'in_progress' && (
-              <>
-                <Button onClick={handleToggleMeetingDisplay} variant="fancy">
-                  <MaximizeIcon className="w-4 h-4 mr-2" />
-                  会议大屏
+          {!isViewerOnly && (
+            <div className="flex gap-2">
+              {canEdit && (
+                <Button onClick={() => setShowShareDialog(true)} variant="outline">
+                  <ShareIcon className="w-4 h-4 mr-2" />
+                  分享
                 </Button>
+              )}
+              {canStartMeeting && (
+                <Button onClick={handleStartMeeting} disabled={updatingStatus} variant="secondary">
+                  <PlayIcon className="w-4 h-4 mr-2" />
+                  开始会议
+                </Button>
+              )}
+              {meeting.status === 'in_progress' && (
+                <>
+                  <Button onClick={handleToggleMeetingDisplay} variant="fancy">
+                    <MaximizeIcon className="w-4 h-4 mr-2" />
+                    会议大屏
+                  </Button>
+                  <Button
+                    onClick={handleEndMeeting}
+                    disabled={updatingStatus}
+                    variant="outline"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
+                  >
+                    <SquareIcon className="w-4 h-4 mr-2" />
+                    结束会议
+                  </Button>
+                </>
+              )}
+              {canEdit && (
+                <Button onClick={() => navigate(`/meetings/${meeting._id}/edit`)} variant="outline">
+                  <EditIcon className="w-4 h-4 mr-2" />
+                  编辑
+                </Button>
+              )}
+              {canEdit && meeting.status !== 'in_progress' && (
                 <Button
-                  onClick={handleEndMeeting}
-                  disabled={updatingStatus}
+                  onClick={handleDeleteMeeting}
                   variant="outline"
                   className="text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
                 >
-                  <SquareIcon className="w-4 h-4 mr-2" />
-                  结束会议
+                  <TrashIcon className="w-4 h-4 mr-2" />
+                  删除
                 </Button>
-              </>
-            )}
-            <Button onClick={() => navigate(`/meetings/${meeting._id}/edit`)} variant="outline">
-              <EditIcon className="w-4 h-4 mr-2" />
-              编辑
-            </Button>
-            {meeting.status !== 'in_progress' && (
-              <Button
-                onClick={handleDeleteMeeting}
-                variant="outline"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
-              >
-                <TrashIcon className="w-4 h-4 mr-2" />
-                删除
-              </Button>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6 w-full">
-        <TabsList className={`grid w-full ${showNotesTab ? 'grid-cols-4' : 'grid-cols-3'}`}>
-          <TabsTrigger value="recordings" className="flex items-center gap-2">
-            <HeadphonesIcon className="w-4 h-4" />
-            录音
-          </TabsTrigger>
-          <TabsTrigger value="transcript" className="flex items-center gap-2">
-            <FileTextIcon className="w-4 h-4" />
-            记录
-          </TabsTrigger>
-          {showNotesTab && (
-            <TabsTrigger value="notes" className="flex items-center gap-2">
-              <FileEditIcon className="w-4 h-4" />
-              速记
+        {isViewerOnly ? (
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="transcript" className="flex items-center gap-2">
+              <FileTextIcon className="w-4 h-4" />
+              记录
             </TabsTrigger>
-          )}
-          <TabsTrigger value="analysis" className="flex items-center gap-2">
-            <RadarIcon className="w-4 h-4" />
-            AI 分析
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger value="analysis" className="flex items-center gap-2">
+              <RadarIcon className="w-4 h-4" />
+              AI 分析
+            </TabsTrigger>
+          </TabsList>
+        ) : (
+          <TabsList className={`grid w-full ${showNotesTab ? 'grid-cols-4' : 'grid-cols-3'}`}>
+            <TabsTrigger value="recordings" className="flex items-center gap-2">
+              <HeadphonesIcon className="w-4 h-4" />
+              录音
+            </TabsTrigger>
+            <TabsTrigger value="transcript" className="flex items-center gap-2">
+              <FileTextIcon className="w-4 h-4" />
+              记录
+            </TabsTrigger>
+            {showNotesTab && (
+              <TabsTrigger value="notes" className="flex items-center gap-2">
+                <FileEditIcon className="w-4 h-4" />
+                速记
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="analysis" className="flex items-center gap-2">
+              <RadarIcon className="w-4 h-4" />
+              AI 分析
+            </TabsTrigger>
+          </TabsList>
+        )}
 
         <TabsContent value="transcript">
-          <MeetingTranscript meeting={meeting} onMeetingUpdate={handleMeetingUpdate} />
+          <MeetingTranscript meeting={meeting} onMeetingUpdate={handleMeetingUpdate} isViewerOnly={isViewerOnly} />
         </TabsContent>
 
-        <TabsContent value="recordings">
-          <MeetingRecordings
-            meeting={meeting}
-            onViewTranscript={() => {
-              setShowConcatenatedRecording(true);
-              setShowTranscript(true);
-            }}
-            onMeetingRefresh={refresh}
-          />
-        </TabsContent>
+        {!isViewerOnly && (
+          <TabsContent value="recordings">
+            <MeetingRecordings
+              meeting={meeting}
+              onViewTranscript={() => {
+                setShowConcatenatedRecording(true);
+                setShowTranscript(true);
+              }}
+              onMeetingRefresh={refresh}
+            />
+          </TabsContent>
+        )}
 
-        {showNotesTab && (
+        {!isViewerOnly && showNotesTab && (
           <TabsContent value="notes">
             <MeetingNotes meeting={meeting} onRefresh={refresh} />
           </TabsContent>
         )}
 
         <TabsContent value="analysis">
-          <MeetingAnaylysis meeting={meeting}>
+          <MeetingAnaylysis meeting={meeting} isViewerOnly={isViewerOnly}>
             {({ disputedIssues, todos }) => (
               <Tabs value={activeSubtab} onValueChange={handleSubtabChange}>
                 <TabsList>
@@ -587,6 +637,9 @@ function MeetingDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Share Meeting Dialog */}
+      <ShareMeetingDialog open={showShareDialog} onOpenChange={setShowShareDialog} meeting={meeting} onViewerAdded={refresh} />
     </div>
   );
 }

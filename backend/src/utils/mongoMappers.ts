@@ -48,6 +48,7 @@ export function meetingDocumentToMeeting(meetingDoc: MeetingDocument): Meeting {
     hotwords: Array.isArray(meetingDoc.hotwords) ? meetingDoc.hotwords : undefined,
     ownerId: meetingDoc.ownerId,
     members: meetingDoc.members,
+    viewers: meetingDoc.viewers,
     recordings: normalizeRecordings(meetingDoc.recordings),
     concatenatedRecording: normalizeRecording(meetingDoc.concatenatedRecording),
     notes: normalizeNotes(meetingDoc.notes),

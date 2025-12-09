@@ -164,6 +164,7 @@ export type Meeting = BaseMeeting &
   Timestamp & {
     ownerId?: string;
     members?: string[];
+    viewers?: string[];
     concatenatedRecording?: Recording | null;
     recordings?: Recording[];
     notes?: Note[];

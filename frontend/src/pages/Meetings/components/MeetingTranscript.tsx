@@ -43,9 +43,10 @@ import { apiService } from '@/services/api';
 interface MeetingTranscriptProps {
   meeting: Meeting;
   onMeetingUpdate?: (meeting: Meeting) => void;
+  isViewerOnly?: boolean;
 }
 
-function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps) {
+function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: MeetingTranscriptProps) {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [viewMode, setViewMode] = useState<'text' | 'markdown'>('text');
@@ -130,7 +131,9 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
         const endMinutes = Math.floor(speech.endTime / 60);
         const endSeconds = Math.floor(speech.endTime % 60);
 
-        markdown += `### 发言人 ${speech.speakerIndex + 1} (${minutes}:${seconds.toString().padStart(2, '0')} - ${endMinutes}:${endSeconds.toString().padStart(2, '0')})\n\n`;
+        markdown += `### 发言人 ${speech.speakerIndex + 1} (${minutes}:${seconds.toString().padStart(2, '0')} - ${endMinutes}:${endSeconds
+          .toString()
+          .padStart(2, '0')})\n\n`;
 
         if (speech.polishedText) {
           markdown += `**整理内容：**\n\n${speech.polishedText}\n\n`;
@@ -461,21 +464,23 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                           <p>复制</p>
                         </TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            onClick={() => setIsRegenerateDialogOpen(true)}
-                            variant="outline"
-                            size="icon"
-                            disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
-                          >
-                            <RefreshCwIcon className={`w-4 h-4 ${isGeneratingFromRecordings ? 'animate-spin' : ''}`} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{isGeneratingFromRecordings ? '生成中...' : '重新生成'}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      {!isViewerOnly && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              onClick={() => setIsRegenerateDialogOpen(true)}
+                              variant="outline"
+                              size="icon"
+                              disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
+                            >
+                              <RefreshCwIcon className={`w-4 h-4 ${isGeneratingFromRecordings ? 'animate-spin' : ''}`} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{isGeneratingFromRecordings ? '生成中...' : '重新生成'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       <Select onValueChange={(value) => exportTranscript(value as 'txt' | 'docx')}>
                         <SelectTrigger className="w-[180px]">
                           <DownloadIcon className="w-4 h-4 mr-2" />
@@ -557,20 +562,22 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
                   <FileTextIcon className="w-12 h-12" />
                 </EmptyMedia>
                 <EmptyTitle>暂无会议转录</EmptyTitle>
-                <EmptyDescription>会议结束后将自动生成转录内容</EmptyDescription>
+                <EmptyDescription>{isViewerOnly ? '会议记录尚未生成' : '会议结束后将自动生成转录内容'}</EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
-                    onClick={handleGenerateTranscriptFromRecordings}
-                  >
-                    {isGeneratingFromRecordings ? '生成中...' : '根据录音转录'}
-                  </Button>
-                  <Button onClick={() => setIsUploadDialogOpen(true)}>手工添加...</Button>
-                </div>
-              </EmptyContent>
+              {!isViewerOnly && (
+                <EmptyContent>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
+                      onClick={handleGenerateTranscriptFromRecordings}
+                    >
+                      {isGeneratingFromRecordings ? '生成中...' : '根据录音转录'}
+                    </Button>
+                    <Button onClick={() => setIsUploadDialogOpen(true)}>手工添加...</Button>
+                  </div>
+                </EmptyContent>
+              )}
             </Empty>
           )}
         </CardContent>

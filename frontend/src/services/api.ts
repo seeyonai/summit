@@ -483,6 +483,14 @@ class ApiService {
     return this.delete(`/api/meetings/${meetingId}/members/${userId}`);
   }
 
+  async addMeetingViewer(meetingId: string, userId: string) {
+    return this.post(`/api/meetings/${meetingId}/viewers`, { userId });
+  }
+
+  async removeMeetingViewer(meetingId: string, userId: string) {
+    return this.delete(`/api/meetings/${meetingId}/viewers/${userId}`);
+  }
+
   // Hotwords
   async getHotwords() {
     return this.get('/api/hotwords');
