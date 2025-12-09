@@ -72,6 +72,7 @@ Start the backend first (port 2591), then the frontend (port 2590). The UI calls
 
 ## Environment Configuration
 - **Customization**: `backend/customization.json` configures app metadata and feature flags. Set `localLoginForm.locked` to `true` to disable local login/registration (defaults to `false`). Use `localLoginForm.admin.locked` to allow admin-only access when the default is locked.
+- If local login form locked, direct user to `localLoginForm.redirectUrl` for authentication by other means.
 - Backend honors `MONGODB_URI`, `DB_NAME`, `RECORDING_FILE_DIR`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
   - `RECORDING_FILE_DIR` sets the filesystem base directory for audio files. If unset, uploads default to the repository-level `files/` directory. Docker images set it to `/usr/src/app/files`.
     - `SEGMENTATION_SERVICE_URL` sets the URL for the speaker segmentation service (default: `http://localhost:2593`).
