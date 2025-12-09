@@ -59,9 +59,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
     if (!meeting.finalTranscript) return;
 
     try {
-      const aiWarning =
-        '\n\n---\n⚠️ AI生成内容警告：此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。';
-      const content = meeting.finalTranscript + aiWarning;
+      const content = meeting.finalTranscript;
 
       if (format === 'docx') {
         // Convert markdown to DOCX
@@ -152,11 +150,6 @@ function MeetingTranscript({ meeting, onMeetingUpdate }: MeetingTranscriptProps)
       // Add full transcript
       markdown += '## 完整会议记录\n\n';
       markdown += meeting.finalTranscript;
-
-      // Add AI warning
-      const aiWarning =
-        '\n\n---\n\n⚠️ **AI生成内容警告：** 此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。';
-      markdown += aiWarning;
 
       // Convert to DOCX
       const doc = await markdownDocx(markdown);
