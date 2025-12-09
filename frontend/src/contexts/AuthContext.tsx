@@ -16,7 +16,7 @@ interface AuthContextValue {
   setUser: (user: AuthUser | null) => void;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, role?: 'admin' | 'user') => Promise<void>;
   register: (email: string, password: string, name?: string, aliases?: string) => Promise<void>;
   customSignOn: (params: Record<string, string>) => Promise<void>;
   logout: () => void;
@@ -47,15 +47,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     let active = true;
     setLoading(true);
-    authService.me(token)
-      .then((u) => { if (active) setUser(u); })
-      .catch(() => { if (active) { setUser(null); setToken(null); localStorage.removeItem('auth_token'); } })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    authService
+      .me(token)
+      .then((u) => {
+        if (active) setUser(u);
+      })
+      .catch(() => {
+        if (active) {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('auth_token');
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [token]);
 
-  const login = async (email: string, password: string) => {
-    const { token: t, user: u } = await authService.login(email, password);
+  const login = async (email: string, password: string, role?: 'admin' | 'user') => {
+    const { token: t, user: u } = await authService.login(email, password, role);
     localStorage.setItem('auth_token', t);
     setToken(t);
     setUser(u);
@@ -78,18 +91,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setToken(null);
-    try { localStorage.removeItem('auth_token'); } catch {
+    try {
+      localStorage.removeItem('auth_token');
+    } catch {
       // Ignore localStorage errors
     }
   };
 
   const value = useMemo(() => ({ user, setUser, token, loading, login, register, customSignOn, logout }), [user, token, loading]);
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

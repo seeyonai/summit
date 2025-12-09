@@ -16,8 +16,9 @@ export const authService = {
       },
     });
   },
-  async login(email: string, password: string): Promise<AuthResult> {
-    return api<AuthResult>('/api/auth/login', {
+  async login(email: string, password: string, role?: 'admin' | 'user'): Promise<AuthResult> {
+    const url = role === 'admin' ? '/api/auth/login?role=admin' : '/api/auth/login';
+    return api<AuthResult>(url, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
       headers: {

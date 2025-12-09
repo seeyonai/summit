@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, LogOut, LogIn, UserPlus, Wrench, User, Flame, Settings } from 'lucide-react';
 import type { AuthUser } from '@/contexts/AuthContext';
 
@@ -11,7 +11,10 @@ interface UserMenuProps {
 function getInitials(name?: string, email?: string) {
   if (name && name.trim()) {
     const parts = name.trim().split(/\s+/);
-    const initials = parts.slice(0, 2).map((p) => p[0]?.toUpperCase()).join('');
+    const initials = parts
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join('');
     return initials || 'U';
   }
   if (email) return email[0]?.toUpperCase() || 'U';
@@ -21,6 +24,7 @@ function getInitials(name?: string, email?: string) {
 function UserMenu({ user, onLogout }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) {
@@ -43,10 +47,7 @@ function UserMenu({ user, onLogout }: UserMenuProps) {
         >
           <LogIn className="inline w-4 h-4 mr-1" /> 登录
         </Link>
-        <Link
-          to="/register"
-          className="px-3 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-all"
-        >
+        <Link to="/register" className="px-3 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-all">
           <UserPlus className="inline w-4 h-4 mr-1" /> 注册
         </Link>
       </div>
@@ -61,9 +62,7 @@ function UserMenu({ user, onLogout }: UserMenuProps) {
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-muted/30 text-foreground hover:bg-muted/60 transition-all"
       >
-        <div className="w-7 h-7 rounded-full bg-primary/15 text-primary grid place-items-center font-semibold">
-          {initials}
-        </div>
+        <div className="w-7 h-7 rounded-full bg-primary/15 text-primary grid place-items-center font-semibold">{initials}</div>
         <span className="hidden sm:inline">{user.name || user.email}</span>
         <ChevronDown className="w-4 h-4 opacity-70" />
       </button>
@@ -94,7 +93,13 @@ function UserMenu({ user, onLogout }: UserMenuProps) {
           </div>
           <div className="py-1 border-t border-border">
             <button
-              onClick={() => { setOpen(false); onLogout?.(); }}
+              onClick={() => {
+                setOpen(false);
+                const isAdmin = user?.role === 'admin';
+                onLogout?.();
+                // Redirect admin users to login with role=admin to preserve admin login form settings
+                navigate(isAdmin ? '/login?role=admin' : '/login', { replace: true });
+              }}
               className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50 text-destructive"
             >
               <LogOut className="w-4 h-4" /> 退出登录

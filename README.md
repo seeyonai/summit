@@ -71,7 +71,7 @@ Override the API base URL by setting `VITE_API_BASE_URL` in the frontend's `.env
 Start the backend first (port 2591), then the frontend (port 2590). The UI calls the API via hard-coded `http://localhost:2591` endpoints; set up a proxy or expose a `VITE_` env var if you need a different origin.
 
 ## Environment Configuration
-- **Customization**: `backend/customization.json` configures app metadata and feature flags. Set `features.enableLocalAccounts` to `false` to disable local user registration (defaults to `true`).
+- **Customization**: `backend/customization.json` configures app metadata and feature flags. Set `localLoginForm.locked` to `true` to disable local login/registration (defaults to `false`). Use `localLoginForm.admin.locked` to allow admin-only access when the default is locked.
 - Backend honors `MONGODB_URI`, `DB_NAME`, `RECORDING_FILE_DIR`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
   - `RECORDING_FILE_DIR` sets the filesystem base directory for audio files. If unset, uploads default to the repository-level `files/` directory. Docker images set it to `/usr/src/app/files`.
     - `SEGMENTATION_SERVICE_URL` sets the URL for the speaker segmentation service (default: `http://localhost:2593`).

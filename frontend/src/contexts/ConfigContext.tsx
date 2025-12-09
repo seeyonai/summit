@@ -17,7 +17,6 @@ const defaultConfig: AppCustomization = {
   faviconUrl: undefined,
   features: {
     shorthandNotes: false,
-    enableLocalAccounts: true,
   },
 };
 

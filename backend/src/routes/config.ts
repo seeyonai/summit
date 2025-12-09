@@ -20,13 +20,6 @@ router.get('/', async (req: Request, res: Response) => {
     try {
       const data = await fs.readFile(filePath, 'utf-8');
       const json = JSON5.parse(data);
-      // Apply defaults for features
-      if (!json.features) {
-        json.features = {};
-      }
-      if (json.features.enableLocalAccounts === undefined) {
-        json.features.enableLocalAccounts = true;
-      }
       return res.json(json);
     } catch (_) {
       // try next candidate

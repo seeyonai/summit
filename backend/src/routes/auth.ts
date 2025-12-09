@@ -20,36 +20,55 @@ function candidatePaths(): string[] {
   return [fromCwd, fromDist, fromSrc];
 }
 
-async function isLocalAccountsEnabled(): Promise<boolean> {
-  const paths = candidatePaths();
-  for (const filePath of paths) {
-    try {
-      const data = await fs.readFile(filePath, 'utf-8');
-      const json = JSON.parse(data);
-      // Default to true if not specified
-      return json.features?.enableLocalAccounts ?? true;
-    } catch (_) {
-      // try next candidate
-    }
-  }
-  // If config file not found, default to true
-  return true;
+interface LocalLoginFormConfig {
+  locked: boolean;
+  message?: { en?: string; 'zh-CN'?: string };
+  admin?: {
+    locked?: boolean;
+    message?: { en?: string; 'zh-CN'?: string };
+  };
+  redirectUrl?: string;
 }
 
-async function isLocalLoginFormLocked(): Promise<boolean> {
+async function getLocalLoginFormConfig(): Promise<LocalLoginFormConfig | null> {
   const paths = candidatePaths();
   for (const filePath of paths) {
     try {
       const data = await fs.readFile(filePath, 'utf-8');
       const json = JSON.parse(data);
-      // Default to false if not specified
-      return json.localLoginForm?.locked ?? false;
+      return json.localLoginForm ?? null;
     } catch (_) {
       // try next candidate
     }
   }
-  // If config file not found, default to false (not locked)
-  return false;
+  return null;
+}
+
+async function isLocalLoginFormLocked(isAdmin: boolean): Promise<boolean> {
+  const config = await getLocalLoginFormConfig();
+  if (!config) return false;
+
+  if (isAdmin && config.admin !== undefined) {
+    // For admin users, use admin.locked if specified, otherwise fall back to default locked
+    return config.admin.locked ?? config.locked ?? false;
+  }
+  // For non-admin users, use default locked
+  return config.locked ?? false;
+}
+
+async function isRegistrationLocked(): Promise<boolean> {
+  const config = await getLocalLoginFormConfig();
+  if (!config) return false;
+
+  const defaultLocked = config.locked ?? false;
+  const adminLocked = config.admin?.locked ?? defaultLocked;
+
+  // If default is locked but admin is not locked, allow registration (admin init mode)
+  if (defaultLocked && !adminLocked) {
+    return false;
+  }
+
+  return defaultLocked;
 }
 
 interface CustomSignOnResponse {
@@ -63,9 +82,11 @@ const isCustomSignOnResponse = (value: unknown): value is CustomSignOnResponse =
     return false;
   }
   const candidate = value as Partial<CustomSignOnResponse>;
-  return typeof candidate.valid === 'boolean'
-    && (candidate.error === undefined || typeof candidate.error === 'string')
-    && (candidate.token === undefined || typeof candidate.token === 'string');
+  return (
+    typeof candidate.valid === 'boolean' &&
+    (candidate.error === undefined || typeof candidate.error === 'string') &&
+    (candidate.token === undefined || typeof candidate.token === 'string')
+  );
 };
 
 interface AuthUserSource {
@@ -86,59 +107,62 @@ function toAuthUser(u: AuthUserSource): AuthResponseUser {
   };
 }
 
-router.post('/register', asyncHandler(async (req, res) => {
-  // Check if local account registration is enabled
-  const localAccountsEnabled = await isLocalAccountsEnabled();
-  if (!localAccountsEnabled) {
-    throw badRequest('本地账户注册已被禁用', 'auth.registration_disabled');
-  }
+router.post(
+  '/register',
+  asyncHandler(async (req, res) => {
+    // Check if registration is locked
+    // Registration is allowed if: (1) not locked, or (2) admin init mode (default locked but admin not locked)
+    const registrationLocked = await isRegistrationLocked();
+    if (registrationLocked) {
+      throw badRequest('本地账户注册已被禁用', 'auth.registration_disabled');
+    }
 
-  const body = req.body as Partial<CreateUserDto>;
-  if (!body?.email || !body?.password) {
-    throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
-  }
-  const user = await userService.createUser(
-    body.email,
-    body.password,
-    body.name,
-    typeof body.aliases === 'string' ? body.aliases : undefined
-  );
-  const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
-  setAuditContext(res, {
-    action: 'auth_register',
-    resource: 'user',
-    resourceId: user._id.toString(),
-    status: 'success',
-    force: true,
-  });
-  res.status(201).json({ token, user: toAuthUser(user) });
-}));
+    const body = req.body as Partial<CreateUserDto>;
+    if (!body?.email || !body?.password) {
+      throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
+    }
+    const user = await userService.createUser(body.email, body.password, body.name, typeof body.aliases === 'string' ? body.aliases : undefined);
+    const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
+    setAuditContext(res, {
+      action: 'auth_register',
+      resource: 'user',
+      resourceId: user._id.toString(),
+      status: 'success',
+      force: true,
+    });
+    res.status(201).json({ token, user: toAuthUser(user) });
+  })
+);
 
-router.post('/login', asyncHandler(async (req, res) => {
-  // Check if local login form is locked
-  const loginFormLocked = await isLocalLoginFormLocked();
-  if (loginFormLocked) {
-    throw badRequest('本地登录功能已被锁定', 'auth.login_locked');
-  }
+router.post(
+  '/login',
+  asyncHandler(async (req, res) => {
+    // Check if local login form is locked based on role query param
+    const isAdmin = req.query.role === 'admin';
+    const loginFormLocked = await isLocalLoginFormLocked(isAdmin);
+    if (loginFormLocked) {
+      throw badRequest('本地登录功能已被锁定', 'auth.login_locked');
+    }
 
-  const body = req.body as Partial<LoginDto>;
-  if (!body?.email || !body?.password) {
-    throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
-  }
-  const user = await userService.findByEmail(body.email);
-  if (!user || !userService.verifyPassword(user, body.password)) {
-    throw unauthorized('邮箱或密码错误', 'auth.invalid_credentials');
-  }
-  const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
-  setAuditContext(res, {
-    action: 'auth_login',
-    resource: 'user',
-    resourceId: user._id.toString(),
-    status: 'success',
-    force: true,
-  });
-  res.json({ token, user: toAuthUser(user) });
-}));
+    const body = req.body as Partial<LoginDto>;
+    if (!body?.email || !body?.password) {
+      throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
+    }
+    const user = await userService.findByEmail(body.email);
+    if (!user || !userService.verifyPassword(user, body.password)) {
+      throw unauthorized('邮箱或密码错误', 'auth.invalid_credentials');
+    }
+    const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
+    setAuditContext(res, {
+      action: 'auth_login',
+      resource: 'user',
+      resourceId: user._id.toString(),
+      status: 'success',
+      force: true,
+    });
+    res.json({ token, user: toAuthUser(user) });
+  })
+);
 
 router.get('/me', authenticate, asyncHandler(async (req, res) => {
   const r = req as RequestWithUser;

@@ -184,13 +184,19 @@ export interface AppCustomization {
   faviconUrl?: string | null;
   features?: {
     shorthandNotes?: boolean;
-    enableLocalAccounts?: boolean;
   };
   localLoginForm?: {
     locked?: boolean;
     message?: {
       en?: string;
       'zh-CN'?: string;
+    };
+    admin?: {
+      locked?: boolean;
+      message?: {
+        en?: string;
+        'zh-CN'?: string;
+      };
     };
     redirectUrl?: string;
   };
