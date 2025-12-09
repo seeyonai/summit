@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +10,13 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AudioPlayer from '@/components/AudioPlayer';
 import StatisticsCard from '@/components/StatisticsCard';
 
-import RecordingTranscription from './RecordingTranscription';
-import RecordingAlignment from './RecordingAlignment';
-import RecordingAnalysis from './RecordingAnalysis';
+import RecordingTranscription, { type RecordingTranscriptionHandle } from './RecordingTranscription';
+import RecordingAlignment, { type RecordingAlignmentHandle } from './RecordingAlignment';
+import RecordingAnalysis, { type RecordingAnalysisHandle } from './RecordingAnalysis';
 import RecordingInfo from './RecordingInfo';
-import RecordingOrganize from './RecordingOrganize';
+import RecordingOrganize, { type RecordingOrganizeHandle } from './RecordingOrganize';
+import PipelineControlBar from './PipelineControlBar';
+import usePipelineRunner from './hooks/usePipelineRunner';
 import AssociateMeetingDialog from '@/components/AssociateMeetingDialog';
 import { useRecordingDetail, type EditForm } from './hooks/useRecordingDetail';
 import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
@@ -83,6 +85,61 @@ function RecordingDetailContent({
 
   const speakerNames = recording?.speakerNames;
   const speakerNameMap = useMemo(() => buildSpeakerNameMap(speakerNames), [speakerNames]);
+
+  // Pipeline stage refs
+  const transcriptionRef = useRef<RecordingTranscriptionHandle>(null);
+  const alignmentRef = useRef<RecordingAlignmentHandle>(null);
+  const analysisRef = useRef<RecordingAnalysisHandle>(null);
+  const organizeRef = useRef<RecordingOrganizeHandle>(null);
+
+  // Pipeline runner
+  const pipeline = usePipelineRunner({
+    recording,
+    onStageComplete: (stage) => {
+      setSuccess(`${stage === 'transcription' ? '转录' : stage === 'alignment' ? '对齐' : stage === 'analysis' ? '分析' : '整理'}完成`);
+    },
+    onPipelineComplete: () => {
+      setSuccess('流水线运行完成');
+    },
+    onError: (stage, error) => {
+      setError(`${stage === 'transcription' ? '转录' : stage === 'alignment' ? '对齐' : stage === 'analysis' ? '分析' : '整理'}失败: ${error}`);
+    },
+  });
+
+  // Register stage runners when refs are available
+  useEffect(() => {
+    if (transcriptionRef.current) {
+      pipeline.registerStageRunner('transcription', transcriptionRef.current.runTranscription);
+    }
+    if (alignmentRef.current) {
+      pipeline.registerStageRunner('alignment', alignmentRef.current.runAlignment);
+    }
+    if (analysisRef.current) {
+      pipeline.registerStageRunner('analysis', analysisRef.current.runAnalysis);
+    }
+    if (organizeRef.current) {
+      pipeline.registerStageRunner('organize', organizeRef.current.runOrganize);
+    }
+  }, [recording, pipeline.registerStageRunner]);
+
+  // Reset pipeline - clear all generated data
+  const handlePipelineReset = async () => {
+    if (!recording) return;
+    try {
+      await apiService.updateRecording(recording._id, {
+        transcription: '',
+        verbatimTranscript: '',
+        alignmentItems: [],
+        speakerSegments: [],
+        organizedSpeeches: [],
+        numSpeakers: 0,
+      });
+      await fetchRecording();
+      setSuccess('流水线数据已重置');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '重置失败');
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -394,11 +451,25 @@ function RecordingDetailContent({
         </div>
       </div>
 
+      {/* Pipeline Control Bar */}
+      {!compact && (
+        <PipelineControlBar
+          stageStatuses={pipeline.stageStatuses}
+          isRunning={pipeline.isRunning}
+          onRunFullPipeline={pipeline.runFullPipeline}
+          onRunFromStage={pipeline.runFromStage}
+          onRunRemaining={pipeline.runRemaining}
+          onAbort={pipeline.abort}
+          onReset={handlePipelineReset}
+        />
+      )}
+
       {/* Pipeline Stages Grid */}
       {!compact && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="lg:col-span-2">
             <RecordingTranscription
+              ref={transcriptionRef}
               recording={recording}
               isEditing={isEditing}
               editForm={editForm}
@@ -410,12 +481,20 @@ function RecordingDetailContent({
             />
           </div>
 
-          <RecordingAlignment recording={recording} isEditing={isEditing} editForm={editForm} setSuccess={setSuccess} setError={setError} />
+          <RecordingAlignment
+            ref={alignmentRef}
+            recording={recording}
+            isEditing={isEditing}
+            editForm={editForm}
+            setSuccess={setSuccess}
+            setError={setError}
+            onRefresh={fetchRecording}
+          />
 
-          <RecordingAnalysis recording={recording} onRefresh={fetchRecording} setSuccess={setSuccess} setError={setError} />
+          <RecordingAnalysis ref={analysisRef} recording={recording} onRefresh={fetchRecording} setSuccess={setSuccess} setError={setError} />
 
           <div className="lg:col-span-2">
-            <RecordingOrganize recording={recording} setSuccess={setSuccess} setError={setError} onRefresh={fetchRecording} />
+            <RecordingOrganize ref={organizeRef} recording={recording} setSuccess={setSuccess} setError={setError} onRefresh={fetchRecording} />
           </div>
 
           {/* <p className="text-xs text-gray-500 dark:text-gray-400">AI生成的内容不保证准确性。请在生成PPT之前仔细审查和编辑内容。</p> */}

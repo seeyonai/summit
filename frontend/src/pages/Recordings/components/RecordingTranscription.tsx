@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
 import SearchInput from '@/components/SearchInput';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,10 @@ import {
 import PipelineStageCard from './PipelineStageCard';
 import HotwordSelection from '@/components/HotwordSelection';
 
+export interface RecordingTranscriptionHandle {
+  runTranscription: () => Promise<void>;
+}
+
 interface RecordingTranscriptionProps {
   recording: Recording;
   isEditing: boolean;
@@ -37,16 +41,10 @@ interface RecordingTranscriptionProps {
   onEditToggle: () => void;
 }
 
-function RecordingTranscription({
-  recording,
-  isEditing,
-  editForm,
-  setEditForm,
-  onRefresh,
-  setSuccess,
-  setError,
-  onEditToggle,
-}: RecordingTranscriptionProps) {
+const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, RecordingTranscriptionProps>(function RecordingTranscription(
+  { recording, isEditing, editForm, setEditForm, onRefresh, setSuccess, setError, onEditToggle },
+  ref
+) {
   const [transcribing, setTranscribing] = useState(false);
   const [exportFormat, setExportFormat] = useState<'txt' | 'docx' | 'pdf' | 'srt'>('txt');
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,7 +61,7 @@ function RecordingTranscription({
     setSelectedHotwords(recording.hotwords ?? []);
   }, [recording.hotwords]);
 
-  const generateTranscription = async () => {
+  const generateTranscription = useCallback(async () => {
     try {
       setTranscribing(true);
       setTranscriptionProgress(0);
@@ -88,11 +86,21 @@ function RecordingTranscription({
       setSuccess(message || '转录生成成功');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err; // Re-throw for pipeline runner
     } finally {
       setTranscribing(false);
       setTimeout(() => setTranscriptionProgress(0), 2000);
     }
-  };
+  }, [recording._id, selectedHotwords, onRefresh, setSuccess, setError]);
+
+  // Expose runTranscription to parent via ref
+  useImperativeHandle(
+    ref,
+    () => ({
+      runTranscription: generateTranscription,
+    }),
+    [generateTranscription]
+  );
 
   const exportTranscription = async () => {
     if (!recording.transcription) return;
@@ -525,6 +533,6 @@ function RecordingTranscription({
       />
     </>
   );
-}
+});
 
 export default RecordingTranscription;

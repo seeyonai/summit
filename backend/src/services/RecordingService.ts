@@ -344,6 +344,16 @@ export async function updateRecording(recordingId: string, updateData: Recording
     remoteUpdates.alignmentItems = updateData.alignmentItems;
   }
 
+  if (Array.isArray(updateData.speakerSegments)) {
+    updates.speakerSegments = updateData.speakerSegments.length > 0 ? updateData.speakerSegments : undefined;
+    remoteUpdates.speakerSegments = updates.speakerSegments;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updateData, 'numSpeakers')) {
+    updates.numSpeakers = typeof updateData.numSpeakers === 'number' && updateData.numSpeakers > 0 ? updateData.numSpeakers : undefined;
+    remoteUpdates.numSpeakers = updates.numSpeakers;
+  }
+
   if (Object.prototype.hasOwnProperty.call(updateData, 'hotwords')) {
     const normalizedHotwords = normalizeHotwords(updateData.hotwords);
     updates.hotwords = normalizedHotwords && normalizedHotwords.length > 0 ? normalizedHotwords : [];

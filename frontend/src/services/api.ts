@@ -173,6 +173,10 @@ interface RecordingUpdatePayload {
     index: number;
     name: string;
   }>;
+  // Pipeline reset fields
+  alignmentItems?: Array<unknown>;
+  speakerSegments?: Array<unknown>;
+  numSpeakers?: number;
 }
 
 type SegmentRecordingOptions = Pick<SegmentationRequest, 'oracleNumSpeakers' | 'returnText'>;

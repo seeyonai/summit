@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,10 @@ import { UsersIcon, ClockIcon, SparklesIcon, PencilIcon, SaveIcon, XIcon } from 
 import PipelineStageCard from './PipelineStageCard';
 import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
 
+export interface RecordingOrganizeHandle {
+  runOrganize: () => Promise<void>;
+}
+
 interface RecordingOrganizeProps {
   recording: Recording;
   setSuccess: (message: string) => void;
@@ -16,7 +20,10 @@ interface RecordingOrganizeProps {
   onRefresh?: () => void;
 }
 
-function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: RecordingOrganizeProps) {
+const RecordingOrganize = forwardRef<RecordingOrganizeHandle, RecordingOrganizeProps>(function RecordingOrganize(
+  { recording, setSuccess, setError, onRefresh },
+  ref
+) {
   const [loading, setLoading] = useState(false);
   const [speeches, setSpeeches] = useState<OrganizedSpeech[] | undefined>(recording.organizedSpeeches);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -25,20 +32,14 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
   const speakerNames = recording.speakerNames;
   const speakerNameMap = useMemo(() => buildSpeakerNameMap(speakerNames), [speakerNames]);
 
-  const borderColors = [
-    'border-blue-500',
-    'border-green-500',
-    'border-yellow-500',
-    'border-purple-500',
-    'border-pink-500'
-  ];
+  const borderColors = ['border-blue-500', 'border-green-500', 'border-yellow-500', 'border-purple-500', 'border-pink-500'];
 
   const badgeColors = [
     'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
     'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
     'bg-purple-100 text-accent dark:bg-purple-900/40 dark:text-accent',
-    'bg-pink-100 text-accent dark:bg-pink-900/40 dark:text-accent'
+    'bg-pink-100 text-accent dark:bg-pink-900/40 dark:text-accent',
   ];
 
   const formatTime = (seconds: number) => {
@@ -47,7 +48,7 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       const { speeches: data, message } = await apiService.organizeRecording(recording._id);
@@ -59,20 +60,32 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '组织失败');
+      throw err; // Re-throw for pipeline runner
     } finally {
       setLoading(false);
     }
-  };
+  }, [recording._id, setSuccess, setError, onRefresh]);
 
+  // Expose runOrganize to parent via ref
+  useImperativeHandle(
+    ref,
+    () => ({
+      runOrganize: load,
+    }),
+    [load]
+  );
+
+  // Sync local speeches state with recording data
   useEffect(() => {
-    if (recording?._id) {
-      if (recording?.organizedSpeeches?.length) {
-        setSpeeches(recording.organizedSpeeches);
-      }
-      // Only auto-load if there's no existing organized data
-      // This prevents re-running on tab switches
+    if (recording?.organizedSpeeches?.length) {
+      setSpeeches(recording.organizedSpeeches);
+    } else {
+      // Clear local state when recording data is reset
+      setSpeeches(undefined);
+      setEditingIndex(null);
+      setEditedSpeech(null);
     }
-  }, [recording?._id, recording?.organizedSpeeches]);
+  }, [recording?.organizedSpeeches]);
 
   const handleEdit = (index: number, speech: OrganizedSpeech) => {
     setEditingIndex(index);
@@ -93,7 +106,7 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
       updatedSpeeches[editingIndex] = editedSpeech;
 
       await apiService.updateRecording(recording._id, {
-        organizedSpeeches: updatedSpeeches
+        organizedSpeeches: updatedSpeeches,
       });
 
       setSpeeches(updatedSpeeches);
@@ -149,9 +162,12 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
           const colorIdx = Math.abs(displaySpeech.speakerIndex) % borderColors.length;
           const borderClass = borderColors[colorIdx];
           const badgeClass = badgeColors[colorIdx];
-          
+
           return (
-            <div key={`${s.speakerIndex}-${s.startTime}-${idx}`} className={`p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 ${borderClass}`}>
+            <div
+              key={`${s.speakerIndex}-${s.startTime}-${idx}`}
+              className={`p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 ${borderClass}`}
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   {isEditing ? (
@@ -172,7 +188,9 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
                   )}
                   <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                     <ClockIcon className="w-3 h-3" />
-                    <span>{formatTime(displaySpeech.startTime)} - {formatTime(displaySpeech.endTime)}</span>
+                    <span>
+                      {formatTime(displaySpeech.startTime)} - {formatTime(displaySpeech.endTime)}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -203,9 +221,7 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
                   disabled={saving}
                 />
               ) : (
-                <div className="text-gray-900 dark:text-gray-100 leading-7">
-                  {displaySpeech.polishedText}
-                </div>
+                <div className="text-gray-900 dark:text-gray-100 leading-7">{displaySpeech.polishedText}</div>
               )}
             </div>
           );
@@ -213,6 +229,6 @@ function RecordingOrganize({ recording, setSuccess, setError, onRefresh }: Recor
       </div>
     </PipelineStageCard>
   );
-}
+});
 
 export default RecordingOrganize;
