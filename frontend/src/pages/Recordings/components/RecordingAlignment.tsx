@@ -161,7 +161,7 @@ const RecordingAlignment = forwardRef<RecordingAlignmentHandle, RecordingAlignme
         <div className="space-y-4 mt-4">
           <div className="flex items-center gap-2 text-sm">
             <Badge variant={alignment.coverage >= 80 ? 'default' : alignment.coverage >= 50 ? 'secondary' : 'destructive'}>
-              对齐质量: {alignment.coverage}%
+              对齐覆盖率: {alignment.coverage}%
             </Badge>
             <Badge variant="outline">{recording.alignmentItems ? '已保存' : '未保存'}</Badge>
             <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ const RecordingAlignment = forwardRef<RecordingAlignmentHandle, RecordingAlignme
               <span className="text-muted-foreground">{globalOffsetMs}ms</span>
             </div>
           </div>
-          <div className="leading-8 bg-muted rounded-lg p-4">
+          <div className="leading-8 bg-muted rounded-lg p-4 font-serif">
             {alignment.tokens.map((tok, idx) => (
               <span
                 key={`${tok.startMs}-${tok.endMs}-${idx}`}

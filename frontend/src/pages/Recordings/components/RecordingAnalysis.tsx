@@ -369,10 +369,7 @@ const RecordingAnalysis = forwardRef<RecordingAnalysisHandle, RecordingAnalysisP
                   const colors = speakerColors[speakerIndex % speakerColors.length];
 
                   return (
-                    <Card
-                      key={speakerIndex}
-                      className={`overflow-hidden border-2 ${colors.border} hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex-1 min-w-[200px] max-w-[280px]`}
-                    >
+                    <Card key={speakerIndex} className={`overflow-hidden border-2 ${colors.border} flex-1 min-w-[200px] max-w-[280px]`}>
                       <div className={`h-1.5 bg-gradient-to-r ${colors.gradient}`} />
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between mb-4">
@@ -402,19 +399,19 @@ const RecordingAnalysis = forwardRef<RecordingAnalysisHandle, RecordingAnalysisP
                           </div>
 
                           <div className="grid grid-cols-2 gap-3 pt-2">
-                            <div className="bg-muted/50 rounded-lg p-2.5">
+                            <div className="p-2.5">
                               <div className="flex items-center gap-1.5 mb-1">
                                 <ClockIcon className="w-3.5 h-3.5 text-muted-foreground" />
                                 <span className="text-xs text-muted-foreground">总时长</span>
                               </div>
-                              <p className="text-base font-semibold">{formatTime(totalTime)}</p>
+                              <p className="text-base font-mono">{formatTime(totalTime)}</p>
                             </div>
-                            <div className="bg-muted/50 rounded-lg p-2.5">
+                            <div className="p-2.5">
                               <div className="flex items-center gap-1.5 mb-1">
                                 <TrendingUpIcon className="w-3.5 h-3.5 text-muted-foreground" />
                                 <span className="text-xs text-muted-foreground">平均时长</span>
                               </div>
-                              <p className="text-base font-semibold">{formatTime(avgSegmentTime)}</p>
+                              <p className="text-base font-mono">{formatTime(avgSegmentTime)}</p>
                             </div>
                           </div>
                         </div>

@@ -49,7 +49,7 @@ function PipelineControlBar({
   };
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4 mb-6">
+    <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-6">
       <div className="flex items-center justify-between gap-4">
         {/* Pipeline Progress Stepper */}
         <div className="flex items-center gap-1 flex-1">
@@ -78,9 +78,7 @@ function PipelineControlBar({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              {index < stageStatuses.length - 1 && (
-                <div className={`w-6 h-px mx-1 ${status.isComplete ? 'bg-success' : 'bg-border'}`} />
-              )}
+              {index < stageStatuses.length - 1 && <div className={`w-6 h-px mx-1 ${status.isComplete ? 'bg-success' : 'bg-border'}`} />}
             </div>
           ))}
         </div>
@@ -99,15 +97,15 @@ function PipelineControlBar({
           ) : (
             <>
               {hasIncomplete && (
-                <Button onClick={onRunRemaining} variant="outline" size="sm">
-                  <FastForwardIcon className="w-4 h-4 mr-2" />
+                <Button onClick={onRunRemaining} variant="outline" size="sm" className="rounded-full">
+                  <FastForwardIcon className="w-3 h-3 mr-1" />
                   继续运行
                 </Button>
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="default" size="sm">
-                    <PlayIcon className="w-4 h-4 mr-2" />
+                  <Button variant="default" size="sm" className="rounded-full">
+                    <PlayIcon className="w-3 h-3 mr-1" />
                     {allComplete ? '重新运行' : '运行流水线'}
                     <ChevronDownIcon className="w-4 h-4 ml-2" />
                   </Button>
@@ -118,11 +116,7 @@ function PipelineControlBar({
                     运行全部流水线
                   </DropdownMenuItem>
                   {stageStatuses.map((status) => (
-                    <DropdownMenuItem
-                      key={status.stage}
-                      onClick={() => onRunFromStage(status.stage)}
-                      disabled={!status.isEnabled}
-                    >
+                    <DropdownMenuItem key={status.stage} onClick={() => onRunFromStage(status.stage)} disabled={!status.isEnabled}>
                       {getStageIcon(status)}
                       <span className="ml-2">从{status.label}开始</span>
                     </DropdownMenuItem>

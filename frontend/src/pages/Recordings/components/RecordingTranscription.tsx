@@ -22,6 +22,9 @@ import {
   EditIcon,
   XIcon,
   MessageSquareIcon,
+  AlertTriangleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from 'lucide-react';
 import PipelineStageCard from './PipelineStageCard';
 import HotwordSelection from '@/components/HotwordSelection';
@@ -56,6 +59,7 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
   const [showRedoConfirm, setShowRedoConfirm] = useState(false);
   const [selectedHotwords, setSelectedHotwords] = useState<string[]>(recording.hotwords ?? []);
   const [showHotwordSelection, setShowHotwordSelection] = useState(false);
+  const [statsExpanded, setStatsExpanded] = useState(false);
 
   useEffect(() => {
     setSelectedHotwords(recording.hotwords ?? []);
@@ -328,7 +332,13 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
           {/* Action Bar */}
           <div className="flex flex-wrap gap-2 items-center">
             {/* Search */}
-            <SearchInput className="flex-1 min-w-[200px]" placeholder="搜索转录内容..." value={searchTerm} onChange={setSearchTerm} />
+            <SearchInput
+              className="flex-1 min-w-[200px]"
+              inputClassName="h-8 ml-0.5"
+              placeholder="搜索转录内容..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
 
             {/* View Controls */}
             <Button onClick={() => setViewMode(viewMode === 'formatted' ? 'plain' : 'formatted')} variant="outline" size="sm">
@@ -447,10 +457,10 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
                 {recording.transcription &&
                   (searchTerm ? highlightSearchTerm(formatText(recording.transcription)) : formatText(recording.transcription))}
                 {/* AI Warning */}
-                <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="mt-6 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <span className="text-amber-600 dark:text-amber-400 text-sm">⚠️</span>
-                    <div className="text-sm text-amber-800 dark:text-amber-200">
+                    <AlertTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <div className="text-xs text-amber-800 dark:text-amber-200">
                       <p className="font-medium mb-1">AI生成内容警告</p>
                       <p className="text-amber-700 dark:text-amber-300">
                         此文件可能包含由人工智能生成的内容，AI系统可能会产生错误。请仔细核对重要信息，不应完全依赖AI生成的内容做出重要决策。
@@ -473,34 +483,72 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
               )}
 
               {/* Word Statistics */}
-              {recording.transcription && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted rounded-lg">
-                  <StatisticsCard
-                    icon={<FileTextIcon className="w-4 h-4 text-primary" />}
-                    label="字符"
-                    value={getWordStats(recording.transcription).characters.toLocaleString()}
-                    description="文本中的字符总数"
-                  />
-                  <StatisticsCard
-                    icon={<HashIcon className="w-4 h-4 text-accent" />}
-                    label="词数"
-                    value={getWordStats(recording.transcription).words.toLocaleString()}
-                    description="按空白分隔统计"
-                  />
-                  <StatisticsCard
-                    icon={<MessageSquareIcon className="w-4 h-4 text-success" />}
-                    label="句数"
-                    value={getWordStats(recording.transcription).sentences.toLocaleString()}
-                    description="按句号/问号/感叹号划分"
-                  />
-                  <StatisticsCard
-                    icon={<FileTextIcon className="w-4 h-4 text-foreground" />}
-                    label="段落"
-                    value={getWordStats(recording.transcription).paragraphs.toLocaleString()}
-                    description="按空行划分"
-                  />
-                </div>
-              )}
+              {recording.transcription &&
+                (() => {
+                  const stats = getWordStats(recording.transcription);
+                  return (
+                    <div className="bg-muted rounded-lg overflow-hidden">
+                      {/* Collapsed status bar */}
+                      <button
+                        type="button"
+                        onClick={() => setStatsExpanded(!statsExpanded)}
+                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted-foreground/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>
+                            <strong>{stats.characters.toLocaleString()}</strong> 字符
+                          </span>
+                          <span>
+                            <strong>{stats.words.toLocaleString()}</strong> 词
+                          </span>
+                          <span>
+                            <strong>{stats.sentences.toLocaleString()}</strong> 句
+                          </span>
+                          <span>
+                            <strong>{stats.paragraphs.toLocaleString()}</strong> 段
+                          </span>
+                        </div>
+                        {statsExpanded ? (
+                          <ChevronUpIcon className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </button>
+                      {/* Expanded grid */}
+                      {statsExpanded && (
+                        <div className="p-3 border-t border-border space-y-2">
+                          <h4 className="text-sm font-medium text-foreground">字数统计</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <StatisticsCard
+                              icon={<FileTextIcon className="w-4 h-4 text-primary" />}
+                              label="字符"
+                              value={stats.characters.toLocaleString()}
+                              description="文本中的字符总数"
+                            />
+                            <StatisticsCard
+                              icon={<HashIcon className="w-4 h-4 text-accent" />}
+                              label="词数"
+                              value={stats.words.toLocaleString()}
+                              description="按空白分隔统计"
+                            />
+                            <StatisticsCard
+                              icon={<MessageSquareIcon className="w-4 h-4 text-success" />}
+                              label="句数"
+                              value={stats.sentences.toLocaleString()}
+                              description="按句号/问号/感叹号划分"
+                            />
+                            <StatisticsCard
+                              icon={<FileTextIcon className="w-4 h-4 text-foreground" />}
+                              label="段落"
+                              value={stats.paragraphs.toLocaleString()}
+                              description="按空行划分"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
             </div>
           )}
         </div>
