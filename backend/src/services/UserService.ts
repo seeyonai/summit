@@ -177,6 +177,15 @@ export async function updateProfile(
   return { _id: result._id, email: result.email, name: result.name, aliases: result.aliases, role: result.role };
 }
 
+export async function deleteUser(userId: string): Promise<boolean> {
+  const col = usersCollection();
+  const result = await col.deleteOne({ _id: new ObjectId(userId) });
+  if (result.deletedCount === 0) {
+    throw notFound('未找到用户', 'user.not_found');
+  }
+  return true;
+}
+
 export async function updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
   if (!currentPassword || !newPassword) {
     throw badRequest('当前密码和新密码为必填项', 'auth.invalid_payload');
@@ -206,6 +215,7 @@ export const userService = {
   updateRole,
   updateProfile,
   updatePassword,
+  deleteUser,
   countUsers,
 };
 

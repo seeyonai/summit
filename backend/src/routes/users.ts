@@ -94,4 +94,22 @@ router.put('/:userId/role', requireAdmin, asyncHandler(async (req, res) => {
   res.json({ user: { _id: updated._id.toString(), email: updated.email, name: updated.name, aliases: updated.aliases, role: updated.role } });
 }));
 
+// Admin: delete user
+router.delete('/:userId', requireAdmin, asyncHandler(async (req, res) => {
+  const request = req as RequestWithUser;
+  const { userId } = req.params;
+  // prevent self-deletion
+  if (request.user?.userId === userId) {
+    throw forbidden('Cannot delete yourself', 'user.cannot_delete_self');
+  }
+  await userService.deleteUser(userId);
+  setAuditContext(res, {
+    action: 'user_delete',
+    resource: 'user',
+    resourceId: userId,
+    status: 'success',
+  });
+  res.json({ success: true });
+}));
+
 export default router;

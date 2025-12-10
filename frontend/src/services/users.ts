@@ -21,3 +21,7 @@ export async function updateProfile(userId: string, updates: { name?: string; al
   });
   return result.user;
 }
+
+export async function deleteUser(userId: string): Promise<void> {
+  await api(`/api/users/${userId}`, { method: 'DELETE' });
+}
