@@ -4,6 +4,7 @@
   "logoUrl": null,
   "logoDarkUrl": null,
   "faviconUrl": null,
+  "requireStrongPassword": false,
   "features": {
     "shorthandNotes": true
   },

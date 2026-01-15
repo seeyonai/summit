@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import { toast } from 'sonner';
 import { authService } from '@/services/auth';
 import { updateProfile } from '@/services/users';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { isStrongPassword, STRONG_PASSWORD_REQUIREMENT_EN, STRONG_PASSWORD_REQUIREMENT_ZH } from '@/utils/password';
 
 function Profile() {
   const { user } = useAuth();
+  const { config } = useConfig();
   const [name, setName] = useState<string>('');
   const [aliases, setAliases] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
@@ -16,6 +19,9 @@ function Profile() {
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [savingPwd, setSavingPwd] = useState<boolean>(false);
+  const isZhCN = typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('zh');
+  const strongPasswordRequired = Boolean(config.requireStrongPassword);
+  const strongPasswordMessage = isZhCN ? STRONG_PASSWORD_REQUIREMENT_ZH : STRONG_PASSWORD_REQUIREMENT_EN;
 
   useEffect(() => {
     setName(user?.name || '');
@@ -45,6 +51,14 @@ function Profile() {
       toast.error('新密码不匹配');
       return;
     }
+    if (strongPasswordRequired && !isStrongPassword(newPassword)) {
+      toast.error(
+        isZhCN
+          ? `新密码不符合安全要求：${STRONG_PASSWORD_REQUIREMENT_ZH}`
+          : `New password does not meet requirements: ${STRONG_PASSWORD_REQUIREMENT_EN}`
+      );
+      return;
+    }
     try {
       setSavingPwd(true);
       await authService.changePassword(currentPassword, newPassword);
@@ -65,22 +79,11 @@ function Profile() {
       <form onSubmit={onSave} className="space-y-6">
         <div>
           <Label className="block text-sm font-medium mb-1">邮箱</Label>
-          <Input
-            type="email"
-            value={user?.email || ''}
-            disabled
-            className="bg-muted/40 text-muted-foreground"
-          />
+          <Input type="email" value={user?.email || ''} disabled className="bg-muted/40 text-muted-foreground" />
         </div>
         <div>
           <Label className="block text-sm font-medium mb-1">显示名称</Label>
-          <Input
-            disabled={saving || user?.role !== 'admin'}
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="姓名"
-          />
+          <Input disabled={saving || user?.role !== 'admin'} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="姓名" />
           <p className="text-xs text-muted-foreground mt-1">留空以移除显示名称。</p>
         </div>
         <div>
@@ -96,19 +99,11 @@ function Profile() {
         </div>
         <div>
           <Label className="block text-sm font-medium mb-1">角色</Label>
-          <Input
-            type="text"
-            value={user?.role || ''}
-            disabled
-            className="bg-muted/40 text-muted-foreground"
-          />
+          <Input type="text" value={user?.role || ''} disabled className="bg-muted/40 text-muted-foreground" />
         </div>
         {user?.role === 'admin' && (
           <div className="flex gap-3">
-            <Button
-              type="submit"
-              disabled={saving}
-            >
+            <Button type="submit" disabled={saving}>
               {saving ? '保存中...' : '保存更改'}
             </Button>
           </div>
@@ -121,38 +116,21 @@ function Profile() {
       <form onSubmit={onChangePassword} className="space-y-6">
         <div>
           <Label className="block text-sm font-medium mb-1">当前密码</Label>
-          <Input
-            type="password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            autoComplete="current-password"
-          />
+          <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label className="block text-sm font-medium mb-1">新密码</Label>
-            <Input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoComplete="new-password"
-            />
+            <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
+            {strongPasswordRequired && <p className="text-xs text-muted-foreground mt-1">新密码需满足：{strongPasswordMessage}</p>}
           </div>
           <div>
             <Label className="block text-sm font-medium mb-1">确认新密码</Label>
-            <Input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              autoComplete="new-password"
-            />
+            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
           </div>
         </div>
         <div className="flex gap-3">
-          <Button
-            type="submit"
-            disabled={savingPwd}
-          >
+          <Button type="submit" disabled={savingPwd}>
             {savingPwd ? '更新中...' : '更新密码'}
           </Button>
         </div>

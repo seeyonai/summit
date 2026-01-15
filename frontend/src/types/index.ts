@@ -183,6 +183,7 @@ export interface AppCustomization {
   logoUrl?: string | null;
   logoDarkUrl?: string | null;
   faviconUrl?: string | null;
+  requireStrongPassword?: boolean;
   features?: {
     shorthandNotes?: boolean;
   };

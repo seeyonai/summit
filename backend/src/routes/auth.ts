@@ -10,6 +10,7 @@ import { getPreferredLang } from '../utils/lang';
 import { setAuditContext } from '../middleware/audit';
 import path from 'path';
 import fs from 'fs/promises';
+import { isStrongPassword } from '../utils/password';
 
 const router = Router();
 
@@ -30,18 +31,33 @@ interface LocalLoginFormConfig {
   redirectUrl?: string;
 }
 
-async function getLocalLoginFormConfig(): Promise<LocalLoginFormConfig | null> {
+interface CustomizationConfig {
+  requireStrongPassword?: boolean;
+  localLoginForm?: LocalLoginFormConfig;
+}
+
+async function loadCustomizationConfig(): Promise<CustomizationConfig | null> {
   const paths = candidatePaths();
   for (const filePath of paths) {
     try {
       const data = await fs.readFile(filePath, 'utf-8');
-      const json = JSON.parse(data);
-      return json.localLoginForm ?? null;
+      const json = JSON.parse(data) as CustomizationConfig;
+      return json;
     } catch (_) {
       // try next candidate
     }
   }
   return null;
+}
+
+async function getLocalLoginFormConfig(): Promise<LocalLoginFormConfig | null> {
+  const config = await loadCustomizationConfig();
+  return config?.localLoginForm ?? null;
+}
+
+async function isStrongPasswordRequired(): Promise<boolean> {
+  const config = await loadCustomizationConfig();
+  return Boolean(config?.requireStrongPassword);
 }
 
 async function isLocalLoginFormLocked(isAdmin: boolean): Promise<boolean> {
@@ -121,6 +137,10 @@ router.post(
     if (!body?.email || !body?.password) {
       throw badRequest('邮箱和密码为必填项', 'auth.invalid_payload');
     }
+    const strongPasswordRequired = await isStrongPasswordRequired();
+    if (strongPasswordRequired && !isStrongPassword(body.password)) {
+      throw badRequest('密码不符合安全要求：至少8位且包含字母、数字或特殊字符中的任意两种', 'auth.weak_password');
+    }
     const user = await userService.createUser(body.email, body.password, body.name, typeof body.aliases === 'string' ? body.aliases : undefined);
     const token = signJwt({ userId: user._id.toString(), email: user.email, role: user.role });
     setAuditContext(res, {
@@ -164,40 +184,52 @@ router.post(
   })
 );
 
-router.get('/me', authenticate, asyncHandler(async (req, res) => {
-  const r = req as RequestWithUser;
-  if (!r.user) {
-    throw unauthorized('未授权', 'auth.unauthorized');
-  }
-  const user = await userService.getById(r.user.userId);
-  if (!user) {
-    throw unauthorized('未授权', 'auth.unauthorized');
-  }
-  res.json({ user: toAuthUser(user) });
-}));
+router.get(
+  '/me',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const r = req as RequestWithUser;
+    if (!r.user) {
+      throw unauthorized('未授权', 'auth.unauthorized');
+    }
+    const user = await userService.getById(r.user.userId);
+    if (!user) {
+      throw unauthorized('未授权', 'auth.unauthorized');
+    }
+    res.json({ user: toAuthUser(user) });
+  })
+);
 
 // Change password for current user
-router.put('/password', authenticate, asyncHandler(async (req, res) => {
-  const r = req as RequestWithUser;
-  if (!r.user) {
-    throw unauthorized('未授权', 'auth.unauthorized');
-  }
-  const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
-  const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
-  if (!currentPassword || !newPassword) {
-    throw badRequest('当前密码和新密码为必填项', 'auth.invalid_payload');
-  }
-  await userService.updatePassword(r.user.userId, currentPassword, newPassword);
-  const lang = getPreferredLang(req);
-  setAuditContext(res, {
-    action: 'auth_change_password',
-    resource: 'user',
-    resourceId: r.user.userId,
-    status: 'success',
-    force: true,
-  });
-  res.json({ message: lang === 'en' ? 'Password updated' : '密码已更新' });
-}));
+router.put(
+  '/password',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const r = req as RequestWithUser;
+    if (!r.user) {
+      throw unauthorized('未授权', 'auth.unauthorized');
+    }
+    const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
+    const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
+    if (!currentPassword || !newPassword) {
+      throw badRequest('当前密码和新密码为必填项', 'auth.invalid_payload');
+    }
+    const strongPasswordRequired = await isStrongPasswordRequired();
+    if (strongPasswordRequired && !isStrongPassword(newPassword)) {
+      throw badRequest('新密码不符合安全要求：至少8位且包含字母、数字或特殊字符中的任意两种', 'auth.weak_password');
+    }
+    await userService.updatePassword(r.user.userId, currentPassword, newPassword);
+    const lang = getPreferredLang(req);
+    setAuditContext(res, {
+      action: 'auth_change_password',
+      resource: 'user',
+      resourceId: r.user.userId,
+      status: 'success',
+      force: true,
+    });
+    res.json({ message: lang === 'en' ? 'Password updated' : '密码已更新' });
+  })
+);
 
 // Custom sign-on endpoint for external authentication service
 router.post('/custom-sign-on', asyncHandler(async (req, res) => {

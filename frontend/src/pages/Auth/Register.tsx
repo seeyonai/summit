@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import BackgroundPattern from '@/components/BackgroundPattern';
+import { isStrongPassword, STRONG_PASSWORD_REQUIREMENT_EN, STRONG_PASSWORD_REQUIREMENT_ZH } from '@/utils/password';
 
 function Register() {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ function Register() {
   // Detect browser language
   const browserLang = navigator.language.toLowerCase();
   const isZhCN = browserLang.startsWith('zh');
+  const strongPasswordRequired = Boolean(config.requireStrongPassword);
+  const strongPasswordMessage = isZhCN ? STRONG_PASSWORD_REQUIREMENT_ZH : STRONG_PASSWORD_REQUIREMENT_EN;
 
   // Determine registration availability based on localLoginForm config
   const { registrationLocked, registrationMessage, isAdminInitMode } = useMemo(() => {
@@ -76,6 +79,12 @@ function Register() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (strongPasswordRequired && !isStrongPassword(password)) {
+      setError(
+        isZhCN ? `密码不符合安全要求：${STRONG_PASSWORD_REQUIREMENT_ZH}` : `Password does not meet requirements: ${STRONG_PASSWORD_REQUIREMENT_EN}`
+      );
+      return;
+    }
     setLoading(true);
     try {
       await register(email, password, name || undefined, aliases || undefined);
@@ -144,6 +153,7 @@ function Register() {
                         required
                         className="w-full"
                       />
+                      {strongPasswordRequired && <p className="text-xs text-muted-foreground">密码需满足：{strongPasswordMessage}</p>}
                     </div>
 
                     {error && (

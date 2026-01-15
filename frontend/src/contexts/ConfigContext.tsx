@@ -15,6 +15,7 @@ const defaultConfig: AppCustomization = {
   logoUrl: '/logo-rectangle.png',
   logoDarkUrl: '/logo-rectangle.png',
   faviconUrl: undefined,
+  requireStrongPassword: false,
   features: {
     shorthandNotes: false,
   },
