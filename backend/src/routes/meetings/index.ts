@@ -402,17 +402,19 @@ router.post(
       text: string;
     }> = [];
 
+    let timeOffset = 0;
     for (const r of recordings) {
       if (Array.isArray(r.organizedSpeeches)) {
         for (const speech of r.organizedSpeeches) {
           allOrganizedSpeeches.push({
             speaker: getSpeakerLabel(speech.speakerIndex),
-            startTime: speech.startTime,
-            endTime: speech.endTime,
+            startTime: speech.startTime + timeOffset,
+            endTime: speech.endTime + timeOffset,
             text: speech.polishedText || speech.rawText,
           });
         }
       }
+      timeOffset += r.duration || 0;
     }
     allOrganizedSpeeches.sort((a, b) => a.startTime - b.startTime);
 

@@ -11,7 +11,7 @@ import SearchInput from '@/components/SearchInput';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiService } from '@/services/api';
-import type { NoteCreate } from '@/types';
+import type { NoteCreate, NoteUpdate } from '@/types';
 import { useNotes } from '@/hooks/useNotes';
 import NoteForm from '@/components/Note/NoteForm';
 import NoteCard from '@/components/Note/NoteCard';
@@ -41,12 +41,13 @@ function NoteList() {
     setCreateError(null);
   };
 
-  const createNote = async (noteData: NoteCreate) => {
+  const createNote = async (noteData: NoteCreate | NoteUpdate) => {
     try {
       setCreating(true);
       setCreateError(null);
 
-      await apiService.createNote(noteData);
+      // In create mode, we can safely cast to NoteCreate since the form ensures required fields
+      await apiService.createNote(noteData as NoteCreate);
       refetch();
       closeCreateModal();
     } catch (err) {

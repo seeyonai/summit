@@ -393,8 +393,38 @@ export async function addRecordingToMeeting(meetingId: string, recordingId: stri
     throw badRequest('无效的会议 ID', 'meeting.invalid_id');
   }
 
-  const collection = recordingsCollection();
-  await collection.updateOne({ _id: recording._id }, { $set: { meetingId: new ObjectId(meetingId) } });
+  const recordingsCol = recordingsCollection();
+  const meetingsCollection = getCollection<MeetingDocument>(COLLECTIONS.MEETINGS);
+  
+  // Get current meeting to find the next index
+  const meeting = await meetingsCollection.findOne({ _id: new ObjectId(meetingId) });
+  if (!meeting) {
+    throw badRequest('会议不存在', 'meeting.not_found');
+  }
+  
+  const nextIndex = Array.isArray(meeting.recordingOrder) 
+    ? Math.max(...meeting.recordingOrder.map(item => item.index), -1) + 1 
+    : 0;
+  
+  // Update recording with meetingId
+  await recordingsCol.updateOne(
+    { _id: recording._id }, 
+    { $set: { meetingId: new ObjectId(meetingId) } }
+  );
+  
+  // Append to recordingOrder
+  await meetingsCollection.updateOne(
+    { _id: new ObjectId(meetingId) },
+    { 
+      $push: { 
+        recordingOrder: {
+          recordingId: recording._id,
+          index: nextIndex,
+          enabled: true
+        } as any
+      }
+    }
+  );
 
   await mergeHotwordsIntoMeeting(meetingId, recording.hotwords);
   return { message: '录音已附加到会议' };

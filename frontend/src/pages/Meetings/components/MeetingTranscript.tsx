@@ -279,18 +279,31 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
     return buildSpeakerNameMap([...allSpeakerNames, ...concatenatedSpeakerNames]);
   }, [sourceRecordings, meeting.concatenatedRecording]);
 
-  // Combine organized speeches from all recordings
-  const combinedOrganizedSpeeches: OrganizedSpeech[] | undefined = sourceRecordings.reduce<OrganizedSpeech[]>((acc, recording) => {
-    if (recording.organizedSpeeches && recording.organizedSpeeches.length > 0) {
-      return acc.concat(recording.organizedSpeeches);
-    }
-    return acc;
-  }, []);
+  // Combine organized speeches from all recordings with time offset
+  const combinedOrganizedSpeeches: OrganizedSpeech[] = useMemo(() => {
+    let timeOffset = 0;
+    const speeches: OrganizedSpeech[] = [];
 
-  // Also check meeting's concatenated recording
+    for (const recording of sourceRecordings) {
+      if (recording.organizedSpeeches && recording.organizedSpeeches.length > 0) {
+        for (const speech of recording.organizedSpeeches) {
+          speeches.push({
+            ...speech,
+            startTime: speech.startTime + timeOffset,
+            endTime: speech.endTime + timeOffset,
+          });
+        }
+      }
+      timeOffset += recording.duration || 0;
+    }
+
+    return speeches;
+  }, [sourceRecordings]);
+
+  // Also check meeting's concatenated recording (already has correct absolute timestamps)
   const concatenatedRecordingSpeeches = meeting.concatenatedRecording?.organizedSpeeches || [];
 
-  const allOrganizedSpeeches = [...(combinedOrganizedSpeeches || []), ...concatenatedRecordingSpeeches];
+  const allOrganizedSpeeches = [...combinedOrganizedSpeeches, ...concatenatedRecordingSpeeches];
 
   // Highlight search matches in text
   const highlightText = (text: string, query: string) => {

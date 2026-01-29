@@ -176,13 +176,6 @@ function RecordingCard({
             </div>
             <CardDescription className="mt-1 text-xs dark:text-gray-400">{formatDate(recording.createdAt)}</CardDescription>
 
-            {/* Meeting Information */}
-            {showMeetingInfo && recording.meeting && (
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">会议:</span>
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{recording.meeting.title}</span>
-              </div>
-            )}
           </div>
 
           <div className="flex items-start gap-1">
@@ -215,25 +208,34 @@ function RecordingCard({
               onClick={(e) => toggleAudioPlayback(recordingId, audioUrlFor(recordingId), e)}
               className="absolute inset-0 flex items-center justify-center bg-background/0 hover:bg-background/10 dark:hover:bg-foreground/5 transition-colors opacity-0 group-hover:opacity-100 transition-opacity duration-100"
             >
-              <div
-                className={`${
-                  variant === 'compact' ? 'w-12 h-12' : 'w-14 h-14'
-                } bg-background/70 dark:bg-background/70 backdrop-blur-sm rounded-full border border-primary/20 flex items-center justify-center shadow-lg dark:shadow-primary/20 group-hover:scale-105 transition-transform`}
-              >
-                {playingAudio === recordingId ? (
-                  <PauseIcon
-                    className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${
-                      variant === 'concatenated' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'
-                    }`}
-                  />
-                ) : (
-                  <PlayIcon
-                    className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${
-                      variant === 'concatenated' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'
-                    } ml-1`}
-                  />
-                )}
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`${
+                        variant === 'compact' ? 'w-12 h-12' : 'w-14 h-14'
+                      } bg-background/70 dark:bg-background/70 backdrop-blur-sm rounded-full border border-primary/20 flex items-center justify-center shadow-lg dark:shadow-primary/20 group-hover:scale-105 transition-transform`}
+                    >
+                      {playingAudio === recordingId ? (
+                        <PauseIcon
+                          className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${
+                            variant === 'concatenated' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'
+                          }`}
+                        />
+                      ) : (
+                        <PlayIcon
+                          className={`${variant === 'compact' ? 'w-5 h-5' : 'w-6 h-6'} ${
+                            variant === 'concatenated' ? 'text-primary dark:text-primary/80' : 'text-primary dark:text-primary/80'
+                          } ml-1`}
+                        />
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{playingAudio === recordingId ? '暂停播放' : '播放音频'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </button>
           </div>
 
@@ -257,33 +259,92 @@ function RecordingCard({
           {showTranscriptionPreview && recording.transcription && <TranscriptionPreview transcription={recording.transcription} />}
         </div>
 
+
         {/* Action Buttons - Always at bottom */}
         {showActions && (
           <div className="flex gap-2 pt-4 mt-auto">
-            <Button size="sm" variant="outline" className="flex-1" onClick={handleAction(defaultActions.onView)}>
-              <EyeIcon className="w-3 h-3 mr-1" />
-              {variant === 'compact' ? '查看' : '详情'}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" className="flex-1" onClick={handleAction(defaultActions.onView)}>
+                    <EyeIcon className="w-3 h-3 mr-1" />
+                    {variant === 'compact' ? '查看' : '详情'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{variant === 'compact' ? '查看详情' : '查看录音详情'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-            {defaultActions.onAssociate && (
-              <Button size="sm" variant="outline" onClick={handleAction(defaultActions.onAssociate)}>
-                <LinkIcon className="w-3 h-3" />
-              </Button>
+            {recording.meeting && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/meetings/${recording.meeting?._id}`);
+                      }}
+                    >
+                      <UsersIcon className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>查看关联会议</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
 
-            <Button size="sm" variant="outline" onClick={handleAction(defaultActions.onDownload)}>
-              <DownloadIcon className="w-3 h-3" />
-            </Button>
+            {defaultActions.onAssociate && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="sm" variant="outline" onClick={handleAction(defaultActions.onAssociate)}>
+                      <LinkIcon className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>关联到会议</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" onClick={handleAction(defaultActions.onDownload)}>
+                    <DownloadIcon className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>下载音频</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             {defaultActions.onDelete && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10 border-destructive/20"
-                onClick={handleAction(defaultActions.onDelete)}
-              >
-                <TrashIcon className="w-3 h-3" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive/90 hover:bg-destructive/10 border-destructive/20"
+                      onClick={handleAction(defaultActions.onDelete)}
+                    >
+                      <TrashIcon className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>删除录音</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         )}
