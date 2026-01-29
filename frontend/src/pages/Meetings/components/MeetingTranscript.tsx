@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import FoldableCard from '@/components/FoldableCard';
 import { Input } from '@/components/ui/input';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -352,248 +352,235 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
 
       {/* Speaker Statistics */}
       {speakerStats && Object.keys(speakerStats).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>发言人统计</CardTitle>
-            <CardDescription>会议中各发言人的参与情况</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {(Object.values(speakerStats) as Array<{ index: number; segments: number; totalDuration: number }>).map((speaker) => {
-                const minutes = Math.floor(speaker.totalDuration / 60);
-                const seconds = Math.floor(speaker.totalDuration % 60);
-                return (
-                  <div key={speaker.index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-chart-4/30 to-chart-5/30 rounded-full flex items-center justify-center text-foreground font-semibold">
-                        {speakerNameMap[speaker.index]?.[0] || speaker.index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{getSpeakerDisplayName(speaker.index, speakerNameMap, '发言人')}</p>
-                        <p className="text-sm text-muted-foreground">{speaker.segments} 个发言片段</p>
-                      </div>
+        <FoldableCard title="发言人统计" description="会议中各发言人的参与情况">
+          <div className="space-y-4">
+            {(Object.values(speakerStats) as Array<{ index: number; segments: number; totalDuration: number }>).map((speaker) => {
+              const minutes = Math.floor(speaker.totalDuration / 60);
+              const seconds = Math.floor(speaker.totalDuration % 60);
+              return (
+                <div key={speaker.index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-chart-4/30 to-chart-5/30 rounded-full flex items-center justify-center text-foreground font-semibold">
+                      {speakerNameMap[speaker.index]?.[0] || speaker.index + 1}
                     </div>
-                    <Badge className={speakerColors[speaker.index % speakerColors.length]}>
-                      {minutes}分{seconds}秒
-                    </Badge>
+                    <div>
+                      <p className="font-medium">{getSpeakerDisplayName(speaker.index, speakerNameMap, '发言人')}</p>
+                      <p className="text-sm text-muted-foreground">{speaker.segments} 个发言片段</p>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  <Badge className={speakerColors[speaker.index % speakerColors.length]}>
+                    {minutes}分{seconds}秒
+                  </Badge>
+                </div>
+              );
+            })}
+          </div>
+        </FoldableCard>
       )}
 
       {/* Organized Speeches */}
       {allOrganizedSpeeches.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <UsersIcon className="w-5 h-5" />
-                  发言整理
-                </CardTitle>
-                <CardDescription>按发言人整理的会议发言内容</CardDescription>
-              </div>
-              {meeting.finalTranscript && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button onClick={exportComprehensiveDocx} variant="outline" size="sm">
-                        <DownloadIcon className="w-4 h-4 mr-2" />
-                        导出完整记录
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>导出包含会议信息、发言整理和完整记录的文档</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {allOrganizedSpeeches
-                .sort((a, b) => a.startTime - b.startTime)
-                .map((speech, index) => {
-                  const speakerColorClass = speakerColors[speech.speakerIndex % speakerColors.length];
-                  const minutes = Math.floor(speech.startTime / 60);
-                  const seconds = Math.floor(speech.startTime % 60);
-                  const endMinutes = Math.floor(speech.endTime / 60);
-                  const endSeconds = Math.floor(speech.endTime % 60);
+        <FoldableCard
+          title={
+            <span className="flex items-center gap-2">
+              <UsersIcon className="w-5 h-5" />
+              发言整理
+            </span>
+          }
+          description="按发言人整理的会议发言内容"
+          headerAction={
+            meeting.finalTranscript && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={exportComprehensiveDocx} variant="outline" size="sm">
+                      <DownloadIcon className="w-4 h-4 mr-2" />
+                      导出完整记录
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>导出包含会议信息、发言整理和完整记录的文档</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )
+          }
+        >
+          <div className="space-y-4">
+            {allOrganizedSpeeches
+              .sort((a, b) => a.startTime - b.startTime)
+              .map((speech, index) => {
+                const speakerColorClass = speakerColors[speech.speakerIndex % speakerColors.length];
+                const minutes = Math.floor(speech.startTime / 60);
+                const seconds = Math.floor(speech.startTime % 60);
+                const endMinutes = Math.floor(speech.endTime / 60);
+                const endSeconds = Math.floor(speech.endTime % 60);
 
-                  return (
-                    <div key={index} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <Badge className={speakerColorClass}>{getSpeakerDisplayName(speech.speakerIndex, speakerNameMap, '发言人')}</Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {minutes}:{seconds.toString().padStart(2, '0')} - {endMinutes}:{endSeconds.toString().padStart(2, '0')}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        {speech.polishedText && (
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-1">整理内容：</p>
-                            <p className="leading-relaxed">{speech.polishedText}</p>
-                          </div>
-                        )}
-                        {speech.rawText && (
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-1">原始内容：</p>
-                            <p className="text-muted-foreground text-sm leading-relaxed italic">{speech.rawText}</p>
-                          </div>
-                        )}
+                return (
+                  <div key={index} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <Badge className={speakerColorClass}>{getSpeakerDisplayName(speech.speakerIndex, speakerNameMap, '发言人')}</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {minutes}:{seconds.toString().padStart(2, '0')} - {endMinutes}:{endSeconds.toString().padStart(2, '0')}
+                        </span>
                       </div>
                     </div>
-                  );
-                })}
-            </div>
-          </CardContent>
-        </Card>
+                    <div className="space-y-3">
+                      {speech.polishedText && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">整理内容：</p>
+                          <p className="leading-relaxed">{speech.polishedText}</p>
+                        </div>
+                      )}
+                      {speech.rawText && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">原始内容：</p>
+                          <p className="text-muted-foreground text-sm leading-relaxed italic">{speech.rawText}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </FoldableCard>
       )}
 
       {/* Transcript Card */}
-      <Card className="relative">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>会议记录</CardTitle>
-              <CardDescription>完整的会议文字记录</CardDescription>
-            </div>
-            {meeting.finalTranscript && (
-              <TooltipProvider>
-                <div className="flex items-center gap-2">
-                  {/* Edit button - only for owner */}
-                  {!isViewerOnly && (
-                    <Button onClick={() => setIsEditorOpen(true)}>
-                      <PencilIcon className="w-4 h-4 mr-2" />
-                      编辑
-                    </Button>
-                  )}
-                  {/* Regenerate button - only for owner */}
-                  {!isViewerOnly && (
-                    <Button
-                      onClick={() => setIsRegenerateDialogOpen(true)}
-                      variant="outline"
-                      disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
-                    >
-                      <RefreshCwIcon className={`w-4 h-4 mr-2 ${isGeneratingFromRecordings ? 'animate-spin' : ''}`} />
-                      {isGeneratingFromRecordings ? '生成中...' : '重新生成'}
-                    </Button>
-                  )}
+      <FoldableCard
+        title="会议记录"
+        description="完整的会议文字记录"
+        headerAction={
+          meeting.finalTranscript && (
+            <TooltipProvider>
+              <div className="flex items-center gap-2">
+                {/* Edit button - only for owner */}
+                {!isViewerOnly && (
+                  <Button onClick={() => setIsEditorOpen(true)}>
+                    <PencilIcon className="w-4 h-4 mr-2" />
+                    编辑
+                  </Button>
+                )}
+                {/* Regenerate button - only for owner */}
+                {!isViewerOnly && (
+                  <Button
+                    onClick={() => setIsRegenerateDialogOpen(true)}
+                    variant="outline"
+                    disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
+                  >
+                    <RefreshCwIcon className={`w-4 h-4 mr-2 ${isGeneratingFromRecordings ? 'animate-spin' : ''}`} />
+                    {isGeneratingFromRecordings ? '生成中...' : '重新生成'}
+                  </Button>
+                )}
 
-                  {/* Spacer */}
-                  <div className="w-px h-6 bg-border mx-1" />
+                {/* Spacer */}
+                <div className="w-px h-6 bg-border mx-1" />
 
-                  {/* Copy */}
+                {/* Copy */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={copyToClipboard} variant="outline" size="icon">
+                      <CopyIcon className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>复制</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Fullscreen */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={() => setIsFullscreen(true)} variant="outline" size="icon">
+                      <MaximizeIcon className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>全屏</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Export dropdown */}
+                <DropdownMenu>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={copyToClipboard} variant="outline" size="icon">
-                        <CopyIcon className="w-4 h-4" />
-                      </Button>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <DownloadIcon className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>复制</p>
+                      <p>导出</p>
                     </TooltipContent>
                   </Tooltip>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => exportTranscript('txt')}>
+                      <FileTextIcon className="w-4 h-4 mr-2" />
+                      文本文件 (.txt)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportTranscript('docx')}>
+                      <FileTextIcon className="w-4 h-4 mr-2" />
+                      Word 文档 (.docx)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-                  {/* Fullscreen */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button onClick={() => setIsFullscreen(true)} variant="outline" size="icon">
-                        <MaximizeIcon className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>全屏</p>
-                    </TooltipContent>
-                  </Tooltip>
+                {/* Spacer */}
+                <div className="w-px h-6 bg-border mx-1" />
 
-                  {/* Export dropdown */}
-                  <DropdownMenu>
+                {/* Search - expandable */}
+                <div className="flex items-center">
+                  {isSearchExpanded ? (
+                    <div className="relative flex items-center">
+                      <SearchIcon className="absolute left-3 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="搜索..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onBlur={() => {
+                          if (!searchQuery) {
+                            setIsSearchExpanded(false);
+                          }
+                        }}
+                        className="pl-9 pr-16 w-[200px]"
+                      />
+                      {searchQuery && (
+                        <div className="absolute right-2 flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">{matchCount}</span>
+                          <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} className="h-5 w-5 p-0">
+                            <XIcon className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon">
-                            <DownloadIcon className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
+                        <Button onClick={() => setIsSearchExpanded(true)} variant="outline" size="icon">
+                          <SearchIcon className="w-4 h-4" />
+                        </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>导出</p>
+                        <p>搜索</p>
                       </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => exportTranscript('txt')}>
-                        <FileTextIcon className="w-4 h-4 mr-2" />
-                        文本文件 (.txt)
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => exportTranscript('docx')}>
-                        <FileTextIcon className="w-4 h-4 mr-2" />
-                        Word 文档 (.docx)
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  {/* Spacer */}
-                  <div className="w-px h-6 bg-border mx-1" />
-
-                  {/* Search - expandable */}
-                  <div className="flex items-center">
-                    {isSearchExpanded ? (
-                      <div className="relative flex items-center">
-                        <SearchIcon className="absolute left-3 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          ref={searchInputRef}
-                          type="text"
-                          placeholder="搜索..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          onBlur={() => {
-                            if (!searchQuery) {
-                              setIsSearchExpanded(false);
-                            }
-                          }}
-                          className="pl-9 pr-16 w-[200px]"
-                        />
-                        {searchQuery && (
-                          <div className="absolute right-2 flex items-center gap-1">
-                            <span className="text-xs text-muted-foreground">{matchCount}</span>
-                            <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} className="h-5 w-5 p-0">
-                              <XIcon className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button onClick={() => setIsSearchExpanded(true)} variant="outline" size="icon">
-                            <SearchIcon className="w-4 h-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>搜索</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
-
-                  {/* Chat with AI */}
-                  <Button onClick={() => setIsChatOpen(true)} variant="outline">
-                    <SparklesIcon className="w-4 h-4 mr-2" />
-                    与记录对话
-                  </Button>
+                  )}
                 </div>
-              </TooltipProvider>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
+
+                {/* Chat with AI */}
+                <Button onClick={() => setIsChatOpen(true)} variant="outline">
+                  <SparklesIcon className="w-4 h-4 mr-2" />
+                  与记录对话
+                </Button>
+              </div>
+            </TooltipProvider>
+          )
+        }
+      >
           {meeting.finalTranscript ? (
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl p-6 border border-border/50">
@@ -637,8 +624,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
               )}
             </Empty>
           )}
-        </CardContent>
-      </Card>
+      </FoldableCard>
 
       {/* Transcript Editor Dialog */}
       {meeting.finalTranscript && (
