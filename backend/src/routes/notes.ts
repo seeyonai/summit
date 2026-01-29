@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import noteService from '../services/NoteService';
 import { NoteCreate, NoteUpdate, Note } from '../types';
+import { RequestWithUser } from '../types/auth';
 
 const router = Router();
 
@@ -21,12 +22,17 @@ const serializeNote = (note: Note) => ({
   updatedAt: toIsoString(note.updatedAt),
 });
 
-// Get notes (default limit 100; use ?all=true to fetch all)
+// Get notes for current user (default limit 100; use ?all=true to fetch all)
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const r = req as RequestWithUser;
+    const userId = r.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const all = typeof req.query.all === 'string' && ['true', '1', 'yes'].includes(req.query.all.toLowerCase());
     const desired = all ? 'all' : 101;
-    const list = await noteService.getAllNotes(desired);
+    const list = r.user?.role === 'admin' ? await noteService.getAllNotes(desired) : await noteService.getNotesForUser(userId, desired);
     const overLimit = !all && list.length > 100;
     const items = overLimit ? list.slice(0, 100) : list;
     const fetchedAll = all || !overLimit;
@@ -60,6 +66,11 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create new note
 router.post('/', async (req: Request, res: Response) => {
   try {
+    const r = req as RequestWithUser;
+    const userId = r.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const request: NoteCreate = req.body;
 
     // Validate required fields
@@ -70,7 +81,7 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const note = await noteService.createNote(request);
+    const note = await noteService.createNote(request, userId);
     res.status(201).json(serializeNote(note));
   } catch (error) {
     console.error('Error creating note:', error);

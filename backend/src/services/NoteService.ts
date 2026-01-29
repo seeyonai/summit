@@ -38,6 +38,41 @@ export const getAllNotes = async (limit?: number | 'all'): Promise<Note[]> => {
   return notes.map(noteDocumentToNote);
 };
 
+export const getNotesForUser = async (userId: string, limit?: number | 'all'): Promise<Note[]> => {
+  const notesCollection = getNotesCollection();
+  const uid = new ObjectId(userId);
+
+  const pipeline: any[] = [
+    {
+      $match: { ownerId: uid }
+    },
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $lookup: {
+        from: COLLECTIONS.MEETINGS,
+        localField: 'meetingId',
+        foreignField: '_id',
+        as: 'meeting'
+      }
+    },
+    {
+      $addFields: {
+        meeting: { $arrayElemAt: ['$meeting', 0] }
+      }
+    }
+  ];
+
+  if (limit !== 'all') {
+    const limitCount = typeof limit === 'number' ? limit : 100;
+    pipeline.push({ $limit: limitCount });
+  }
+
+  const notes = await notesCollection.aggregate<NoteDocument>(pipeline).toArray();
+  return notes.map(noteDocumentToNote);
+};
+
 export const getNoteById = async (id: string): Promise<Note | null> => {
   const collection = getNotesCollection();
   const note = await collection.findOne({ _id: new ObjectId(id) });
@@ -134,6 +169,7 @@ export const disassociateFromMeeting = async (noteId: string): Promise<Note | nu
 
 export const noteService = {
   getAllNotes,
+  getNotesForUser,
   getNoteById,
   getNotesByMeetingId,
   createNote,
