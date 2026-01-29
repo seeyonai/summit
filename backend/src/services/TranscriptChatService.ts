@@ -47,7 +47,7 @@ ${transcript.slice(0, 8000)}${transcript.length > 8000 ? '...' : ''}
         temperature: 0.8,
         max_tokens: 500,
         response_format: { type: 'json_object' },
-      });
+      }, 'fast');
 
       const content = completion.choices[0]?.message?.content;
       if (!content) {

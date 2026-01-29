@@ -370,6 +370,7 @@ router.post(
   requireOwner(),
   asyncHandler(async (req: Request, res: Response) => {
     const { meetingId } = req.params;
+    const { instruction } = req.body as { instruction?: string };
     const lang = getPreferredLang(req);
 
     const meeting = await meetingService.getMeetingById(meetingId);
@@ -439,7 +440,7 @@ router.post(
     }
 
     // Generate polished transcript using AI
-    const systemPrompt = `你是一位专业的会议纪要撰写专家。请根据提供的会议录音转录内容，生成一份结构清晰、内容完整的会议纪要。
+    let systemPrompt = `你是一位专业的会议纪要撰写专家。请根据提供的会议录音转录内容，生成一份结构清晰、内容完整的会议纪要。
 
 要求：
 1. 使用 Markdown 格式输出
@@ -448,6 +449,10 @@ router.post(
 4. 如果有发言人标注，请在发言摘要中保留发言人信息
 5. 语言流畅，表达专业
 6. 不要编造内容，仅基于提供的转录内容进行整理`;
+
+    if (instruction?.trim()) {
+      systemPrompt += `\n\n用户额外要求：${instruction.trim()}`;
+    }
 
     const userPrompt = `会议标题：${meeting.title}
 ${meeting.summary ? `会议简介：${meeting.summary}\n` : ''}

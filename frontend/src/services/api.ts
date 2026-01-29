@@ -452,8 +452,8 @@ class ApiService {
     return this.put(`/api/meetings/${id}`, data);
   }
 
-  async generateMeetingFinalTranscript(id: string): Promise<{ success: boolean; finalTranscript: string; message?: string }> {
-    return this.post(`/api/meetings/${id}/final-transcript`);
+  async generateMeetingFinalTranscript(id: string, instruction?: string): Promise<{ success: boolean; finalTranscript: string; message?: string }> {
+    return this.post(`/api/meetings/${id}/final-transcript`, { instruction });
   }
 
   async updateMeetingTranscript(id: string, finalTranscript: string): Promise<{ success: boolean; message: string; meeting: Meeting }> {

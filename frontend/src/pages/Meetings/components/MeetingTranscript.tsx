@@ -1,11 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ButtonGroup } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AlertDialog,
@@ -25,12 +24,12 @@ import {
   MessageSquareIcon,
   UsersIcon,
   HashIcon,
-  EyeIcon,
   SearchIcon,
   XIcon,
   MaximizeIcon,
-  MessageSquareTextIcon,
+  SparklesIcon,
   RefreshCwIcon,
+  PencilIcon,
 } from 'lucide-react';
 import AnnotatedMarkdown from '@/components/AnnotatedMarkdown';
 import markdownDocx, { Packer } from 'markdown-docx';
@@ -39,6 +38,7 @@ import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames
 import TranscriptUploadDialog from './TranscriptUploadDialog';
 import FullscreenMarkdownViewer from './FullscreenMarkdownViewer';
 import TranscriptChatPanel from './TranscriptChat/TranscriptChatPanel';
+import TranscriptEditorDialog from './TranscriptEditorDialog';
 import { apiService } from '@/services/api';
 
 interface MeetingTranscriptProps {
@@ -50,12 +50,36 @@ interface MeetingTranscriptProps {
 function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: MeetingTranscriptProps) {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [viewMode, setViewMode] = useState<'text' | 'markdown'>('text');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isGeneratingFromRecordings, setIsGeneratingFromRecordings] = useState(false);
   const [isRegenerateDialogOpen, setIsRegenerateDialogOpen] = useState(false);
+  const [regenerateInstruction, setRegenerateInstruction] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isSearchExpanded) {
+        setIsSearchExpanded(false);
+        setSearchQuery('');
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isSearchExpanded]);
+
+  const handleEditorSave = async (content: string) => {
+    await handleTranscriptAdd(content);
+  };
 
   const exportTranscript = async (format: 'txt' | 'docx') => {
     if (!meeting.finalTranscript) return;
@@ -171,14 +195,14 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
     }
   };
 
-  const handleGenerateTranscriptFromRecordings = async () => {
+  const handleGenerateTranscriptFromRecordings = async (instruction?: string) => {
     if (!meeting.recordings || meeting.recordings.length === 0) {
       return;
     }
 
     setIsGeneratingFromRecordings(true);
     try {
-      const response = await apiService.generateMeetingFinalTranscript(meeting._id);
+      const response = await apiService.generateMeetingFinalTranscript(meeting._id, instruction);
       if (response.success && response.finalTranscript && onMeetingUpdate) {
         onMeetingUpdate({
           ...meeting,
@@ -434,124 +458,146 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
 
       {/* Transcript Card */}
       <Card className="relative">
-        <CardHeader className="pb-0">
-          <div className="space-y-4">
-            <div className="pb-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>会议记录</CardTitle>
-                  <CardDescription>完整的会议文字记录</CardDescription>
-                </div>
-                {meeting.finalTranscript && (
-                  <div className="flex gap-2">
-                    <TooltipProvider>
-                      <ButtonGroup>
-                        <Button onClick={() => setViewMode('text')} variant={viewMode === 'text' ? 'default' : 'outline'}>
-                          <FileTextIcon className="w-4 h-4 mr-2" />
-                          文本
-                        </Button>
-                        <Button onClick={() => setViewMode('markdown')} variant={viewMode === 'markdown' ? 'default' : 'outline'}>
-                          <EyeIcon className="w-4 h-4 mr-2" />
-                          预览
-                        </Button>
-                      </ButtonGroup>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button onClick={() => setIsFullscreen(true)} variant="outline" size="icon">
-                            <MaximizeIcon className="w-4 h-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>全屏</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button onClick={copyToClipboard} variant="outline" size="icon">
-                            <CopyIcon className="w-4 h-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>复制</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      {!isViewerOnly && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              onClick={() => setIsRegenerateDialogOpen(true)}
-                              variant="outline"
-                              size="icon"
-                              disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
-                            >
-                              <RefreshCwIcon className={`w-4 h-4 ${isGeneratingFromRecordings ? 'animate-spin' : ''}`} />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{isGeneratingFromRecordings ? '生成中...' : '重新生成'}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      <Select onValueChange={(value) => exportTranscript(value as 'txt' | 'docx')}>
-                        <SelectTrigger className="w-[180px]">
-                          <DownloadIcon className="w-4 h-4 mr-2" />
-                          <SelectValue placeholder="导出" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="txt">文本文件 (.txt)</SelectItem>
-                          <SelectItem value="docx">Word 文档 (.docx)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TooltipProvider>
-                  </div>
-                )}
-                <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="搜索会议记录..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-20"
-                  />
-                  {searchQuery && (
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{matchCount} 个匹配</span>
-                      <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} className="h-6 w-6 p-0">
-                        <XIcon className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <Button onClick={() => setIsChatOpen(true)} variant="outline">
-                  <MessageSquareTextIcon className="w-4 h-4 mr-2" />
-                  与记录对话
-                </Button>
-              </div>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>会议记录</CardTitle>
+              <CardDescription>完整的会议文字记录</CardDescription>
             </div>
+            {meeting.finalTranscript && (
+              <TooltipProvider>
+                <div className="flex items-center gap-2">
+                  {/* Edit button - only for owner */}
+                  {!isViewerOnly && (
+                    <Button onClick={() => setIsEditorOpen(true)}>
+                      <PencilIcon className="w-4 h-4 mr-2" />
+                      编辑
+                    </Button>
+                  )}
+                  {/* Regenerate button - only for owner */}
+                  {!isViewerOnly && (
+                    <Button
+                      onClick={() => setIsRegenerateDialogOpen(true)}
+                      variant="outline"
+                      disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
+                    >
+                      <RefreshCwIcon className={`w-4 h-4 mr-2 ${isGeneratingFromRecordings ? 'animate-spin' : ''}`} />
+                      {isGeneratingFromRecordings ? '生成中...' : '重新生成'}
+                    </Button>
+                  )}
+
+                  {/* Spacer */}
+                  <div className="w-px h-6 bg-border mx-1" />
+
+                  {/* Copy */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={copyToClipboard} variant="outline" size="icon">
+                        <CopyIcon className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>复制</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Fullscreen */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={() => setIsFullscreen(true)} variant="outline" size="icon">
+                        <MaximizeIcon className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>全屏</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Export dropdown */}
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon">
+                            <DownloadIcon className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>导出</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => exportTranscript('txt')}>
+                        <FileTextIcon className="w-4 h-4 mr-2" />
+                        文本文件 (.txt)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => exportTranscript('docx')}>
+                        <FileTextIcon className="w-4 h-4 mr-2" />
+                        Word 文档 (.docx)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Spacer */}
+                  <div className="w-px h-6 bg-border mx-1" />
+
+                  {/* Search - expandable */}
+                  <div className="flex items-center">
+                    {isSearchExpanded ? (
+                      <div className="relative flex items-center">
+                        <SearchIcon className="absolute left-3 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          ref={searchInputRef}
+                          type="text"
+                          placeholder="搜索..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onBlur={() => {
+                            if (!searchQuery) {
+                              setIsSearchExpanded(false);
+                            }
+                          }}
+                          className="pl-9 pr-16 w-[200px]"
+                        />
+                        {searchQuery && (
+                          <div className="absolute right-2 flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground">{matchCount}</span>
+                            <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} className="h-5 w-5 p-0">
+                              <XIcon className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button onClick={() => setIsSearchExpanded(true)} variant="outline" size="icon">
+                            <SearchIcon className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>搜索</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+
+                  {/* Chat with AI */}
+                  <Button onClick={() => setIsChatOpen(true)} variant="outline">
+                    <SparklesIcon className="w-4 h-4 mr-2" />
+                    与记录对话
+                  </Button>
+                </div>
+              </TooltipProvider>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           {meeting.finalTranscript ? (
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl p-6 border border-border/50">
-                {viewMode === 'text' ? (
-                  <div className="prose max-w-none">
-                    {searchQuery ? (
-                      <div
-                        className="text-foreground whitespace-pre-wrap leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: highlightedTranscript || '' }}
-                      />
-                    ) : (
-                      <p className="text-foreground whitespace-pre-wrap leading-relaxed">{meeting.finalTranscript}</p>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <AnnotatedMarkdown content={searchQuery ? highlightedTranscript || '' : meeting.finalTranscript} />
-                  </div>
-                )}
+                <AnnotatedMarkdown content={searchQuery ? highlightedTranscript || '' : meeting.finalTranscript} />
                 {/* AI Warning */}
                 <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <div className="flex items-start gap-2">
@@ -581,7 +627,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
                     <Button
                       variant="outline"
                       disabled={isGeneratingFromRecordings || !meeting.recordings || meeting.recordings.length === 0}
-                      onClick={handleGenerateTranscriptFromRecordings}
+                      onClick={() => handleGenerateTranscriptFromRecordings()}
                     >
                       {isGeneratingFromRecordings ? '生成中...' : '根据录音转录'}
                     </Button>
@@ -593,6 +639,16 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
           )}
         </CardContent>
       </Card>
+
+      {/* Transcript Editor Dialog */}
+      {meeting.finalTranscript && (
+        <TranscriptEditorDialog
+          open={isEditorOpen}
+          onOpenChange={setIsEditorOpen}
+          content={meeting.finalTranscript}
+          onSave={handleEditorSave}
+        />
+      )}
 
       {/* Upload Dialog */}
       <TranscriptUploadDialog
@@ -613,20 +669,33 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
       )}
 
       {/* Re-generate Confirmation Dialog */}
-      <AlertDialog open={isRegenerateDialogOpen} onOpenChange={setIsRegenerateDialogOpen}>
+      <AlertDialog open={isRegenerateDialogOpen} onOpenChange={(open) => {
+        setIsRegenerateDialogOpen(open);
+        if (!open) setRegenerateInstruction('');
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>重新生成会议记录？</AlertDialogTitle>
             <AlertDialogDescription>
-              这将根据会议录音重新生成完整的会议记录。当前的记录内容将被覆盖，此操作无法撤销。确定要继续吗？
+              这将根据会议录音重新生成完整的会议记录。当前的记录内容将被覆盖，此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium mb-2 block">额外指令（可选）</label>
+            <textarea
+              value={regenerateInstruction}
+              onChange={(e) => setRegenerateInstruction(e.target.value)}
+              placeholder="例如：请特别关注关于预算和时间线的讨论"
+              className="w-full h-24 px-3 py-2 text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setIsRegenerateDialogOpen(false);
-                handleGenerateTranscriptFromRecordings();
+                handleGenerateTranscriptFromRecordings(regenerateInstruction || undefined);
+                setRegenerateInstruction('');
               }}
             >
               确定重新生成
