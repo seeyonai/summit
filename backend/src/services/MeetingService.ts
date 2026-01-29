@@ -298,11 +298,27 @@ export const removeRecordingFromMeeting = async (meetingId: string, recordingId:
   const meetingsCollection = getMeetingsCollection();
   const recordingsCollection = getCollection<{ _id: ObjectId; meetingId?: ObjectId }>(COLLECTIONS.RECORDINGS);
 
+  // Get the meeting first to check if this is the concatenated recording
+  const meeting = await meetingsCollection.findOne({ _id: new ObjectId(meetingId) });
+  if (!meeting) {
+    return null;
+  }
+
   // Clear meetingId on the recording document (how the relationship is stored)
   await recordingsCollection.updateOne({ _id: new ObjectId(recordingId), meetingId: new ObjectId(meetingId) }, { $unset: { meetingId: '' } });
 
-  // Touch the meeting's updatedAt
-  await meetingsCollection.updateOne({ _id: new ObjectId(meetingId) }, { $set: { updatedAt: new Date() } });
+  // Update operations for the meeting
+  const updateOperations: Record<string, any> = {
+    $set: { updatedAt: new Date() },
+  };
+
+  // If the removed recording is the concatenated recording, clear it
+  if (meeting.concatenatedRecording && meeting.concatenatedRecording._id.toString() === recordingId) {
+    updateOperations.$unset = { concatenatedRecording: '', combinedRecording: '' };
+  }
+
+  // Apply updates to the meeting
+  await meetingsCollection.updateOne({ _id: new ObjectId(meetingId) }, updateOperations);
 
   // Return the updated meeting with recordings
   return getMeetingById(meetingId);
