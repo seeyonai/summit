@@ -131,7 +131,7 @@ function NoteList() {
               <PlusIcon className="w-5 h-5 mr-2" />
               新建速记
             </Button>
-            <Button onClick={() => navigate('/notes/new/zen')} size="lg" variant="outline">
+            <Button onClick={() => navigate('/notes/new/zen')} size="lg">
               <ZapIcon className="w-5 h-5 mr-2" />
               专注模式
             </Button>
