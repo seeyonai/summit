@@ -35,6 +35,7 @@ import {
 import AnnotatedMarkdown from '@/components/AnnotatedMarkdown';
 import markdownDocx, { Packer } from 'markdown-docx';
 import StatisticsCard from '@/components/StatisticsCard';
+import { buildSpeakerNameMap, getSpeakerDisplayName } from '@/utils/speakerNames';
 import TranscriptUploadDialog from './TranscriptUploadDialog';
 import FullscreenMarkdownViewer from './FullscreenMarkdownViewer';
 import TranscriptChatPanel from './TranscriptChat/TranscriptChatPanel';
@@ -224,25 +225,35 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
   const sourceRecordings = (meeting.recordings || []).filter((recording) => recording.source !== 'concatenated');
 
   // Analyze speaker segments if available
-  const speakerStats = sourceRecordings.reduce((acc, recording) => {
-    if (recording.speakerSegments) {
-      recording.speakerSegments.forEach((segment) => {
-        const speakerId = `speaker_${segment.speakerIndex}`;
-        if (!acc[speakerId]) {
-          acc[speakerId] = {
-            index: segment.speakerIndex,
-            segments: 0,
-            totalDuration: 0,
-          };
-        }
-        acc[speakerId].segments++;
-        acc[speakerId].totalDuration += segment.endTime - segment.startTime;
-      });
-    }
-    return acc;
-  }, {} as Record<string, { index: number; segments: number; totalDuration: number }>);
+  const speakerStats = sourceRecordings.reduce(
+    (acc, recording) => {
+      if (recording.speakerSegments) {
+        recording.speakerSegments.forEach((segment) => {
+          const speakerId = `speaker_${segment.speakerIndex}`;
+          if (!acc[speakerId]) {
+            acc[speakerId] = {
+              index: segment.speakerIndex,
+              segments: 0,
+              totalDuration: 0,
+            };
+          }
+          acc[speakerId].segments++;
+          acc[speakerId].totalDuration += segment.endTime - segment.startTime;
+        });
+      }
+      return acc;
+    },
+    {} as Record<string, { index: number; segments: number; totalDuration: number }>,
+  );
 
   const speakerColors = ['bg-badge-info', 'bg-badge-success', 'bg-badge-warning', 'bg-badge-accent', 'bg-badge-primary'];
+
+  // Build speaker name map from recordings
+  const speakerNameMap = useMemo(() => {
+    const allSpeakerNames = sourceRecordings.flatMap((r) => r.speakerNames || []);
+    const concatenatedSpeakerNames = meeting.concatenatedRecording?.speakerNames || [];
+    return buildSpeakerNameMap([...allSpeakerNames, ...concatenatedSpeakerNames]);
+  }, [sourceRecordings, meeting.concatenatedRecording]);
 
   // Combine organized speeches from all recordings
   const combinedOrganizedSpeeches: OrganizedSpeech[] | undefined = sourceRecordings.reduce<OrganizedSpeech[]>((acc, recording) => {
@@ -266,7 +277,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
       .map((part) =>
         part.toLowerCase() === query.toLowerCase()
           ? `<mark class="bg-yellow-200 dark:bg-yellow-900/50 text-foreground rounded px-0.5">${part}</mark>`
-          : part
+          : part,
       )
       .join('');
   };
@@ -331,10 +342,10 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
                   <div key={speaker.index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-chart-4/30 to-chart-5/30 rounded-full flex items-center justify-center text-foreground font-semibold">
-                        {speaker.index + 1}
+                        {speakerNameMap[speaker.index]?.[0] || speaker.index + 1}
                       </div>
                       <div>
-                        <p className="font-medium">发言人 {speaker.index + 1}</p>
+                        <p className="font-medium">{getSpeakerDisplayName(speaker.index, speakerNameMap, '发言人')}</p>
                         <p className="text-sm text-muted-foreground">{speaker.segments} 个发言片段</p>
                       </div>
                     </div>
@@ -393,7 +404,7 @@ function MeetingTranscript({ meeting, onMeetingUpdate, isViewerOnly = false }: M
                     <div key={index} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <Badge className={speakerColorClass}>发言人 {speech.speakerIndex + 1}</Badge>
+                          <Badge className={speakerColorClass}>{getSpeakerDisplayName(speech.speakerIndex, speakerNameMap, '发言人')}</Badge>
                           <span className="text-sm text-muted-foreground">
                             {minutes}:{seconds.toString().padStart(2, '0')} - {endMinutes}:{endSeconds.toString().padStart(2, '0')}
                           </span>

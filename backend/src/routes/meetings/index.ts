@@ -20,6 +20,7 @@ import { setAuditContext } from '../../middleware/audit';
 import { getFilesBaseDir } from '../../utils/filePaths';
 import { decryptFileToTempPath, writeEncryptedFile } from '../../utils/audioEncryption';
 import { buildRecordingFilename, findRecordingFilePath } from '../../utils/recordingHelpers';
+import { createChatCompletion } from '../../utils/openai';
 
 const router = Router();
 
@@ -369,6 +370,7 @@ router.post(
   requireOwner(),
   asyncHandler(async (req: Request, res: Response) => {
     const { meetingId } = req.params;
+    const lang = getPreferredLang(req);
 
     const meeting = await meetingService.getMeetingById(meetingId);
     if (!meeting) {
@@ -377,48 +379,121 @@ router.post(
 
     const recordings = await recordingService.getRecordingsByMeetingId(meetingId);
 
+    // Build speaker name map from all recordings
+    const speakerNameMap: Record<number, string> = {};
+    for (const r of recordings) {
+      if (Array.isArray(r.speakerNames)) {
+        for (const sn of r.speakerNames) {
+          if (typeof sn.index === 'number' && sn.name?.trim()) {
+            speakerNameMap[sn.index] = sn.name.trim();
+          }
+        }
+      }
+    }
+
+    const getSpeakerLabel = (index: number): string => speakerNameMap[index] || `发言人 ${index + 1}`;
+
+    // Collect organized speeches with speaker names
+    const allOrganizedSpeeches: Array<{
+      speaker: string;
+      startTime: number;
+      endTime: number;
+      text: string;
+    }> = [];
+
+    for (const r of recordings) {
+      if (Array.isArray(r.organizedSpeeches)) {
+        for (const speech of r.organizedSpeeches) {
+          allOrganizedSpeeches.push({
+            speaker: getSpeakerLabel(speech.speakerIndex),
+            startTime: speech.startTime,
+            endTime: speech.endTime,
+            text: speech.polishedText || speech.rawText,
+          });
+        }
+      }
+    }
+    allOrganizedSpeeches.sort((a, b) => a.startTime - b.startTime);
+
+    // Collect raw transcripts as fallback
     const transcripts = recordings
       .filter((r: RecordingResponse) => r.transcription)
       .map((r: RecordingResponse) => r.transcription)
       .filter(Boolean);
 
-    if (transcripts.length === 0) {
-      const lang = getPreferredLang(req);
+    if (transcripts.length === 0 && allOrganizedSpeeches.length === 0) {
       throw badRequest(lang === 'en' ? 'No transcriptions available for this meeting' : '此会议没有可用的转录文本', 'meeting.no_transcriptions');
     }
 
-    const allTranscripts = transcripts.join('\n\n');
-    meeting.finalTranscript = `# 会议纪要 - ${meeting.title}
+    // Build input content for AI
+    let inputContent = '';
+    if (allOrganizedSpeeches.length > 0) {
+      const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+      };
+      inputContent = allOrganizedSpeeches.map((s) => `[${formatTime(s.startTime)}] ${s.speaker}: ${s.text}`).join('\n');
+    } else {
+      inputContent = transcripts.join('\n\n');
+    }
+
+    // Generate polished transcript using AI
+    const systemPrompt = `你是一位专业的会议纪要撰写专家。请根据提供的会议录音转录内容，生成一份结构清晰、内容完整的会议纪要。
+
+要求：
+1. 使用 Markdown 格式输出
+2. 包含以下结构：会议标题、会议概要、主要讨论内容、发言摘要、后续行动项
+3. 保留原始内容中的重要信息和细节，不要遗漏关键点
+4. 如果有发言人标注，请在发言摘要中保留发言人信息
+5. 语言流畅，表达专业
+6. 不要编造内容，仅基于提供的转录内容进行整理`;
+
+    const userPrompt = `会议标题：${meeting.title}
+${meeting.summary ? `会议简介：${meeting.summary}\n` : ''}
+---
+转录内容：
+${inputContent}`;
+
+    let finalTranscript: string;
+    try {
+      const completion = await createChatCompletion({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.1,
+      });
+      finalTranscript = completion.choices?.[0]?.message?.content?.trim() || '';
+    } catch (err) {
+      debug('AI transcript generation failed, using fallback', err);
+      finalTranscript = '';
+    }
+
+    // Fallback to simple template if AI fails
+    if (!finalTranscript) {
+      const speakerSection =
+        allOrganizedSpeeches.length > 0 ? allOrganizedSpeeches.map((s) => `- **${s.speaker}**: ${s.text}`).join('\n') : transcripts.join('\n\n');
+
+      finalTranscript = `# 会议纪要 - ${meeting.title}
 
 ## 会议概要
-本次会议主要讨论了相关议题，参会人员进行了深入的交流和讨论。
+${meeting.summary || '本次会议主要讨论了相关议题，参会人员进行了深入的交流和讨论。'}
 
-## 主要内容
-${allTranscripts
-  .split('\n')
-  .map((line: string) => `- ${line}`)
-  .join('\n')}
-
-## 后续行动
-- 整理会议记录
-- 跟进相关事项
-- 安排下次会议
+## 发言记录
+${speakerSection}
 
 ---
-*此纪要由AI自动生成，仅供参考。*`;
-
-    await meetingService.updateMeeting(meetingId, {
-      finalTranscript: meeting.finalTranscript,
-    });
-
-    {
-      const lang = getPreferredLang(req);
-      res.json({
-        success: true,
-        finalTranscript: meeting.finalTranscript,
-        message: lang === 'en' ? 'Final transcript generated' : '最终纪要生成成功',
-      });
+*此纪要由系统自动生成，仅供参考。*`;
     }
+
+    await meetingService.updateMeeting(meetingId, { finalTranscript });
+
+    res.json({
+      success: true,
+      finalTranscript,
+      message: lang === 'en' ? 'Final transcript generated' : '最终纪要生成成功',
+    });
   })
 );
 

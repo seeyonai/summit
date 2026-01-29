@@ -48,8 +48,8 @@ export async function createChatCompletion(request: any, clientOrTarget: 'defaul
     clientOrTarget === 'default'
       ? parseJson(process.env.SUMMIT_OPENAI_MODEL_EXTRA_REQUEST)
       : clientOrTarget === 'fast'
-      ? parseJson(process.env.SUMMIT_FAST_OPENAI_MODEL_EXTRA_REQUEST_EXTRA_REQUEST)
-      : undefined;
+        ? parseJson(process.env.SUMMIT_FAST_OPENAI_MODEL_EXTRA_REQUEST)
+        : undefined;
 
   // Merge extras first so explicit request fields take precedence
   const merged: Record<string, unknown> = { ...(extraFromEnv || {}), ...(request as any) };
