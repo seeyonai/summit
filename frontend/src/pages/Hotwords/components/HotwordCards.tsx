@@ -54,37 +54,29 @@ const HotwordCards: React.FC<HotwordCardsProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {hotwords.map((hotword) => (
-        <Card key={hotword._id} className="hover:shadow-md transition-shadow">
+        <Card 
+          key={hotword._id} 
+          className={`shadow-none hover:shadow-md transition-shadow cursor-pointer ${!hotword.isActive ? 'opacity-60' : ''}`}
+          onClick={() => !(!!hotword.isPublic && !isAdmin) && !isLoading && onToggleActive(hotword)}
+        >
           <CardContent className="p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium font-serif text-2xl flex-grow">{hotword.word}</span>
-                  <Badge variant={hotword.isActive ? 'outline' : 'secondary'} className="flex-shrink-0">
-                    {hotword.isActive ? '启用' : '禁用'}
-                  </Badge>
-                  {hotword.isPublic && (
-                    <Badge variant="secondary">公开</Badge>
-                  )}
-                </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span 
+                  className={`font-medium font-serif text-2xl truncate ${!hotword.isActive ? 'line-through text-gray-400' : ''}`}
+                  title={hotword.word + (hotword.isActive ? ' - 已启用。点击禁用' : ' - 已禁用。点击启用')}
+                >
+                  {hotword.word}
+                </span>
+                {hotword.isPublic && (
+                  <Badge variant="secondary" className="shrink-0">公开</Badge>
+                )}
               </div>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">是否启用:</label>
-                <Checkbox
-                  checked={hotword.isActive}
-                  onCheckedChange={() => onToggleActive(hotword)}
-                  disabled={isLoading || (!!hotword.isPublic && !isAdmin)}
-                />
-              </div>
-              
-              <div className="flex gap-1">
+              <div className="flex gap-1 shrink-0">
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onEdit(hotword)}
+                  onClick={(e) => { e.stopPropagation(); onEdit(hotword); }}
                   disabled={isLoading || (!!hotword.isPublic && !isAdmin)}
                   className="h-8 w-8 p-0"
                 >
@@ -93,7 +85,7 @@ const HotwordCards: React.FC<HotwordCardsProps> = ({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onDelete(hotword._id)}
+                  onClick={(e) => { e.stopPropagation(); onDelete(hotword._id); }}
                   disabled={isLoading || (!!hotword.isPublic && !isAdmin)}
                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                 >
