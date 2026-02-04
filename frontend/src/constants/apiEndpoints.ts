@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
     HOTWORDS_BULK: '/api/hotwords/bulk',
     HOTWORDS_IMPORT: '/api/hotwords/import',
     HOTWORDS_EXPORT: '/api/hotwords/export',
+    HOTWORDS_DISCOVER: '/api/hotwords/discover',
     HOTWORD_DETAIL: (id: string) => `/api/hotwords/${id}`,
     SEGMENTATION: {
       MODEL_INFO: '/api/segmentation/model-info',

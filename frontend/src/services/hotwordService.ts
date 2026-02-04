@@ -13,6 +13,7 @@ export interface HotwordService {
   importHotwordsBulk: (words: string[], isPublic?: boolean) => Promise<HotwordBulkImportResult>;
   importHotwordsFromFile: (file: File, options?: { isPublic?: boolean }) => Promise<HotwordImportResponse>;
   exportHotwords: () => Promise<{ blob: Blob; filename: string }>;
+  discoverHotwords: (text: string) => Promise<string[]>;
 }
 
 const extractErrorMessage = (payload: unknown): string | undefined => {
@@ -159,6 +160,17 @@ export const createHotwordService = (client: ApiClient = defaultApi): HotwordSer
     const blob = await response.blob();
     const filename = resolveFilename(response.headers.get('content-disposition'));
     return { blob, filename };
+  },
+
+  discoverHotwords: async (text: string) => {
+    const result = await client<{ hotwords: string[] }>(
+      API_ENDPOINTS.BACKEND.HOTWORDS_DISCOVER,
+      {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+      }
+    );
+    return result.hotwords;
   },
 });
 

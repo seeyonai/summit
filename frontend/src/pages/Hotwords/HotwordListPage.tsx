@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
-import { AlertCircle as AlertCircleIcon, PlusIcon, TrendingUp, Clock, Users, FolderOpenIcon, UploadIcon } from 'lucide-react';
+import { AlertCircle as AlertCircleIcon, PlusIcon, TrendingUp, Clock, Users, FolderOpenIcon, UploadIcon, Sparkles } from 'lucide-react';
 import type { Hotword, HotwordUpdate, HotwordCreate } from '@/types';
 import createHotwordService from '@/services/hotwordService';
 import { useHotwords } from '@/hooks/useHotwords';
@@ -16,6 +16,7 @@ import HotwordCreateModal from '@/pages/Hotwords/components/HotwordCreateModal';
 import HotwordEditModal from '@/pages/Hotwords/components/HotwordEditModal';
 import HotwordBulkActions from '@/pages/Hotwords/components/HotwordBulkActions';
 import HotwordImportDialog from '@/pages/Hotwords/components/HotwordImportDialog';
+import HotwordAutoDiscoverDialog from '@/pages/Hotwords/components/HotwordAutoDiscoverDialog';
 import HotwordListItem from '@/pages/Hotwords/components/HotwordListItem';
 import HotwordCards from '@/pages/Hotwords/components/HotwordCards';
 
@@ -34,6 +35,7 @@ function HotwordListPage() {
   const [opError, setOpError] = useState<string | undefined>(undefined);
   const [deletingHotwordId, setDeletingHotwordId] = useState<string | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showAutoDiscoverDialog, setShowAutoDiscoverDialog] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const filtered = useMemo(() => filterHotwords(hotwords, searchTerm, statusFilter), [hotwords, searchTerm, statusFilter]);
@@ -121,6 +123,10 @@ function HotwordListPage() {
         subline="集中维护识别热词，提升语音识别准确率"
         actionButtons={
           <>
+            <Button onClick={() => setShowAutoDiscoverDialog(true)} size="lg" variant="hero">
+              <Sparkles className="w-5 h-5 mr-2" />
+              智能发现
+            </Button>
             <Button onClick={() => setShowCreateModal(true)} size="lg" variant="hero">
               <PlusIcon className="w-5 h-5 mr-2" />
               添加热词
@@ -282,6 +288,14 @@ function HotwordListPage() {
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
         onImport={handleImport}
+      />
+
+      <HotwordAutoDiscoverDialog
+        open={showAutoDiscoverDialog}
+        onOpenChange={setShowAutoDiscoverDialog}
+        service={service}
+        existingHotwords={hotwords}
+        onComplete={actions.fetchHotwords}
       />
 
       {/* Modals */}

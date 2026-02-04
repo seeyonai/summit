@@ -8,6 +8,7 @@ import { authenticate } from '../../middleware/auth';
 import { getPreferredLang } from '../../utils/lang';
 import { setAuditContext } from '../../middleware/audit';
 import { parseHotwordsFromBuffer } from '../../utils/hotwordImport';
+import { createChatCompletion } from '../../utils/openai';
 
 const router = express.Router();
 const hotwordService = new HotwordService();
@@ -127,6 +128,96 @@ router.post(
         skipped: result.skipped.length,
       },
     });
+  })
+);
+
+// Discover hotwords from text using AI
+router.post(
+  '/discover',
+  asyncHandler(async (req: RequestWithUser, res) => {
+    if (!req.user) throw unauthorized('Unauthorized', 'auth.unauthorized');
+
+    const { text } = req.body as { text?: string };
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      throw badRequest('Text is required', 'hotword.text_required');
+    }
+
+    const systemPrompt = `你是一个专业的语音识别（ASR）热词提取助手。你的任务是从会议纪要文本中识别出可能对语音识别造成挑战的词汇。
+
+请提取以下类型的词汇：
+1. 专业术语和技术名词（如：Kubernetes、微服务、API网关）
+2. 人名、公司名、产品名等专有名词
+3. 缩写词和首字母缩略词（如：OKR、KPI、SaaS）
+4. 行业特定术语
+5. 不常见的中文词汇或新词
+
+输出要求：
+- 只输出一个JSON数组，包含提取的热词
+- 每个热词是一个字符串
+- 不要输出任何解释或其他内容
+- 如果没有找到热词，返回空数组 []
+- 去除重复词汇
+- 每个热词长度应在2-50个字符之间
+
+示例输出：
+["Kubernetes", "微服务", "张三", "OKR", "敏捷开发"]`;
+
+    const userPrompt = `请从以下会议纪要中提取热词：
+
+${text}`;
+
+    try {
+      const response = await createChatCompletion({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        maxTokens: 2000,
+        temperature: 0.3,
+      }, 'fast');
+
+      const content = response.choices?.[0]?.message?.content || '[]';
+
+      // Parse the JSON array from response
+      let hotwords: string[] = [];
+      try {
+        // Try to extract JSON array from the response
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          hotwords = JSON.parse(jsonMatch[0]);
+        }
+      } catch {
+        console.warn('Failed to parse hotwords from AI response:', content);
+        hotwords = [];
+      }
+
+      // Filter and clean hotwords
+      const cleaned = hotwords
+        .filter((w): w is string => typeof w === 'string')
+        .map((w) => w.trim())
+        .filter((w) => w.length >= 2 && w.length <= 50);
+
+      // Remove duplicates (case-insensitive)
+      const seen = new Set<string>();
+      const unique = cleaned.filter((w) => {
+        const lower = w.toLowerCase();
+        if (seen.has(lower)) return false;
+        seen.add(lower);
+        return true;
+      });
+
+      setAuditContext(res, {
+        action: 'hotword_discover',
+        resource: 'hotword',
+        status: 'success',
+        details: { inputLength: text.length, discoveredCount: unique.length },
+      });
+
+      res.json({ hotwords: unique });
+    } catch (err) {
+      console.error('Hotword discovery failed:', err);
+      throw badRequest('热词发现失败，请稍后重试', 'hotword.discover_failed');
+    }
   })
 );
 
