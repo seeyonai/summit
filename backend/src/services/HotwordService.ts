@@ -35,10 +35,14 @@ export class HotwordService {
     }
     const collection = getCollection<HotwordDocument>(COLLECTIONS.HOTWORDS);
 
-    // Check if hotword already exists
+    // Check if hotword already exists (user's own or public)
     const existing = await collection.findOne({
       word: { $regex: new RegExp(`^${trimmedWord}$`, 'i') },
       isActive: true,
+      $or: [
+        { ownerId: new ObjectId(user.userId) },
+        { isPublic: true },
+      ],
     });
 
     if (existing) {

@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
-import { AlertCircle as AlertCircleIcon, PlusIcon, TrendingUp, Clock, Users, FolderOpenIcon } from 'lucide-react';
-import type { Hotword, HotwordUpdate, HotwordCreate, HotwordImportResponse } from '@/types';
+import { AlertCircle as AlertCircleIcon, PlusIcon, TrendingUp, Clock, Users, FolderOpenIcon, UploadIcon } from 'lucide-react';
+import type { Hotword, HotwordUpdate, HotwordCreate } from '@/types';
 import createHotwordService from '@/services/hotwordService';
 import { useHotwords } from '@/hooks/useHotwords';
 import { getHotwordAnalytics, filterHotwords } from '@/utils/hotwords';
@@ -15,6 +15,7 @@ import HotwordToolbar from '@/pages/Hotwords/components/HotwordToolbar';
 import HotwordCreateModal from '@/pages/Hotwords/components/HotwordCreateModal';
 import HotwordEditModal from '@/pages/Hotwords/components/HotwordEditModal';
 import HotwordBulkActions from '@/pages/Hotwords/components/HotwordBulkActions';
+import HotwordImportDialog from '@/pages/Hotwords/components/HotwordImportDialog';
 import HotwordListItem from '@/pages/Hotwords/components/HotwordListItem';
 import HotwordCards from '@/pages/Hotwords/components/HotwordCards';
 
@@ -32,8 +33,7 @@ function HotwordListPage() {
   const [editingHotword, setEditingHotword] = useState<Hotword | null>(null);
   const [opError, setOpError] = useState<string | undefined>(undefined);
   const [deletingHotwordId, setDeletingHotwordId] = useState<string | null>(null);
-  const [importResult, setImportResult] = useState<HotwordImportResponse | null>(null);
-  const [importing, setImporting] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const filtered = useMemo(() => filterHotwords(hotwords, searchTerm, statusFilter), [hotwords, searchTerm, statusFilter]);
@@ -90,17 +90,7 @@ function HotwordListPage() {
   };
 
   const handleImport = async (file: File) => {
-    try {
-      setOpError(undefined);
-      setImporting(true);
-      const result = await actions.importHotwordsFromFile(file);
-      setImportResult(result);
-    } catch (e) {
-      setOpError(e instanceof Error ? e.message : '导入失败');
-      setImportResult(null);
-    } finally {
-      setImporting(false);
-    }
+    return actions.importHotwordsFromFile(file);
   };
 
   const handleExport = async () => {
@@ -123,32 +113,6 @@ function HotwordListPage() {
     }
   };
 
-  useEffect(() => {
-    if (!importResult) {
-      return undefined;
-    }
-    const timer = setTimeout(() => setImportResult(null), 5000);
-    return () => clearTimeout(timer);
-  }, [importResult]);
-
-  const importSummary = useMemo(() => {
-    if (!importResult) {
-      return null;
-    }
-    const summary = importResult.summary ?? {
-      total:
-        importResult.created.length
-        + (importResult.skipped?.length ?? 0)
-        + (importResult.invalid?.length ?? 0)
-        + (importResult.duplicates?.length ?? 0),
-      valid: importResult.created.length,
-      invalid: importResult.invalid?.length ?? 0,
-      duplicates: importResult.duplicates?.length ?? 0,
-      created: importResult.created.length,
-      skipped: importResult.skipped?.length ?? 0,
-    };
-    return summary;
-  }, [importResult]);
 
   return (
     <div className="space-y-8">
@@ -156,10 +120,16 @@ function HotwordListPage() {
         title="热词"
         subline="集中维护识别热词，提升语音识别准确率"
         actionButtons={
-          <Button onClick={() => setShowCreateModal(true)} size="lg" variant="hero">
-            <PlusIcon className="w-5 h-5 mr-2" />
-            添加热词
-          </Button>
+          <>
+            <Button onClick={() => setShowCreateModal(true)} size="lg" variant="hero">
+              <PlusIcon className="w-5 h-5 mr-2" />
+              添加热词
+            </Button>
+            <Button size="lg" variant="hero" onClick={() => setShowImportDialog(true)}>
+              <UploadIcon className="w-5 h-5 mr-2" />
+              批量导入
+            </Button>
+          </>
         }
       >
         <div className="stats-grid">
@@ -242,27 +212,6 @@ function HotwordListPage() {
         </Alert>
       )}
 
-      {importSummary && (
-        <Alert>
-          <AlertCircleIcon className="h-4 w-4" />
-          <AlertTitle>导入完成</AlertTitle>
-          <AlertDescription>
-            <div className="space-y-1">
-              <div>
-                共 {importSummary.total} 条，新增 {importSummary.created} 条，跳过 {importSummary.skipped} 条。
-              </div>
-              {(importResult?.invalid?.length || 0) > 0 || (importResult?.duplicates?.length || 0) > 0 ? (
-                <div className="text-muted-foreground">
-                  {(importResult?.invalid?.length || 0) > 0 && `无效 ${importResult?.invalid?.length || 0} 条`}
-                  {(importResult?.invalid?.length || 0) > 0 && (importResult?.duplicates?.length || 0) > 0 && '，'}
-                  {(importResult?.duplicates?.length || 0) > 0 && `重复 ${importResult?.duplicates?.length || 0} 条`}
-                </div>
-              ) : null}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
       {!loading && !error && filtered.length > 0 && (
         viewMode === 'grid' ? (
           /* Reuse existing card list component */
@@ -325,10 +274,14 @@ function HotwordListPage() {
 
       <HotwordBulkActions
         hotwords={hotwords}
-        onImport={handleImport}
         onExport={handleExport}
-        isImporting={importing}
         isExporting={exporting}
+      />
+
+      <HotwordImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImport={handleImport}
       />
 
       {/* Modals */}

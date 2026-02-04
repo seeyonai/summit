@@ -54,3 +54,5 @@ public/index-prod.html
 .codex
 .cursor
 dev
+
+rsync-to-mini.sh
