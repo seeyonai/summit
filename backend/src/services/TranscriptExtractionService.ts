@@ -1,4 +1,4 @@
-import { createIntext, SchemaField, ExtractResult, OpenAICompatibleClient } from 'intext';
+import { createIntext, SchemaField, ExtractResult, OpenAICompatibleClient, ProgressEvent } from 'intext';
 import recordingService from './RecordingService';
 import { badRequest, internal } from '../utils/errors';
 import { defaultClient, model } from '../utils/openai';
@@ -87,7 +87,7 @@ class TranscriptExtractionService {
     this.isInitialized = true;
   }
 
-  async extractFromTranscript(transcript: string): Promise<ExtractionResult> {
+  async extractFromTranscript(transcript: string, onProgress?: (event: ProgressEvent) => void): Promise<ExtractionResult> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -112,6 +112,7 @@ class TranscriptExtractionService {
       schema: transcriptAnalysisSchema,
       debug: true,
       ...intextParams,
+      ...(onProgress ? { onProgress } : {}),
     });
 
     return result;

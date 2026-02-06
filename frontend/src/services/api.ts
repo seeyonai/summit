@@ -78,7 +78,7 @@ function createApiError(payload: ErrorPayload, status: number): ApiError {
   return error;
 }
 
-// Resolve backend base URL internally (not exported)
+// Resolve backend base URL
 function resolveBaseUrl(): string {
   const envBase = typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_API_BASE_URL as string | undefined) : undefined;
   if (envBase && typeof envBase === 'string' && envBase.trim().length > 0) {
@@ -135,6 +135,10 @@ export async function api<T = unknown>(endpoint: string, options: RequestInit = 
   }
 
   return (isJson ? body : (undefined as unknown)) as T;
+}
+
+export function getApiBaseUrl(): string {
+  return resolveBaseUrl();
 }
 
 export function apiUrl(endpoint: string): string {

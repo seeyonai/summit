@@ -590,7 +590,7 @@ router.post(
   })
 );
 
-// Extract disputed issues and todos from meeting transcript
+// Extract disputed issues and todos from meeting transcript (SSE streaming)
 router.post(
   '/:meetingId/extract-analysis',
   requireMemberOrOwner(),
@@ -617,8 +617,38 @@ router.post(
       }
     }
 
+    // Set up SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    let aborted = false;
+    req.on('close', () => {
+      aborted = true;
+    });
+
+    const sendEvent = (event: string, data: any) => {
+      if (aborted) return;
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
     try {
-      const extractionResult = await transcriptExtractionService.extractFromTranscript(transcript);
+      const extractionResult = await transcriptExtractionService.extractFromTranscript(transcript, (progressEvent) => {
+        if (aborted) return;
+        sendEvent('progress', {
+          stage: progressEvent.stage,
+          chunkIndex: progressEvent.chunkIndex,
+          chunkCount: progressEvent.chunkCount,
+          status: progressEvent.status,
+        });
+      });
+
+      if (aborted) {
+        res.end();
+        return;
+      }
+
       const formattedAnalysis = transcriptExtractionService.formatExtractionForMeeting(extractionResult);
 
       const updateData: any = {
@@ -631,9 +661,9 @@ router.post(
         updateData.finalTranscript = transcript;
       }
 
-      const updatedMeeting = await meetingService.updateMeeting(meetingId, updateData);
+      await meetingService.updateMeeting(meetingId, updateData);
 
-      res.json({
+      sendEvent('done', {
         success: true,
         data: {
           disputedIssues: formattedAnalysis.disputedIssues,
@@ -641,19 +671,21 @@ router.post(
           metadata: formattedAnalysis.metadata,
         },
         message: '转录分析完成',
-        meeting: updatedMeeting ? serializeMeeting(updatedMeeting) : null,
       });
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes('OPENAI_API_KEY')) {
-          throw internal('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.', 'analysis.missing_api_key');
+      if (!aborted) {
+        let errorMessage = 'Failed to extract analysis from transcript';
+        if (error instanceof Error) {
+          if (error.message.includes('OPENAI_API_KEY')) {
+            errorMessage = 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.';
+          } else if (error.message.includes('Transcript text is required')) {
+            errorMessage = error.message;
+          }
         }
-        if (error.message.includes('Transcript text is required')) {
-          throw badRequest(error.message, 'analysis.transcript_required');
-        }
+        sendEvent('error', { message: errorMessage });
       }
-
-      throw internal('Failed to extract analysis from transcript', 'analysis.failed', error instanceof Error ? error.message : error);
+    } finally {
+      res.end();
     }
   })
 );
