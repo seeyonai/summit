@@ -28,6 +28,7 @@ import CustomSignOn from '@/pages/Auth/CustomSignOn';
 import AdminRoute from '@/components/AdminRoute';
 import AdminUsers from '@/pages/Admin/Users';
 import AdminAudit from '@/pages/Admin/AdminAudit';
+import SystemHealth from '@/pages/Admin/SystemHealth';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import { ConfigProvider } from '@/contexts/ConfigContext';
@@ -219,6 +220,14 @@ function AppContent() {
                           element={
                             <AdminRoute>
                               <AdminAudit />
+                            </AdminRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/health"
+                          element={
+                            <AdminRoute>
+                              <SystemHealth />
                             </AdminRoute>
                           }
                         />

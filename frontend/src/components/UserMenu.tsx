@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown, LogOut, LogIn, UserPlus, Wrench, User, Flame, Settings } from 'lucide-react';
+import { ChevronDown, LogOut, LogIn, UserPlus, User, Flame, Settings, Sun, Moon } from 'lucide-react';
 import type { AuthUser } from '@/contexts/AuthContext';
+import { useTheme } from '@/layout/useTheme';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
 
 interface UserMenuProps {
   user: AuthUser | null;
@@ -25,6 +27,22 @@ function UserMenu({ user, onLogout }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+
+  const handleToggleTheme = useCallback(() => {
+    toggleTheme();
+  }, [toggleTheme]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'x') {
+        e.preventDefault();
+        handleToggleTheme();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [handleToggleTheme]);
 
   useEffect(() => {
     if (!user) {
@@ -85,11 +103,11 @@ function UserMenu({ user, onLogout }: UserMenuProps) {
             <Link to="/settings" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
               <Settings className="w-4 h-4" /> 设置
             </Link>
-            {user.role === 'admin' && (
-              <Link to="/admin/users" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
-                <Wrench className="w-4 h-4" /> 管理
-              </Link>
-            )}
+            <button onClick={handleToggleTheme} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted/50">
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              {theme === 'light' ? '深色模式' : '浅色模式'}
+              <KbdGroup className="ml-auto"><Kbd>⌘</Kbd><Kbd>⇧</Kbd><Kbd>X</Kbd></KbdGroup>
+            </button>
           </div>
           <div className="py-1 border-t border-border">
             <button

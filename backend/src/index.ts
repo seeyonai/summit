@@ -18,6 +18,7 @@ import alignerRouter from './routes/aligner';
 import recordingsRouter from './routes/recordings/index';
 import configRouter from './routes/config';
 import adminAuditRouter from './routes/adminAudit';
+import adminHealthRouter from './routes/adminHealth';
 import { LiveRecorderService } from './services/LiveRecorderService';
 import { checkAllServices, generateHealthTable } from './utils/healthChecker';
 import { errorHandler } from './middleware/errorHandler';
@@ -52,6 +53,7 @@ app.use('/api/aligner', alignerRouter);
 app.use('/api/recordings', authenticate, recordingsRouter);
 app.use('/api/config', configRouter);
 app.use('/api/admin/audit', authenticate, requireAdmin, adminAuditRouter);
+app.use('/api/admin/health', authenticate, requireAdmin, adminHealthRouter);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {

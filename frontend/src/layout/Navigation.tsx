@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Book, Users, Wrench, Mic, FileText, FileEditIcon } from 'lucide-react';
+import { LayoutDashboard, Book, Users, Wrench, Mic, FileText, FileEditIcon, Activity, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConfig } from '../contexts/ConfigContext';
@@ -19,6 +19,83 @@ const baseItems: NavItem[] = [
   { path: '/hotwords', label: '热词', icon: Book },
 ];
 
+const adminItems: NavItem[] = [
+  { path: '/admin/users', label: '用户管理', icon: Wrench },
+  { path: '/admin/audit', label: '审计日志', icon: FileText },
+  { path: '/admin/health', label: '系统状态', icon: Activity },
+];
+
+function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.path}
+      className={cn(
+        'relative px-4 py-2.5 font-medium text-sm transition-all duration-200',
+        'flex items-center space-x-2 group',
+        isActive
+          ? 'bg-accent text-accent-foreground shadow-sm rounded-full'
+          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-none'
+      )}
+    >
+      <Icon className={cn('w-5 h-5 transition-transform duration-200', isActive ? 'scale-110' : 'group-hover:scale-105')} />
+      <span className="font-medium">{item.label}</span>
+    </Link>
+  );
+}
+
+function AdminDropdown({ items, pathname }: { items: NavItem[]; pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isChildActive = items.some((item) => pathname === item.path);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'relative px-4 py-2.5 font-medium text-sm transition-all duration-200',
+          'flex items-center space-x-2 group',
+          isChildActive
+            ? 'bg-accent text-accent-foreground shadow-sm rounded-full'
+            : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-none'
+        )}
+      >
+        <Wrench className={cn('w-5 h-5 transition-transform duration-200', isChildActive ? 'scale-110' : 'group-hover:scale-105')} />
+        <span className="font-medium">管理</span>
+        <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="absolute left-0 mt-1 w-40 rounded-lg border border-border bg-popover shadow-md overflow-hidden z-50">
+          {items.map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setOpen(false)}
+                className={cn('flex items-center gap-2 px-3 py-2 text-sm transition-colors', active ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-muted/50')}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const Navigation: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
@@ -31,43 +108,18 @@ export const Navigation: React.FC = () => {
     return true;
   });
   const navigationItems = useMemo(() => {
-    if (!user) {
-      // Logged out: show only public home
-      return [];
-    }
-    if (user.role === 'admin') {
-      return [
-        ...enabledItems,
-        { path: '/admin/users', label: '用户管理', icon: Wrench },
-        { path: '/admin/audit', label: '审计日志', icon: FileText },
-      ];
-    }
+    if (!user) return [];
     return enabledItems;
   }, [user, enableShorthandNotes]);
 
+  const isAdmin = user?.role === 'admin';
+
   return (
     <nav className="flex gap-2">
-      {navigationItems.map((item) => {
-        const isActive = location.pathname === item.path;
-        const Icon = item.icon;
-
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={cn(
-              'relative px-4 py-2.5 font-medium text-sm transition-all duration-200',
-              'flex items-center space-x-2 group',
-              isActive
-                ? 'bg-accent text-accent-foreground shadow-sm rounded-full'
-                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-none'
-            )}
-          >
-            <Icon className={cn('w-5 h-5 transition-transform duration-200', isActive ? 'scale-110' : 'group-hover:scale-105')} />
-            <span className="font-medium">{item.label}</span>
-          </Link>
-        );
-      })}
+      {navigationItems.map((item) => (
+        <NavLink key={item.path} item={item} isActive={location.pathname === item.path} />
+      ))}
+      {isAdmin && <AdminDropdown items={adminItems} pathname={location.pathname} />}
     </nav>
   );
 };
