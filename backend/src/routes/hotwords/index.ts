@@ -12,7 +12,7 @@ import { createChatCompletion } from '../../utils/openai';
 
 const router = express.Router();
 const hotwordService = new HotwordService();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 512 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 * 1024 } });
 
 function parseBoolean(value: unknown): boolean | undefined {
   if (typeof value === 'boolean') {

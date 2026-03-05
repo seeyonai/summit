@@ -91,7 +91,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit
+    fileSize: 2 * 1024 * 1024 * 1024 // 2GB limit
   }
 });
 
@@ -240,7 +240,7 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
 
     if (error instanceof multer.MulterError) {
       if (error.code === 'LIMIT_FILE_SIZE') {
-        throw badRequest('File too large. Maximum size is 50MB.', 'upload.file_too_large');
+        throw badRequest('File too large. Maximum size is 2GB.', 'upload.file_too_large');
       }
       throw badRequest(error.message, 'upload.failed');
     }

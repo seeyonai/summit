@@ -121,10 +121,10 @@ function RecordingList() {
       return;
     }
 
-    // Validate file size (50MB limit)
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    // Validate file size (2GB limit)
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
     if (file.size > maxSize) {
-      const errorMsg = '文件大小超过限制。请上传小于 50MB 的音频文件。';
+      const errorMsg = '文件大小超过限制。请上传小于 2GB 的音频文件。';
       toast.error(errorMsg);
       setError(errorMsg);
       return;
