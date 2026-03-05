@@ -14,6 +14,7 @@ import { apiService } from '@/services/api';
 import { recordingPanelBus } from '@/services/recordingPanelBus';
 import { useRecordingPanel } from '@/contexts/RecordingPanelContext';
 import { formatDuration, formatFileSize } from '@/utils/formatHelpers';
+import { uploadMaxSizeBytes, uploadMaxSizeLabel } from '@/utils/uploadSize';
 import type { Recording } from '@/types';
 import { useRecordingList } from './hooks/useRecordingList';
 import RecordingCard from '@/components/RecordingCard';
@@ -81,7 +82,7 @@ function RecordingList() {
     try {
       await deleteRecordingAPI(deletingRecordingId);
       setDeletingRecordingId(null);
-    } catch (err) {
+    } catch {
       // Error already handled by the hook
       setDeletingRecordingId(null);
     }
@@ -121,10 +122,8 @@ function RecordingList() {
       return;
     }
 
-    // Validate file size (2GB limit)
-    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
-    if (file.size > maxSize) {
-      const errorMsg = '文件大小超过限制。请上传小于 2GB 的音频文件。';
+    if (file.size > uploadMaxSizeBytes) {
+      const errorMsg = `文件大小超过限制。请上传小于 ${uploadMaxSizeLabel} 的音频文件。`;
       toast.error(errorMsg);
       setError(errorMsg);
       return;

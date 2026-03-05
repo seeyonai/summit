@@ -9,10 +9,11 @@ import { getPreferredLang } from '../../utils/lang';
 import { setAuditContext } from '../../middleware/audit';
 import { parseHotwordsFromBuffer } from '../../utils/hotwordImport';
 import { createChatCompletion } from '../../utils/openai';
+import { uploadMaxSizeBytes } from '../../utils/uploadSize';
 
 const router = express.Router();
 const hotwordService = new HotwordService();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: uploadMaxSizeBytes } });
 
 function parseBoolean(value: unknown): boolean | undefined {
   if (typeof value === 'boolean') {

@@ -14,6 +14,7 @@ import {
   CheckCircleIcon
 } from 'lucide-react';
 import mammoth from 'mammoth';
+import { uploadMaxSizeBytes, uploadMaxSizeLabel } from '@/utils/uploadSize';
 
 interface TranscriptUploadDialogProps {
   open: boolean;
@@ -28,8 +29,6 @@ const ACCEPTED_FILE_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
 };
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
-
 function TranscriptUploadDialog({ open, onOpenChange, onTranscriptAdd, isSaving = false }: TranscriptUploadDialogProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -41,8 +40,8 @@ function TranscriptUploadDialog({ open, onOpenChange, onTranscriptAdd, isSaving 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const validateFile = (file: File): boolean => {
-    if (file.size > MAX_FILE_SIZE) {
-      setErrorMessage('文件大小不能超过 2GB');
+    if (file.size > uploadMaxSizeBytes) {
+      setErrorMessage(`文件大小不能超过 ${uploadMaxSizeLabel}`);
       return false;
     }
 
@@ -270,7 +269,7 @@ function TranscriptUploadDialog({ open, onOpenChange, onTranscriptAdd, isSaving 
                     <UploadIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                     <h3 className="font-semibold mb-2">拖拽文件到此处或点击选择</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      支持 TXT、MD、MARKDOWN、DOCX 格式，最大 2GB
+                      支持 TXT、MD、MARKDOWN、DOCX 格式，最大 {uploadMaxSizeLabel}
                     </p>
                     <div className="flex flex-wrap gap-2 justify-center">
                       {Object.entries(ACCEPTED_FILE_TYPES).map(([type, extensions]) => (

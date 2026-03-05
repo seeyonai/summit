@@ -75,12 +75,14 @@ Start the backend first (port 2591), then the frontend (port 2590). The UI calls
 - If local login form locked, direct user to `localLoginForm.redirectUrl` for authentication by other means.
 - Backend honors `MONGODB_URI`, `DB_NAME`, `RECORDING_FILE_DIR`, and optional `SEED_DATA` flags (add an `.env` under `backend/` if needed).
   - `RECORDING_FILE_DIR` sets the filesystem base directory for audio files. If unset, uploads default to the repository-level `files/` directory. Docker images set it to `/usr/src/app/files`.
-    - `SEGMENTATION_SERVICE_URL` sets the URL for the speaker segmentation service (default: `http://localhost:2593`).
+  - `UPLOAD_MAX_SIZE` sets upload/body size limits for backend multipart uploads, backend JSON payload parsing, and nginx proxy body size in the runtime container (default: `2G`).
+  - `SEGMENTATION_SERVICE_URL` sets the URL for the speaker segmentation service (default: `http://localhost:2593`).
   - `TRANSCRIBE_SERVICE_URL` sets the URL for the transcription service (default: `http://localhost:2594`).
   - Static URLs stream audio at `/files/<recordingId>`; the server maps these to the configured base directory and resolves the file by `<_id>.<ext>` on disk.
   - `SUMMIT_OPENAI_API_KEY`, `SUMMIT_OPENAI_BASE_URL`, `SUMMIT_OPENAI_MODEL` are used for the OpenAI API. If not set, the backend will fall back to `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL`.
   - `SUMMIT_INTEXT_CHUNK_TOKENS`, `SUMMIT_INTEXT_OVERLAP_TOKENS`, `SUMMIT_INTEXT_CONCURRENCY` configure transcript extraction chunking and parallelism (defaults: 500, 50, 8).
 - Frontend consumes `VITE_`-prefixed env vars via `import.meta.env`. Create `frontend/.env` to override defaults (e.g., `VITE_API_BASE_URL`).
+  - `VITE_UPLOAD_MAX_SIZE` sets frontend file-size validation limit for upload UIs (default: `2G`).
   - Store large or generated audio under the configured base directory. By default this is the repo `files/` directory; it is served at `/files/*`.
 
 ### Files & Paths

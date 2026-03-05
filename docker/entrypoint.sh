@@ -4,6 +4,12 @@ set -e
 NODE_PID=''
 NGINX_PID=''
 
+configure_nginx() {
+  UPLOAD_MAX_SIZE="${UPLOAD_MAX_SIZE:-2G}"
+  sed "s|__UPLOAD_MAX_SIZE__|${UPLOAD_MAX_SIZE}|g" /etc/nginx/nginx.conf > /tmp/nginx.conf
+  mv /tmp/nginx.conf /etc/nginx/nginx.conf
+}
+
 start_backend() {
   ENTRY_JS="/usr/src/app/dist/index.js"
   if [ ! -f "$ENTRY_JS" ]; then
@@ -45,6 +51,7 @@ term_handler() {
 
 trap term_handler INT TERM
 
+configure_nginx
 start_backend
 
 nginx -g 'daemon off;' &

@@ -13,6 +13,7 @@ cp .env.example .env
 
 Then modify the values in `.env` as needed for your development environment.
 Set `AUDIO_ENCRYPTION_KEY` to a 32-byte key (base64 or 64-character hex) to enable encryption at rest. If omitted, audio files are stored unencrypted.
+Use `UPLOAD_MAX_SIZE` to override upload/body size limits for multipart uploads and JSON parsing (default: `2G`).
 
 ### Audit Logging
 

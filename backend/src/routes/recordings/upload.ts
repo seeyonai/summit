@@ -14,6 +14,7 @@ import recordingService from '../../services/RecordingService';
 import { writeEncryptedFile } from '../../utils/audioEncryption';
 import { buildRecordingFilename } from '../../utils/recordingHelpers';
 import { setAuditContext } from '../../middleware/audit';
+import { uploadMaxSizeBytes, uploadMaxSizeLabel } from '../../utils/uploadSize';
 
 // Ensure files directory exists (storage for uploaded audio)
 import { getFilesBaseDir } from '../../utils/filePaths';
@@ -91,7 +92,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024 * 1024 // 2GB limit
+    fileSize: uploadMaxSizeBytes
   }
 });
 
@@ -240,7 +241,7 @@ router.post('/', upload.single('audio'), asyncHandler(async (req: Request, res: 
 
     if (error instanceof multer.MulterError) {
       if (error.code === 'LIMIT_FILE_SIZE') {
-        throw badRequest('File too large. Maximum size is 2GB.', 'upload.file_too_large');
+        throw badRequest(`File too large. Maximum size is ${uploadMaxSizeLabel}.`, 'upload.file_too_large');
       }
       throw badRequest(error.message, 'upload.failed');
     }
