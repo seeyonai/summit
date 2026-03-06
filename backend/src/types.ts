@@ -34,7 +34,14 @@ export interface RecordingResponse {
   updatedAt?: string;
   duration?: number;
   fileSize?: number;
+  transcriptionStatus?: 'idle' | 'processing' | 'completed' | 'failed';
+  transcriptionProgressSeconds?: number;
+  transcriptionProgressTotalSeconds?: number;
+  alignmentStatus?: 'idle' | 'processing' | 'completed' | 'failed';
+  alignmentProgressSeconds?: number;
+  alignmentProgressTotalSeconds?: number;
   transcription?: string;
+  transcriptionChunks?: string[];
   verbatimTranscript?: string;
   speakerSegments?: SpeakerSegment[];
   speakerNames?: baseTypes.SpeakerName[];

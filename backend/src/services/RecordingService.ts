@@ -1,4 +1,6 @@
 import { promises as fs } from 'fs';
+import os from 'os';
+import { spawn } from 'child_process';
 import path from 'path';
 import { ObjectId, OptionalUnlessRequiredId } from 'mongodb';
 import { RecordingResponse, RecordingUpdate, SpeakerSegment, Meeting } from '../types';
@@ -13,7 +15,7 @@ import { getMimeType, normalizeTranscriptText, findRecordingFilePath, findRecord
 import { debug } from '../utils/logger';
 import { normalizeHotwords } from '../utils/hotwordUtils';
 import { mergeHotwordsIntoMeeting } from './meetingHotwordHelpers';
-import { readDecryptedFile } from '../utils/audioEncryption';
+import { decryptFileToTempPath, readDecryptedFile } from '../utils/audioEncryption';
 
 interface TranscriptionServiceResponse {
   text: string;
@@ -23,6 +25,46 @@ interface TranscriptionServiceResponse {
 }
 
 const TRANSCRIPTION_SERVICE_URL = process.env.TRANSCRIPTION_SERVICE_URL || process.env.TRANSCRIBE_SERVICE_URL || 'http://localhost:2594';
+const DEFAULT_TRANSCRIPTION_CHUNK_SECONDS = 300;
+const DEFAULT_TRANSCRIPTION_CHUNK_OVERLAP_SECONDS = 1;
+
+function parsePositiveNumber(value: string | undefined, fallback: number): number {
+  const parsed = typeof value === 'string' ? parseFloat(value) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseNonNegativeNumber(value: string | undefined, fallback: number): number {
+  const parsed = typeof value === 'string' ? parseFloat(value) : NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function normalizeTranscriptChunkSettings(): { chunkSeconds: number; overlapSeconds: number } {
+  const configuredChunkSeconds = parsePositiveNumber(process.env.TRANSCRIBE_CHUNK_SECONDS, DEFAULT_TRANSCRIPTION_CHUNK_SECONDS);
+  const configuredOverlapSeconds = parseNonNegativeNumber(
+    process.env.TRANSCRIBE_CHUNK_OVERLAP_SECONDS,
+    DEFAULT_TRANSCRIPTION_CHUNK_OVERLAP_SECONDS,
+  );
+  const chunkSeconds = Math.max(60, Math.min(configuredChunkSeconds, DEFAULT_TRANSCRIPTION_CHUNK_SECONDS));
+  const maxOverlap = Math.max(0, chunkSeconds - 1);
+  const overlapSeconds = Math.max(0, Math.min(configuredOverlapSeconds, maxOverlap));
+
+  return {
+    chunkSeconds,
+    overlapSeconds,
+  };
+}
+
+interface SpawnResult {
+  stdout: string;
+  stderr: string;
+}
+
+interface TranscriptChunk {
+  index: number;
+  startTimeSeconds: number;
+  durationSeconds: number;
+  filePath: string;
+}
 
 // Module-level singletons and constants
 const RECORDINGS_DIR = getFilesBaseDir();
@@ -149,6 +191,224 @@ async function deleteRecordingFile(document: RecordingDocument): Promise<void> {
 
 function buildTranscriptionUrl(pathname: string): string {
   return new URL(pathname, TRANSCRIPTION_SERVICE_BASE).toString();
+}
+
+async function runCommand(command: string, args: string[]): Promise<SpawnResult> {
+  return new Promise((resolve, reject) => {
+    const processArgs = args.map((arg) => arg);
+    const child = spawn(command, processArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`${command} exited with code ${code}: ${stderr.trim()}`));
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+  });
+}
+
+function detectChineseText(text: string): boolean {
+  return /\p{Script=Han}/u.test(text);
+}
+
+type MergeToken = {
+  value: string;
+  start: number;
+  end: number;
+};
+
+function tokenizeForMerge(text: string, locale: string): MergeToken[] {
+  if (!text) {
+    return [];
+  }
+
+  if (typeof (Intl as unknown as { Segmenter?: unknown }).Segmenter === 'undefined') {
+    return Array.from(text).reduce<MergeToken[]>((tokens, char, index) => {
+      if (char.trim().length === 0) {
+        return tokens;
+      }
+
+      return [...tokens, { value: char, start: index, end: index + 1 }];
+    }, []);
+  }
+
+  type WordSegment = { segment: string; index: number };
+  const segmenter = new (Intl as unknown as {
+    Segmenter: new (locale: string, options: { granularity: 'word' }) => { segment(input: string): Iterable<WordSegment> };
+  }).Segmenter(
+    locale,
+    { granularity: 'word' },
+  );
+  const segments = segmenter.segment(text) as Iterable<WordSegment>;
+  const tokens = Array.from(segments, (segment) => ({
+    value: segment.segment,
+    start: segment.index,
+    end: segment.index + segment.segment.length,
+  }));
+  const filteredTokens = tokens.filter((token) => token.value.trim().length > 0);
+
+  return filteredTokens.length > 0 ? filteredTokens : Array.from(text).reduce<MergeToken[]>((tokens, char, index) => {
+    if (char.trim().length === 0) {
+      return tokens;
+    }
+    return [...tokens, { value: char, start: index, end: index + 1 }];
+  }, []);
+}
+
+function findOverlapTokenCount(prefixTokens: MergeToken[], suffixTokens: MergeToken[], maxLookBack: number): number {
+  const max = Math.min(prefixTokens.length, suffixTokens.length, maxLookBack);
+
+  for (let len = max; len > 0; len -= 1) {
+    let matched = true;
+
+    for (let i = 0; i < len; i += 1) {
+      if (prefixTokens[prefixTokens.length - len + i].value !== suffixTokens[i].value) {
+        matched = false;
+        break;
+      }
+    }
+
+    if (matched) {
+      return len;
+    }
+  }
+
+  return 0;
+}
+
+function mergeChunkTranscripts(chunkTranscripts: string[]): string {
+  if (chunkTranscripts.length === 0) {
+    return '';
+  }
+
+  const fullText = chunkTranscripts.join('');
+  const hasChinese = detectChineseText(fullText);
+  const locale = hasChinese ? 'zh-CN' : 'en-US';
+  const maxLookBack = 120;
+
+  let mergedText = chunkTranscripts[0] || '';
+
+  for (let i = 1; i < chunkTranscripts.length; i += 1) {
+    const chunkText = chunkTranscripts[i] || '';
+    const mergedTokens = tokenizeForMerge(mergedText, locale);
+    const chunkTokens = tokenizeForMerge(chunkText, locale);
+    const overlap = findOverlapTokenCount(mergedTokens, chunkTokens, maxLookBack);
+
+    if (chunkTokens.length === 0) {
+      continue;
+    }
+
+    if (overlap >= chunkTokens.length) {
+      continue;
+    }
+
+    const overlapEnd = chunkTokens[overlap]?.start;
+    if (overlapEnd === undefined) {
+      mergedText += chunkText;
+      continue;
+    }
+
+    mergedText += chunkText.slice(overlapEnd);
+  }
+
+  return mergedText;
+}
+
+async function probeAudioDurationSeconds(filePath: string): Promise<number | null> {
+  const result = await runCommand('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_format', filePath]);
+  const payload = JSON.parse(result.stdout || '{}');
+  const durationValue = payload?.format?.duration;
+  const duration = Number(durationValue);
+
+  if (Number.isFinite(duration) && duration > 0) {
+    return duration;
+  }
+
+  return null;
+}
+
+function buildChunkFilename(chunkDir: string, index: number): string {
+  return path.join(chunkDir, `chunk-${String(index).padStart(4, '0')}.wav`);
+}
+
+async function splitAudioIntoChunks(sourcePath: string, chunkDir: string, chunkSeconds: number, overlapSeconds: number): Promise<TranscriptChunk[]> {
+  const audioDuration = await probeAudioDurationSeconds(sourcePath);
+  if (!audioDuration || audioDuration <= chunkSeconds) {
+    return [];
+  }
+
+  const chunks: TranscriptChunk[] = [];
+
+  const chunkWindowSeconds = chunkSeconds + overlapSeconds;
+  const stepSeconds = chunkSeconds;
+
+  for (let startTimeSeconds = 0, index = 0; startTimeSeconds < audioDuration; index += 1, startTimeSeconds += stepSeconds) {
+    const remainingSeconds = Math.max(0, audioDuration - startTimeSeconds);
+    if (remainingSeconds <= 0) {
+      break;
+    }
+
+    const durationSeconds = Math.min(chunkWindowSeconds, remainingSeconds);
+    const outputPath = buildChunkFilename(chunkDir, index);
+
+    await runCommand('ffmpeg', [
+      '-y',
+      '-ss', String(startTimeSeconds),
+      '-i', sourcePath,
+      '-t', String(durationSeconds),
+      '-c:a', 'pcm_s16le',
+      '-ar', '16000',
+      '-ac', '1',
+      outputPath,
+    ]);
+
+    chunks.push({
+      index,
+      startTimeSeconds,
+      durationSeconds,
+      filePath: outputPath,
+    });
+  }
+
+  return chunks;
+}
+
+async function transcribeChunk(chunk: TranscriptChunk, hotword?: string): Promise<string> {
+  const filename = path.basename(chunk.filePath);
+  const chunkBuffer = await fs.readFile(chunk.filePath);
+  const formData: Record<string, string> = {};
+
+  if (hotword && hotword.trim().length > 0) {
+    formData.hotword = hotword.trim();
+  }
+
+  const transcriptionResponse = await uploadMultipart<TranscriptionServiceResponse>(
+    buildTranscriptionUrl('/api/upload-transcribe'),
+    {
+      fieldName: 'file',
+      filename,
+      contentType: getMimeType(filename),
+      buffer: chunkBuffer,
+    },
+    Object.keys(formData).length > 0 ? formData : undefined,
+  );
+
+  return transcriptionResponse.text;
 }
 
 // Service API (functions over classes)
@@ -318,6 +578,14 @@ export async function updateRecording(recordingId: string, updateData: Recording
     remoteUpdates.transcription = updateData.transcription;
   }
 
+  if (Array.isArray((updateData as { transcriptionChunks?: string[] }).transcriptionChunks)) {
+    const chunks = (updateData as { transcriptionChunks?: string[] }).transcriptionChunks;
+    if (chunks && chunks.every((value) => typeof value === 'string')) {
+      updates.transcriptionChunks = chunks;
+      remoteUpdates.transcriptionChunks = updates.transcriptionChunks;
+    }
+  }
+
   if (typeof updateData.verbatimTranscript === 'string') {
     updates.verbatimTranscript = updateData.verbatimTranscript;
     remoteUpdates.verbatimTranscript = updateData.verbatimTranscript;
@@ -342,6 +610,27 @@ export async function updateRecording(recordingId: string, updateData: Recording
   if (Array.isArray(updateData.alignmentItems)) {
     updates.alignmentItems = updateData.alignmentItems;
     remoteUpdates.alignmentItems = updateData.alignmentItems;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updateData, 'alignmentStatus')) {
+    const status = (updateData as { alignmentStatus?: string }).alignmentStatus;
+    if (status === 'idle' || status === 'processing' || status === 'completed' || status === 'failed') {
+      updates.alignmentStatus = status;
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updateData, 'alignmentProgressSeconds')) {
+    const value = (updateData as { alignmentProgressSeconds?: unknown }).alignmentProgressSeconds;
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      updates.alignmentProgressSeconds = value;
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updateData, 'alignmentProgressTotalSeconds')) {
+    const value = (updateData as { alignmentProgressTotalSeconds?: unknown }).alignmentProgressTotalSeconds;
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      updates.alignmentProgressTotalSeconds = value;
+    }
   }
 
   if (Array.isArray(updateData.speakerSegments)) {
@@ -432,31 +721,156 @@ export async function addRecordingToMeeting(meetingId: string, recordingId: stri
 
 export async function transcribeRecording(recordingId: string, hotword?: string): Promise<{ message: string; transcription: string }> {
   const document = await findRecordingOrThrow(recordingId);
+  const collection = recordingsCollection();
   const workingPath =
     (await findRecordingWorkingFilePath(RECORDINGS_DIR, document._id.toString(), document.format)) || (await resolveAbsoluteFilePath(document));
   debug('Transcribing recording:', workingPath);
-  const fileBuffer = await readDecryptedFile(workingPath);
-  const filename = path.basename(workingPath);
+  let fileToProcessPath = workingPath;
+  let cleanupTempFile: (() => Promise<void>) | null = null;
+  let cleanupChunks = async (): Promise<void> => undefined;
 
-  const formData: Record<string, string> = {};
-
-  if (hotword && typeof hotword === 'string' && hotword.trim().length > 0) {
-    formData.hotword = hotword.trim();
+  try {
+    const { tempPath, cleanup } = await decryptFileToTempPath(workingPath);
+    fileToProcessPath = tempPath;
+    cleanupTempFile = cleanup;
+  } catch (error) {
+    throw internal(`解密录音失败: ${(error as Error).message}`, 'transcription.decryption_failed');
   }
 
-  const transcriptionResponse = await uploadMultipart<TranscriptionServiceResponse>(
-    buildTranscriptionUrl('/api/upload-transcribe'),
-    {
-      fieldName: 'file',
-      filename,
-      contentType: getMimeType(filename),
-      buffer: fileBuffer,
-    },
-    Object.keys(formData).length > 0 ? formData : undefined
-  );
+  const configured = normalizeTranscriptChunkSettings();
+  let transcriptionResponse: TranscriptionServiceResponse = {
+    text: '',
+    processingTime: 0,
+  };
+  let transcriptionChunks: string[] = [];
+  let progressTotalSeconds: number | undefined;
+  let progressProcessedSeconds = 0;
+
+  try {
+    let useChunking = false;
+    const configuredChunkSeconds = configured.chunkSeconds;
+    const overlapSeconds = configured.overlapSeconds;
+    const sourceDuration = typeof document.duration === 'number' && Number.isFinite(document.duration) && document.duration > 0
+      ? document.duration
+      : await probeAudioDurationSeconds(fileToProcessPath);
+
+    if (typeof sourceDuration === 'number' && Number.isFinite(sourceDuration) && sourceDuration > 0) {
+      progressTotalSeconds = sourceDuration;
+    }
+
+    await collection.updateOne(
+      { _id: document._id },
+      {
+        $set: {
+          transcriptionStatus: 'processing',
+          transcriptionProgressSeconds: 0,
+          transcriptionProgressTotalSeconds: progressTotalSeconds,
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    if (
+      typeof sourceDuration === 'number'
+      && Number.isFinite(sourceDuration)
+      && sourceDuration > configuredChunkSeconds
+    ) {
+      useChunking = true;
+    }
+
+    if (!useChunking) {
+      const fileBuffer = await readDecryptedFile(fileToProcessPath);
+      const filename = path.basename(fileToProcessPath);
+      const formData: Record<string, string> = {};
+
+      if (hotword && typeof hotword === 'string' && hotword.trim().length > 0) {
+        formData.hotword = hotword.trim();
+      }
+
+      transcriptionResponse = await uploadMultipart<TranscriptionServiceResponse>(
+        buildTranscriptionUrl('/api/upload-transcribe'),
+        {
+          fieldName: 'file',
+          filename,
+          contentType: getMimeType(filename),
+          buffer: fileBuffer,
+        },
+        Object.keys(formData).length > 0 ? formData : undefined
+      );
+
+      transcriptionChunks = [];
+      if (typeof progressTotalSeconds === 'number' && Number.isFinite(progressTotalSeconds) && progressTotalSeconds > 0) {
+        progressProcessedSeconds = progressTotalSeconds;
+      }
+    } else {
+      const chunkDir = await fs.mkdtemp(path.join(os.tmpdir(), 'summit-transcription-chunks-'));
+      cleanupChunks = async () => fs.rm(chunkDir, { recursive: true, force: true }).catch(() => undefined);
+
+      try {
+        const generated = await splitAudioIntoChunks(fileToProcessPath, chunkDir, configuredChunkSeconds, overlapSeconds);
+        if (generated.length === 0) {
+          throw badRequest('音频切分失败，请检查音频文件格式', 'transcription.chunking_failed');
+        }
+
+        const chunks: string[] = [];
+
+        for (const chunk of generated) {
+          const chunkText = await transcribeChunk(chunk, hotword);
+          chunks.push(chunkText);
+
+          if (typeof progressTotalSeconds === 'number' && Number.isFinite(progressTotalSeconds) && progressTotalSeconds > 0) {
+            const effectiveChunkSeconds = Math.min(configuredChunkSeconds, chunk.durationSeconds);
+            progressProcessedSeconds = Math.min(progressTotalSeconds, chunk.startTimeSeconds + effectiveChunkSeconds);
+          } else {
+            progressProcessedSeconds += chunk.durationSeconds;
+          }
+
+          await collection.updateOne(
+            { _id: document._id },
+            {
+              $set: {
+                transcriptionStatus: 'processing',
+                transcriptionProgressSeconds: progressProcessedSeconds,
+                transcriptionProgressTotalSeconds: progressTotalSeconds,
+                updatedAt: new Date(),
+              },
+            },
+          );
+        }
+
+        transcriptionChunks = chunks;
+      } finally {
+        await cleanupChunks();
+      }
+
+      if (transcriptionChunks.length === 0) {
+        transcriptionResponse.text = '';
+      } else {
+        transcriptionResponse.text = mergeChunkTranscripts(transcriptionChunks);
+      }
+    }
+  } catch (error) {
+    await collection.updateOne(
+      { _id: document._id },
+      {
+        $set: {
+          transcriptionStatus: 'failed',
+          transcriptionProgressSeconds: progressProcessedSeconds,
+          transcriptionProgressTotalSeconds: progressTotalSeconds,
+          updatedAt: new Date(),
+        },
+      },
+    );
+    throw error;
+  } finally {
+    if (cleanupTempFile) {
+      await cleanupTempFile().catch(() => undefined);
+    }
+  }
 
   const updates: Partial<RecordingDocument> = {
     transcription: transcriptionResponse.text,
+    transcriptionChunks,
     updatedAt: new Date(),
   };
 
@@ -468,7 +882,13 @@ export async function transcribeRecording(recordingId: string, hotword?: string)
     updates.fileSize = transcriptionResponse.fileSize;
   }
 
-  const collection = recordingsCollection();
+  updates.transcriptionStatus = 'completed';
+  updates.transcriptionProgressSeconds =
+    typeof progressTotalSeconds === 'number' && Number.isFinite(progressTotalSeconds) && progressTotalSeconds > 0
+      ? progressTotalSeconds
+      : progressProcessedSeconds;
+  updates.transcriptionProgressTotalSeconds = progressTotalSeconds;
+
   await collection.updateOne({ _id: document._id }, { $set: updates });
 
   // No live-service sync without externalId

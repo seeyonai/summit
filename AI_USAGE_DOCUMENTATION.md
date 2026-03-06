@@ -107,6 +107,8 @@ SEGMENTATION_SERVICE_URL=http://localhost:2593
 ```typescript
 TRANSCRIPTION_SERVICE_URL=http://localhost:2594
 TRANSCRIBE_SERVICE_URL=http://localhost:2594 // Alternative
+TRANSCRIBE_CHUNK_SECONDS=300 // Split recordings longer than this into chunks
+TRANSCRIBE_CHUNK_OVERLAP_SECONDS=1 // Overlap seconds between chunks
 ```
 
 **Key Features**:

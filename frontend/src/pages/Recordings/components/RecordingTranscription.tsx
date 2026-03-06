@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardR
 import { Button } from '@/components/ui/button';
 import SearchInput from '@/components/SearchInput';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 /* tooltip and tabs imports removed */
@@ -52,7 +51,6 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
   const [exportFormat, setExportFormat] = useState<'txt' | 'docx' | 'pdf' | 'srt'>('txt');
   const [searchTerm, setSearchTerm] = useState('');
   const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg'>('base');
-  const [transcriptionProgress, setTranscriptionProgress] = useState(0);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const autoSaveTimer = useRef<number | null>(null);
   const [viewMode, setViewMode] = useState<'formatted' | 'plain' | 'timeline'>('formatted');
@@ -60,42 +58,66 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
   const [selectedHotwords, setSelectedHotwords] = useState<string[]>(recording.hotwords ?? []);
   const [showHotwordSelection, setShowHotwordSelection] = useState(false);
   const [statsExpanded, setStatsExpanded] = useState(false);
+  const [processedSeconds, setProcessedSeconds] = useState<number>(recording.transcriptionProgressSeconds || 0);
+  const [totalSeconds, setTotalSeconds] = useState<number | undefined>(recording.transcriptionProgressTotalSeconds || recording.duration);
+  const transcriptionPollingTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setSelectedHotwords(recording.hotwords ?? []);
   }, [recording.hotwords]);
 
+  useEffect(() => {
+    setProcessedSeconds(recording.transcriptionProgressSeconds || 0);
+    setTotalSeconds(recording.transcriptionProgressTotalSeconds || recording.duration);
+  }, [recording.transcriptionProgressSeconds, recording.transcriptionProgressTotalSeconds, recording.duration]);
+
+  const stopTranscriptionPolling = useCallback(() => {
+    if (transcriptionPollingTimerRef.current !== null) {
+      window.clearInterval(transcriptionPollingTimerRef.current);
+      transcriptionPollingTimerRef.current = null;
+    }
+  }, []);
+
+  const pollTranscriptionProgress = useCallback(async () => {
+    try {
+      const latest = await apiService.getRecording(recording._id);
+      setProcessedSeconds(latest.transcriptionProgressSeconds || 0);
+      setTotalSeconds(latest.transcriptionProgressTotalSeconds || latest.duration);
+    } catch {
+      // Ignore polling errors and continue waiting for completion
+    }
+  }, [recording._id]);
+
   const generateTranscription = useCallback(async () => {
     try {
       setTranscribing(true);
-      setTranscriptionProgress(0);
-
-      // Simulate progress updates
-      const progressInterval = setInterval(() => {
-        setTranscriptionProgress((prev) => {
-          if (prev >= 95) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + Math.random() * 20;
-        });
-      }, 1000);
+      setProcessedSeconds(0);
+      setTotalSeconds(recording.duration);
+      stopTranscriptionPolling();
+      transcriptionPollingTimerRef.current = window.setInterval(() => {
+        pollTranscriptionProgress();
+      }, 1200);
 
       const hotwordParam = selectedHotwords.length > 0 ? selectedHotwords.join(' ') : undefined;
       const { message } = await apiService.transcribeRecording(recording._id, hotwordParam);
-
-      clearInterval(progressInterval);
-      setTranscriptionProgress(100);
       await onRefresh();
+      await pollTranscriptionProgress();
       setSuccess(message || '转录生成成功');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       throw err; // Re-throw for pipeline runner
     } finally {
+      stopTranscriptionPolling();
       setTranscribing(false);
-      setTimeout(() => setTranscriptionProgress(0), 2000);
     }
-  }, [recording._id, selectedHotwords, onRefresh, setSuccess, setError]);
+  }, [recording._id, recording.duration, selectedHotwords, onRefresh, pollTranscriptionProgress, setSuccess, setError, stopTranscriptionPolling]);
+
+  useEffect(
+    () => () => {
+      stopTranscriptionPolling();
+    },
+    [stopTranscriptionPolling]
+  );
 
   // Expose runTranscription to parent via ref
   useImperativeHandle(
@@ -324,7 +346,7 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
         title="转录内容"
         description="音频的文字转录结果"
         primaryButton={combinedPrimaryControls}
-        isEmpty={!recording.transcription}
+        isEmpty={!recording.transcription && !transcribing}
         emptyIcon={<MicIcon className="w-12 h-12" />}
         emptyMessage="暂无转录内容"
       >
@@ -359,7 +381,7 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
             </Select>
 
             {/* Export Controls */}
-            {recording.transcription && !isEditing && (
+            {recording.transcription && !isEditing && !transcribing && (
               <>
                 <Button onClick={copyToClipboard} variant="outline" size="sm">
                   <CopyIcon className="w-4 h-4 mr-2" />
@@ -397,18 +419,21 @@ const RecordingTranscription = forwardRef<RecordingTranscriptionHandle, Recordin
             </div>
           )}
 
-          {/* Transcription Progress */}
-          {transcribing && (
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">转录进度</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{Math.round(transcriptionProgress)}%</span>
+          {transcribing ? (
+            <div className="mt-4 min-h-[300px] flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="text-center">
+                <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500 dark:border-gray-600 dark:border-t-blue-400" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">正在转录，请稍候...</p>
+                {(processedSeconds > 0 || totalSeconds) && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {typeof totalSeconds === 'number' && totalSeconds > 0
+                      ? `已处理 ${processedSeconds.toFixed(1)} / ${totalSeconds.toFixed(1)} 秒`
+                      : `已处理 ${processedSeconds.toFixed(1)} 秒`}
+                  </p>
+                )}
               </div>
-              <Progress value={transcriptionProgress} className="w-full h-2" />
             </div>
-          )}
-
-          {isEditing ? (
+          ) : isEditing ? (
             <div className="space-y-4 mt-4">
               <div>
                 <div className="flex justify-between items-center mb-2">

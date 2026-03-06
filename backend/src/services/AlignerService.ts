@@ -1,10 +1,14 @@
 import fs from 'fs';
+import { promises as fsPromises } from 'fs';
+import os from 'os';
+import { spawn } from 'child_process';
 import path from 'path';
 import { ensureTrailingSlash, HttpError, httpRequest, requestJson } from '../utils/httpClient';
 import { getFilesBaseDir, normalizePublicOrRelative, resolvePathFromCandidate } from '../utils/filePaths';
 import { badRequest, internal, notFound } from '../utils/errors';
 import { debug } from '../utils/logger';
-import { readDecryptedFile } from '../utils/audioEncryption';
+import { decryptFileToTempPath, readDecryptedFile } from '../utils/audioEncryption';
+import { sanitizeTranscript } from '../utils/textUtils';
 
 interface ApiModelInfo {
   model: string;
@@ -41,11 +45,347 @@ export interface AlignmentItem {
   timestamp: number[][];
 }
 
+const DEFAULT_ALIGNER_CHUNK_SECONDS = 300;
+const DEFAULT_ALIGNER_CHUNK_OVERLAP_SECONDS = 1;
+
+const MAX_ALIGNER_CHUNK_LOOKBACK = 120;
+const CHUNK_OFFSET_UNIT_SECONDS_TO_MS = 1000;
+
+interface SpawnResult {
+  stdout: string;
+  stderr: string;
+}
+
+interface TranscriptChunk {
+  index: number;
+  startTimeSeconds: number;
+  durationSeconds: number;
+  filePath: string;
+}
+
+interface MergeToken {
+  value: string;
+  start: number;
+  end: number;
+}
+
+interface TimedTextToken {
+  text: string;
+  start: number;
+  end: number;
+  textStart: number;
+  textEnd: number;
+}
+
 export interface AlignmentResponse {
   success: boolean;
   alignments: AlignmentItem[];
   message: string;
   key: string | null;
+}
+
+function parsePositiveNumber(value: string | undefined, fallback: number): number {
+  const parsed = typeof value === 'string' ? parseFloat(value) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseNonNegativeNumber(value: string | undefined, fallback: number): number {
+  const parsed = typeof value === 'string' ? parseFloat(value) : NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function normalizeAlignerChunkSettings(): { chunkSeconds: number; overlapSeconds: number } {
+  const configuredChunkSeconds = parsePositiveNumber(process.env.TRANSCRIBE_CHUNK_SECONDS, DEFAULT_ALIGNER_CHUNK_SECONDS);
+  const configuredOverlapSeconds = parseNonNegativeNumber(
+    process.env.TRANSCRIBE_CHUNK_OVERLAP_SECONDS,
+    DEFAULT_ALIGNER_CHUNK_OVERLAP_SECONDS,
+  );
+  const chunkSeconds = Math.max(60, Math.min(configuredChunkSeconds, DEFAULT_ALIGNER_CHUNK_SECONDS));
+  const maxOverlap = Math.max(0, chunkSeconds - 1);
+  const overlapSeconds = Math.max(0, Math.min(configuredOverlapSeconds, maxOverlap));
+
+  return { chunkSeconds, overlapSeconds };
+}
+
+function detectChineseText(text: string): boolean {
+  return /\p{Script=Han}/u.test(text);
+}
+
+function tokenizeForMerge(text: string, locale: string): MergeToken[] {
+  if (!text) {
+    return [];
+  }
+
+  if (typeof (Intl as unknown as { Segmenter?: unknown }).Segmenter === 'undefined') {
+    return Array.from(text).reduce<MergeToken[]>((tokens, char, index) => {
+      if (char.trim().length === 0) {
+        return tokens;
+      }
+
+      return [...tokens, { value: char, start: index, end: index + 1 }];
+    }, []);
+  }
+
+  type WordSegment = { segment: string; index: number };
+  const segmenter = new (Intl as unknown as {
+    Segmenter: new (locale: string, options: { granularity: 'word' }) => { segment(input: string): Iterable<WordSegment> };
+  }).Segmenter(
+    locale,
+    { granularity: 'word' },
+  );
+  const segments = segmenter.segment(text) as Iterable<WordSegment>;
+  const tokens = Array.from(segments, (segment) => ({
+    value: segment.segment,
+    start: segment.index,
+    end: segment.index + segment.segment.length,
+  }));
+  const filteredTokens = tokens.filter((token) => token.value.trim().length > 0);
+
+  return filteredTokens.length > 0 ? filteredTokens : Array.from(text).reduce<MergeToken[]>((acc, char, index) => {
+    if (char.trim().length === 0) {
+      return acc;
+    }
+    return [...acc, { value: char, start: index, end: index + 1 }];
+  }, []);
+}
+
+function findOverlapTokenCount(prefixTokens: MergeToken[], suffixTokens: MergeToken[], maxLookBack: number): number {
+  const max = Math.min(prefixTokens.length, suffixTokens.length, maxLookBack);
+
+  for (let len = max; len > 0; len -= 1) {
+    let matched = true;
+    for (let i = 0; i < len; i += 1) {
+      if (prefixTokens[prefixTokens.length - len + i].value !== suffixTokens[i].value) {
+        matched = false;
+        break;
+      }
+    }
+    if (matched) {
+      return len;
+    }
+  }
+
+  return 0;
+}
+
+function sanitizeChunkText(text: string): string {
+  const cleaned = sanitizeTranscript(text);
+  return cleaned.trim();
+}
+
+function normalizeChunkTexts(rawTexts?: string[]): string[] {
+  if (!Array.isArray(rawTexts)) {
+    return [];
+  }
+
+  return rawTexts
+    .map((text) => (typeof text === 'string' ? sanitizeChunkText(text) : ''))
+    .filter((text) => text.length > 0);
+}
+
+function splitTextWithOffsets(text: string): Array<{ value: string; start: number; end: number }> {
+  const tokens: Array<{ value: string; start: number; end: number }> = [];
+  const regex = /\S+/g;
+  const matches = text.matchAll(regex);
+
+  for (const match of matches) {
+    if (typeof match.index !== 'number') {
+      continue;
+    }
+    tokens.push({
+      value: match[0],
+      start: match.index,
+      end: match.index + match[0].length,
+    });
+  }
+
+  return tokens;
+}
+
+function mapTimestamps(raw?: number[][]): number[][] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((pair) => Array.isArray(pair) && pair.length >= 2 ? [Number(pair[0]), Number(pair[1])] : null)
+    .filter((pair): pair is number[] => Array.isArray(pair) && pair.length === 2 && pair.every((value) => Number.isFinite(value)));
+}
+
+function mapTimedTokensFromItem(item: ApiAlignmentItem): TimedTextToken[] {
+  const text = typeof item.text === 'string' ? item.text : '';
+  const timestamps = mapTimestamps(item.timestamp);
+  if (!text || timestamps.length === 0) {
+    return [];
+  }
+
+  const textTokens = splitTextWithOffsets(text);
+  const count = Math.min(textTokens.length, timestamps.length);
+  const tokens: TimedTextToken[] = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const pair = timestamps[i];
+    const token = textTokens[i];
+    if (!token) continue;
+
+    const [start, end] = pair;
+    if (!Number.isFinite(start) || !Number.isFinite(end)) {
+      continue;
+    }
+
+    tokens.push({
+      text: token.value,
+      start,
+      end,
+      textStart: token.start,
+      textEnd: token.end,
+    });
+  }
+
+  return tokens;
+}
+
+function mapResponseTokens(response: ApiAlignmentResponse): TimedTextToken[] {
+  if (!Array.isArray(response.alignments)) {
+    return [];
+  }
+
+  return response.alignments.flatMap((alignment) => mapTimedTokensFromItem(alignment));
+}
+
+function shiftTimedTokens(tokens: TimedTextToken[], offsetSeconds: number): TimedTextToken[] {
+  const offsetMs = offsetSeconds * CHUNK_OFFSET_UNIT_SECONDS_TO_MS;
+  return tokens.map((token) => ({
+    ...token,
+    start: token.start + offsetMs,
+    end: token.end + offsetMs,
+  }));
+}
+
+function dropOverlappedTimedTokensByText(mergedText: string, chunkText: string, chunkTokens: TimedTextToken[]): TimedTextToken[] {
+  if (mergedText.length === 0) {
+    return chunkTokens;
+  }
+
+  const locale = detectChineseText(`${mergedText}${chunkText}`) ? 'zh-CN' : 'en-US';
+  const mergedTokens = tokenizeForMerge(mergedText, locale);
+  const chunkMergeTokens = tokenizeForMerge(chunkText, locale);
+
+  const overlap = findOverlapTokenCount(mergedTokens, chunkMergeTokens, MAX_ALIGNER_CHUNK_LOOKBACK);
+  if (overlap <= 0) {
+    return chunkTokens;
+  }
+
+  const overlapEnd = chunkMergeTokens[overlap - 1]?.end;
+  if (overlapEnd === undefined || overlapEnd <= 0) {
+    return chunkTokens;
+  }
+
+  const filtered = chunkTokens.filter((token) => token.textEnd > overlapEnd);
+  return filtered;
+}
+
+function mergeTimedTokens(existing: TimedTextToken[], incoming: TimedTextToken[]): TimedTextToken[] {
+  if (existing.length === 0) {
+    return [...incoming];
+  }
+
+  const existingText = existing.map((token) => token.text).join(' ');
+  const incomingText = incoming.map((token) => token.text).join(' ');
+
+  const deduped = dropOverlappedTimedTokensByText(existingText, incomingText, incoming);
+  return existing.concat(deduped);
+}
+
+function timedTokensToAlignmentItem(tokens: TimedTextToken[]): AlignmentItem {
+  return {
+    key: 'merged',
+    text: tokens.map((token) => token.text).join(' '),
+    timestamp: tokens.map((token) => [token.start, token.end]),
+  };
+}
+
+async function runCommand(command: string, args: string[]): Promise<SpawnResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`${command} exited with code ${code}: ${stderr.trim()}`));
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+  });
+}
+
+async function probeAudioDurationSeconds(filePath: string): Promise<number | null> {
+  const result = await runCommand('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_format', filePath]);
+  const payload = JSON.parse(result.stdout || '{}');
+  const durationValue = payload?.format?.duration;
+  const duration = Number(durationValue);
+
+  if (Number.isFinite(duration) && duration > 0) {
+    return duration;
+  }
+
+  return null;
+}
+
+function buildChunkFilename(chunkDir: string, index: number): string {
+  return path.join(chunkDir, `chunk-${String(index).padStart(4, '0')}.wav`);
+}
+
+async function splitAudioIntoChunks(sourcePath: string, chunkDir: string, chunkSeconds: number, overlapSeconds: number): Promise<TranscriptChunk[]> {
+  const audioDuration = await probeAudioDurationSeconds(sourcePath);
+  if (!audioDuration || audioDuration <= chunkSeconds) {
+    return [];
+  }
+
+  const chunks: TranscriptChunk[] = [];
+  const chunkWindowSeconds = chunkSeconds + overlapSeconds;
+  const stepSeconds = chunkSeconds;
+
+  for (let startTimeSeconds = 0, index = 0; startTimeSeconds < audioDuration; index += 1, startTimeSeconds += stepSeconds) {
+    const remainingSeconds = Math.max(0, audioDuration - startTimeSeconds);
+    if (remainingSeconds <= 0) {
+      break;
+    }
+
+    const durationSeconds = Math.min(chunkWindowSeconds, remainingSeconds);
+    const outputPath = buildChunkFilename(chunkDir, index);
+
+    await runCommand('ffmpeg', [
+      '-y',
+      '-ss', String(startTimeSeconds),
+      '-i', sourcePath,
+      '-t', String(durationSeconds),
+      '-c:a', 'pcm_s16le',
+      '-ar', '16000',
+      '-ac', '1',
+      outputPath,
+    ]);
+
+    chunks.push({
+      index,
+      startTimeSeconds,
+      durationSeconds,
+      filePath: outputPath,
+    });
+  }
+
+  return chunks;
 }
 
 export const ALIGNER_SERVICE_URL = process.env.ALIGNER_SERVICE_URL || 'http://localhost:2595';
@@ -69,8 +409,14 @@ export class AlignerService {
     }
   }
 
-  async alignAudioWithText(options: { audioFilePath: string; text: string }): Promise<AlignmentResponse> {
-    const { audioFilePath, text } = options;
+  async alignAudioWithText(options: {
+    audioFilePath: string;
+    text: string;
+    chunkTexts?: string[];
+    onProgress?: (processedSeconds: number, totalSeconds?: number) => Promise<void> | void;
+  }): Promise<AlignmentResponse> {
+    const { audioFilePath, text, chunkTexts: rawChunkTexts, onProgress } = options;
+    const chunkTexts = normalizeChunkTexts(rawChunkTexts);
 
     if (!audioFilePath || typeof audioFilePath !== 'string') {
       throw badRequest('音频文件路径为必填项', 'alignment.audio_required');
@@ -83,16 +429,123 @@ export class AlignerService {
     const normalizedPath = normalizePublicOrRelative(audioFilePath);
     const absolutePath = this.resolveAudioFilePath(normalizedPath);
     debug('Aligning audio with text:', absolutePath);
-    const audioBuffer = await readDecryptedFile(absolutePath);
-    const contentType = this.determineContentType(absolutePath);
 
-    const targetUrl = this.buildAlignBytesUrl(text);
+    const { tempPath: plainPath, cleanup } = await decryptFileToTempPath(absolutePath);
 
     try {
+      if (chunkTexts.length >= 2) {
+        const mergedChunkResult = await this.alignByChunks(plainPath, text, chunkTexts, onProgress);
+        if (mergedChunkResult) {
+          return mergedChunkResult;
+        }
+      }
+
+      const audioBuffer = await readDecryptedFile(plainPath);
+      const contentType = this.determineContentType(plainPath);
+      const targetUrl = this.buildAlignBytesUrl(text);
       const response = await this.sendAlignBytesRequest(targetUrl, audioBuffer, contentType);
+      const probedDuration = await probeAudioDurationSeconds(plainPath).catch(() => null);
+      if (onProgress && typeof probedDuration === 'number' && Number.isFinite(probedDuration) && probedDuration > 0) {
+        await onProgress(probedDuration, probedDuration);
+      }
       return this.mapAlignmentResponse(response);
     } catch (error) {
       this.handleApiError(error, { audioFilePath: normalizedPath });
+    } finally {
+      await cleanup().catch(() => undefined);
+    }
+
+    return {
+      success: false,
+      alignments: [],
+      message: '对齐失败',
+      key: null,
+    };
+  }
+
+  private async alignByChunks(
+    audioPath: string,
+    text: string,
+    chunkTexts: string[],
+    onProgress?: (processedSeconds: number, totalSeconds?: number) => Promise<void> | void,
+  ): Promise<AlignmentResponse | null> {
+    const { chunkSeconds, overlapSeconds } = normalizeAlignerChunkSettings();
+    const chunkDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'summit-align-chunks-'));
+    const cleanupChunks = async () => {
+      await fsPromises.rm(chunkDir, { recursive: true, force: true }).catch(() => undefined);
+    };
+
+    try {
+      const chunks = await splitAudioIntoChunks(audioPath, chunkDir, chunkSeconds, overlapSeconds);
+      if (chunks.length <= 1) {
+        return null;
+      }
+
+      if (chunks.length !== chunkTexts.length) {
+        return null;
+      }
+
+      const totalSeconds = chunks.length > 0
+        ? chunks[chunks.length - 1].startTimeSeconds + Math.min(chunkSeconds, chunks[chunks.length - 1].durationSeconds)
+        : undefined;
+
+      if (onProgress) {
+        await onProgress(0, totalSeconds);
+      }
+
+      const mergedTextFromChunks = sanitizeTranscript(chunkTexts.join(' '));
+      if (sanitizeTranscript(text) !== mergedTextFromChunks) {
+        return null;
+      }
+
+      let mergedTokens: TimedTextToken[] = [];
+      let key: string | null = null;
+      let message = '';
+
+      for (let i = 0; i < chunks.length; i += 1) {
+        const chunkText = chunkTexts[i];
+        if (!chunkText || chunkText.length === 0) {
+          continue;
+        }
+
+        const chunkBuffer = await fsPromises.readFile(chunks[i].filePath);
+        const chunkUrl = this.buildAlignBytesUrl(chunkText);
+        const response = await this.sendAlignBytesRequest(chunkUrl, chunkBuffer, 'audio/wav');
+        const chunkTokens = mapResponseTokens(response);
+        if (chunkTokens.length === 0) {
+          continue;
+        }
+
+        const shiftedTokens = shiftTimedTokens(chunkTokens, chunks[i].startTimeSeconds);
+        mergedTokens = mergeTimedTokens(mergedTokens, shiftedTokens);
+        if (typeof response.key === 'string') {
+          key = response.key;
+        }
+        if (typeof response.message === 'string' && response.message.length > 0) {
+          message = response.message;
+        }
+
+        if (onProgress) {
+          const processedSeconds = chunks[i].startTimeSeconds + Math.min(chunkSeconds, chunks[i].durationSeconds);
+          await onProgress(processedSeconds, totalSeconds);
+        }
+      }
+
+      if (mergedTokens.length === 0) {
+        return null;
+      }
+
+      return {
+        success: true,
+        alignments: [timedTokensToAlignmentItem(mergedTokens)],
+        message: message || 'Chunked alignment completed',
+        key,
+      };
+    } catch (error) {
+      debug('alignByChunks failed, falling back to one-shot:', error);
+      return null;
+    } finally {
+      await cleanupChunks();
     }
   }
 
@@ -230,8 +683,8 @@ export async function getAlignerModelInfo(): Promise<AlignerModelInfo> {
   return alignerService.getModelInfo();
 }
 
-export async function alignAudioWithText(audioFilePath: string, text: string): Promise<AlignmentResponse> {
-  return alignerService.alignAudioWithText({ audioFilePath, text });
+export async function alignAudioWithText(audioFilePath: string, text: string, chunkTexts?: string[]): Promise<AlignmentResponse> {
+  return alignerService.alignAudioWithText({ audioFilePath, text, chunkTexts });
 }
 
 export default alignerService;

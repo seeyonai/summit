@@ -35,13 +35,55 @@ router.post('/', requireRecordingWriteAccess(), asyncHandler(async (req: Request
     throw badRequest('text content is empty after sanitization', 'alignment.text_empty');
   }
 
-  const result = await alignerService.alignAudioWithText({ audioFilePath: filePath, text: cleaned });
+  const recordedText = recording.transcription || recording.verbatimTranscript || '';
+  const transcriptionChunks = recording.transcriptionChunks;
+  const shouldUseChunkedAlignment =
+    Array.isArray(transcriptionChunks)
+    && transcriptionChunks.length > 0
+    && sanitizeTranscript(recordedText) === cleaned;
+  const chunkTexts = shouldUseChunkedAlignment
+    ? transcriptionChunks.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    : undefined;
+
+  await recordingService.updateRecording(recordingId, {
+    alignmentStatus: 'processing',
+    alignmentProgressSeconds: 0,
+    alignmentProgressTotalSeconds: recording.duration,
+  });
+
+  let result;
+  try {
+    result = await alignerService.alignAudioWithText({
+      audioFilePath: filePath,
+      text: cleaned,
+      chunkTexts,
+      onProgress: async (processedSeconds, totalSeconds) => {
+        await recordingService.updateRecording(recordingId, {
+          alignmentStatus: 'processing',
+          alignmentProgressSeconds: processedSeconds,
+          alignmentProgressTotalSeconds: totalSeconds,
+        });
+      },
+    });
+  } catch (error) {
+    await recordingService.updateRecording(recordingId, {
+      alignmentStatus: 'failed',
+    });
+    throw error;
+  }
 
   if (result.success && result.alignments && result.alignments.length > 0) {
     const updateData: RecordingUpdate = {
-      alignmentItems: result.alignments
+      alignmentItems: result.alignments,
+      alignmentStatus: 'completed',
+      alignmentProgressSeconds: recording.duration,
+      alignmentProgressTotalSeconds: recording.duration,
     };
     await recordingService.updateRecording(recordingId, updateData);
+  } else {
+    await recordingService.updateRecording(recordingId, {
+      alignmentStatus: 'failed',
+    });
   }
 
   const lang = getPreferredLang(req);
