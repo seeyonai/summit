@@ -20,6 +20,10 @@ router.post(
     const { recordingId } = req.params;
 
     const recording = await recordingService.getRecordingById(recordingId);
+
+    // Reset previous result immediately so stale data never merges with the new run
+    await recordingService.updateRecording(recordingId, { organizedSpeeches: [] });
+
     const baseDir = getFilesBaseDir();
     const absolutePath =
       (await findRecordingWorkingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format)) ||
@@ -81,8 +85,6 @@ router.post(
       })
       .filter((s) => s.rawText.length > 0);
 
-    const apiKey = process.env.SUMMIT_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-    const baseUrl = process.env.SUMMIT_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
     let polishedById: Record<string, string> = {};
 
     const fallbackPolish = (text: string): string => {
@@ -91,7 +93,7 @@ router.post(
       return singleSpaced.length > 0 ? singleSpaced.charAt(0).toUpperCase() + singleSpaced.slice(1) : singleSpaced;
     };
 
-    if (apiKey && speeches.length > 0) {
+    if (speeches.length > 0) {
       try {
         const items = speeches.map((s, idx) => ({ id: String(idx), text: s.rawText }));
         const userPayload = {
@@ -101,15 +103,22 @@ router.post(
         };
         const completion = await createChatCompletion({
           temperature: 0.2,
-          response_format: { type: 'json_object' },
           messages: [
-            { role: 'system', content: 'You are a precise editor. Improve readability while preserving meaning. Do not translate.' },
+            { role: 'system', content: 'You are a precise editor. Improve readability while preserving meaning. Correct some segment errors. Do not translate. Always respond with valid JSON only, no markdown.' },
             { role: 'user', content: JSON.stringify(userPayload) },
           ],
         });
-        const content = completion.choices?.[0]?.message?.content || '';
-        const parsed = JSON.parse(content);
-        const outItems = Array.isArray(parsed?.items) ? parsed.items : [];
+        const raw = completion.choices?.[0]?.message?.content || '';
+        // Strip optional markdown code fences and extract the JSON object
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        const content = jsonMatch ? jsonMatch[0] : raw;
+        let parsed: unknown = null;
+        try {
+          parsed = JSON.parse(content);
+        } catch (parseErr) {
+          console.error('[organize] failed to parse OpenAI response as JSON:', parseErr, '| raw:', raw.slice(0, 200));
+        }
+        const outItems = Array.isArray((parsed as any)?.items) ? (parsed as any).items : [];
         const map: Record<string, string> = {};
         outItems.forEach((it: any) => {
           const id = String(it?.id ?? '');
@@ -117,7 +126,8 @@ router.post(
           if (id) map[id] = polished;
         });
         polishedById = map;
-      } catch (_) {
+      } catch (err) {
+        console.error('[organize] polishing step failed:', err instanceof Error ? err.message : err);
         polishedById = {};
       }
     }
