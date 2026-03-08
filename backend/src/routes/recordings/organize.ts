@@ -51,6 +51,7 @@ router.post(
 
     const cleaned = sanitizeTranscript(sourceText);
     const alignmentResult = await alignerService.alignAudioWithText({ audioFilePath: filePath, text: cleaned });
+    console.log('alignmentResult:\n', JSON.stringify(alignmentResult, null, 2));
     const first = Array.isArray(alignmentResult.alignments) && alignmentResult.alignments.length > 0 ? alignmentResult.alignments[0] : null;
 
     if (!first || !Array.isArray(first.timestamp)) {
