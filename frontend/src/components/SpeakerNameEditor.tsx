@@ -14,33 +14,45 @@ interface SpeakerNameEditorProps {
   disabled?: boolean;
 }
 
-function SpeakerNameEditor({ speakerIndices, currentSpeakerNames = [], onSave, disabled = false }: SpeakerNameEditorProps) {
+const EMPTY_SPEAKER_NAMES: SpeakerName[] = [];
+
+const buildEditedNames = (speakerNames: SpeakerName[]): Record<number, string> => {
+  const names: Record<number, string> = {};
+  speakerNames.forEach(({ index, name }) => {
+    if (typeof index === 'number' && name) {
+      names[index] = name;
+    }
+  });
+  return names;
+};
+
+const areEditedNamesEqual = (prev: Record<number, string>, next: Record<number, string>): boolean => {
+  const prevKeys = Object.keys(prev);
+  const nextKeys = Object.keys(next);
+  if (prevKeys.length !== nextKeys.length) {
+    return false;
+  }
+
+  return prevKeys.every((key) => prev[Number(key)] === next[Number(key)]);
+};
+
+function SpeakerNameEditor({ speakerIndices, currentSpeakerNames, onSave, disabled = false }: SpeakerNameEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const safeSpeakerNames = currentSpeakerNames ?? EMPTY_SPEAKER_NAMES;
 
   // Initialize edited names from current speaker names
-  const [editedNames, setEditedNames] = useState<Record<number, string>>(() => {
-    const initialNames: Record<number, string> = {};
-    currentSpeakerNames.forEach(({ index, name }) => {
-      if (typeof index === 'number' && name) {
-        initialNames[index] = name;
-      }
-    });
-    return initialNames;
-  });
+  const [editedNames, setEditedNames] = useState<Record<number, string>>(() => buildEditedNames(safeSpeakerNames));
 
   // Update edited names when currentSpeakerNames changes AND we're not editing
   useEffect(() => {
-    if (!isEditing && !saving) {
-      const updatedNames: Record<number, string> = {};
-      currentSpeakerNames.forEach(({ index, name }) => {
-        if (typeof index === 'number' && name) {
-          updatedNames[index] = name;
-        }
-      });
-      setEditedNames(updatedNames);
+    if (isEditing || saving) {
+      return;
     }
-  }, [currentSpeakerNames, isEditing, saving]);
+
+    const updatedNames = buildEditedNames(safeSpeakerNames);
+    setEditedNames((prev) => (areEditedNamesEqual(prev, updatedNames) ? prev : updatedNames));
+  }, [safeSpeakerNames, isEditing, saving]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -48,13 +60,7 @@ function SpeakerNameEditor({ speakerIndices, currentSpeakerNames = [], onSave, d
 
   const handleCancel = () => {
     // Reset to current values
-    const resetNames: Record<number, string> = {};
-    currentSpeakerNames.forEach(({ index, name }) => {
-      if (typeof index === 'number' && name) {
-        resetNames[index] = name;
-      }
-    });
-    setEditedNames(resetNames);
+    setEditedNames(buildEditedNames(safeSpeakerNames));
     setIsEditing(false);
   };
 
