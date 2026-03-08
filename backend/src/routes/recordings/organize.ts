@@ -50,7 +50,12 @@ router.post(
     }
 
     const cleaned = sanitizeTranscript(sourceText);
-    const alignmentResult = await alignerService.alignAudioWithText({ audioFilePath: filePath, text: cleaned });
+    const transcriptionChunks = recording.transcriptionChunks;
+    const chunkTexts = Array.isArray(transcriptionChunks)
+      ? transcriptionChunks.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      : undefined;
+
+    const alignmentResult = await alignerService.alignAudioWithText({ audioFilePath: filePath, text: cleaned, chunkTexts });
     console.log('alignmentResult:\n', JSON.stringify(alignmentResult, null, 2));
     const first = Array.isArray(alignmentResult.alignments) && alignmentResult.alignments.length > 0 ? alignmentResult.alignments[0] : null;
 
