@@ -24,15 +24,6 @@ router.post(
     // Reset previous result immediately so stale data never merges with the new run
     await recordingService.updateRecording(recordingId, { organizedSpeeches: [] });
 
-    const baseDir = getFilesBaseDir();
-    const absolutePath =
-      (await findRecordingWorkingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format)) ||
-      (await findRecordingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format));
-    if (!absolutePath) {
-      throw badRequest('Recording file path is missing', 'organize.file_missing');
-    }
-    const filePath = makeRelativeToBase(baseDir, absolutePath);
-
     const sourceText = recording.transcription || recording.verbatimTranscript || '';
     if (!sourceText.trim()) {
       throw badRequest('No transcription available to organize', 'organize.transcription_missing');
@@ -50,21 +41,36 @@ router.post(
     }
 
     const cleaned = sanitizeTranscript(sourceText);
-    const transcriptionChunks = recording.transcriptionChunks;
-    const chunkTexts = Array.isArray(transcriptionChunks)
-      ? transcriptionChunks.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-      : undefined;
+    const reusableAlignmentItem = Array.isArray(recording.alignmentItems)
+      ? recording.alignmentItems.find((item) => sanitizeTranscript(item.text || '') === cleaned && Array.isArray(item.timestamp) && item.timestamp.length > 0)
+      : null;
 
-    const alignmentResult = await alignerService.alignAudioWithText({ audioFilePath: filePath, text: cleaned, chunkTexts });
-    console.log('alignmentResult:\n', JSON.stringify(alignmentResult, null, 2));
-    const first = Array.isArray(alignmentResult.alignments) && alignmentResult.alignments.length > 0 ? alignmentResult.alignments[0] : null;
+    let selectedAlignmentItem = reusableAlignmentItem || null;
+    if (!selectedAlignmentItem) {
+      const baseDir = getFilesBaseDir();
+      const absolutePath =
+        (await findRecordingWorkingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format)) ||
+        (await findRecordingFilePath(baseDir, recording._id?.toString?.() ?? String(recording._id), recording.format));
+      if (!absolutePath) {
+        throw badRequest('Recording file path is missing', 'organize.file_missing');
+      }
+      const filePath = makeRelativeToBase(baseDir, absolutePath);
 
-    if (!first || !Array.isArray(first.timestamp)) {
+      const transcriptionChunks = recording.transcriptionChunks;
+      const chunkTexts = Array.isArray(transcriptionChunks)
+        ? transcriptionChunks.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        : undefined;
+
+      const alignmentResult = await alignerService.alignAudioWithText({ audioFilePath: filePath, text: cleaned, chunkTexts });
+      selectedAlignmentItem = Array.isArray(alignmentResult.alignments) && alignmentResult.alignments.length > 0 ? alignmentResult.alignments[0] : null;
+    }
+
+    if (!selectedAlignmentItem || !Array.isArray(selectedAlignmentItem.timestamp)) {
       throw badRequest('Alignment failed to produce timestamps', 'organize.alignment_failed');
     }
 
-    const words = (first.text || '').split(/\s+/).filter(Boolean);
-    const timestamps = (first.timestamp || []).map((pair) => (Array.isArray(pair) && pair.length >= 2 ? [Number(pair[0]), Number(pair[1])] : [0, 0]));
+    const words = (selectedAlignmentItem.text || '').split(/\s+/).filter(Boolean);
+    const timestamps = (selectedAlignmentItem.timestamp || []).map((pair) => (Array.isArray(pair) && pair.length >= 2 ? [Number(pair[0]), Number(pair[1])] : [0, 0]));
     const tokens = words
       .map((w, idx) => ({
         text: w,
